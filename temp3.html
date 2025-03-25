@@ -196,12 +196,23 @@
     
     /* Document Preview Enhanced - Improved using reference code */
     .documents-preview {
-      margin-top: auto; /* Push to bottom of sidebar */
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      margin-top: auto;
       margin-bottom: 0;
+      background: var(--light-surface);
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--light-border);
+      padding: var(--spacing-md);
+      box-shadow: var(--box-shadow);
+      z-index: 5;
     }
     
     body.dark-mode .documents-preview {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--dark-surface);
+      border-color: var(--dark-border);
+      box-shadow: var(--dark-box-shadow);
     }
     
     .documents-preview h3 {
@@ -219,9 +230,11 @@
     }
     
     #documentPreviews {
+      flex: 1;
       min-height: 50px;
-      max-height: 300px;
+      max-height: 250px;
       overflow-y: auto;
+      margin-bottom: 5px;
     }
     
     .file-item {
@@ -853,6 +866,10 @@
       
       .sidebar-toggle {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        pointer-events: none !important;
       }
       
       body.dark-mode .sidebar {
@@ -1131,31 +1148,48 @@
       }
     }
 
-    /* Document preview toggle button */
+    /* Completely hide the sidebar-toggle button */
+    .sidebar-toggle {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      pointer-events: none !important;
+    }
+
+    /* Ensure the documents-toggle button is always visible and properly positioned */
     .documents-toggle {
-      display: block !important;
+      display: flex !important;
       visibility: visible !important;
       opacity: 1 !important;
       width: 100%;
-      background: var(--bg-color-card);
+      height: 30px;
+      align-items: center;
+      justify-content: center;
+      background: var(--light-bg);
       border: none;
-      border-radius: 0 0 var(--border-radius) var(--border-radius);
-      padding: 10px;
-      color: var(--text-color-muted);
+      border-top: 1px solid var(--light-border);
+      color: var(--light-text);
       cursor: pointer;
       transition: all 0.3s ease;
-      text-align: center;
       position: sticky;
       bottom: 0;
       z-index: 10;
+      margin-top: 5px;
+    }
+
+    body.dark-mode .documents-toggle {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--dark-text);
+      border-color: var(--dark-border);
     }
 
     .documents-toggle:hover {
-      background-color: rgba(0,0,0,0.05);
+      background-color: rgba(0, 123, 255, 0.1);
     }
 
     body.dark-mode .documents-toggle:hover {
-      background-color: rgba(255,255,255,0.05);
+      background-color: rgba(255, 255, 255, 0.1);
     }
 
     .documents-preview.collapsed {
@@ -1261,31 +1295,77 @@
     /* Responsive styles for document preview */
     @media (max-width: 992px) {
       .documents-preview {
-        max-height: 250px;
-        border-top: 1px solid var(--border-color);
-        margin-top: 15px;
+        position: relative;
+        max-height: none;
+        border: 1px solid var(--light-border);
+        margin: 15px 0;
+        border-radius: var(--border-radius-md);
+        overflow: hidden;
       }
       
-      .documents-toggle {
-        position: relative;
-        bottom: auto;
-        border-radius: var(--border-radius);
-        margin-top: 5px;
+      body.dark-mode .documents-preview {
+        border-color: var(--dark-border);
       }
       
       #documentPreviews {
         max-height: 200px;
+      }
+      
+      .documents-toggle {
+        height: 35px;
+        border-radius: 0;
+        position: relative;
+        bottom: 0;
+        margin-top: 0;
+      }
+      
+      /* Make sure document preview remains visible on collapsed sidebar */
+      .sidebar.collapsed .documents-preview {
+        display: none !important;
       }
     }
 
     @media (max-width: 768px) {
       .documents-preview {
-        max-height: 200px;
+        margin: 10px 0;
+        padding: 10px;
       }
       
       #documentPreviews {
         max-height: 150px;
       }
+      
+      .documents-toggle {
+        height: 30px;
+      }
+    }
+
+    /* Style for mobile menu button */
+    .mobile-menu-btn {
+      background: none;
+      border: none;
+      color: var(--light-text);
+      font-size: 1.1rem;
+      padding: 15px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      transition: all 0.3s ease;
+    }
+
+    .mobile-menu-btn:hover {
+      background-color: rgba(0, 123, 255, 0.1);
+    }
+
+    body.dark-mode .mobile-menu-btn {
+      color: var(--dark-text);
+    }
+
+    body.dark-mode .mobile-menu-btn:hover {
+      background-color: rgba(255, 255, 255, 0.1);
     }
   </style>
 </head>
@@ -1310,7 +1390,7 @@
       <div class="documents-preview">
         <h3><i class="fas fa-file-alt"></i> Documents</h3>
         <div id="documentPreviews"></div>
-        <button class="documents-toggle" id="documentsToggle" style="display: block; visibility: visible; opacity: 1;">
+        <button class="documents-toggle" id="documentsToggle">
           <i class="fas fa-chevron-up"></i>
         </button>
       </div>
@@ -1413,6 +1493,9 @@
           <button class="mobile-menu-close" id="mobileMenuClose">
             <i class="fas fa-times"></i>
           </button>
+          <button class="mobile-menu-btn" id="toggleSidebarBtn">
+            <i class="fas fa-folder-open"></i> Toggle Documents
+          </button>
         </div>
       </div>
 
@@ -1473,14 +1556,10 @@
       
       // Check screen width and adapt layout
       function checkScreenWidth() {
-        if (window.innerWidth <= 992) {
-          if (sidebar && !sidebar.classList.contains('collapsed')) {
+        const sidebar = document.querySelector('.sidebar');
+        if (window.innerWidth <= 992 && sidebar) {
+          if (!sidebar.classList.contains('collapsed')) {
             sidebar.classList.add('collapsed');
-            if (sidebarToggle) {
-              const icon = sidebarToggle.querySelector('i');
-              icon.classList.remove('fa-chevron-up');
-              icon.classList.add('fa-chevron-down');
-            }
           }
         }
       }
@@ -1521,24 +1600,23 @@
         }, 100); // Short delay to ensure DOM is fully loaded
       }
       
-      // Documents toggle functionality - restored but keeping button visible
+      // Simplified documents toggle functionality
       const documentsToggle = document.getElementById('documentsToggle');
-      const documentsPreview = document.querySelector('.documents-preview');
+      const documentPreviews = document.getElementById('documentPreviews');
       
-      if (documentsToggle && documentsPreview) {
+      if (documentsToggle && documentPreviews) {
+        // Initialize with visible previews
+        documentPreviews.style.display = 'block';
+        
         documentsToggle.addEventListener('click', function() {
-          // Toggle only the document previews, not the entire section
-          const previewsContainer = document.getElementById('documentPreviews');
-          if (previewsContainer) {
-            if (previewsContainer.style.display === 'none') {
-              previewsContainer.style.display = 'block';
-              this.querySelector('i').classList.remove('fa-chevron-down');
-              this.querySelector('i').classList.add('fa-chevron-up');
-            } else {
-              previewsContainer.style.display = 'none';
-              this.querySelector('i').classList.remove('fa-chevron-up');
-              this.querySelector('i').classList.add('fa-chevron-down');
-            }
+          if (documentPreviews.style.display === 'none') {
+            documentPreviews.style.display = 'block';
+            this.querySelector('i').classList.remove('fa-chevron-down');
+            this.querySelector('i').classList.add('fa-chevron-up');
+          } else {
+            documentPreviews.style.display = 'none';
+            this.querySelector('i').classList.remove('fa-chevron-up');
+            this.querySelector('i').classList.add('fa-chevron-down');
           }
         });
       }
@@ -1947,6 +2025,28 @@
         }
       });
     });
+
+    // Create a toggle function for sidebar that can be used from a mobile menu button
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar) {
+        sidebar.classList.toggle('collapsed');
+      }
+    }
+
+    // Add a button to the mobile menu to toggle sidebar
+    const mobileMenuContent = document.querySelector('.mobile-menu-content');
+    if (mobileMenuContent) {
+      const toggleSidebarBtn = document.createElement('button');
+      toggleSidebarBtn.className = 'mobile-menu-btn';
+      toggleSidebarBtn.innerHTML = '<i class="fas fa-folder-open"></i> Toggle Documents';
+      toggleSidebarBtn.addEventListener('click', function() {
+        toggleSidebar();
+        // Close mobile menu after action
+        document.getElementById('mobileMenu').classList.remove('active');
+      });
+      mobileMenuContent.appendChild(toggleSidebarBtn);
+    }
   </script>
 </body>
 </html>
