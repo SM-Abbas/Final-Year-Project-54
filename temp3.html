@@ -195,7 +195,7 @@
       opacity: 1;
     }
     
-    /* Document Preview section with added margins */
+    /* Document Preview section with fixed styling */
     .documents-preview {
       position: relative;
       display: flex;
@@ -207,6 +207,7 @@
       padding: var(--spacing-md);
       box-shadow: var(--box-shadow);
       z-index: 5;
+      max-height: none;
     }
     
     body.dark-mode .documents-preview {
@@ -330,6 +331,7 @@
       flex-direction: column;
       background-color: var(--light-surface);
       transition: var(--transition);
+      position: relative;
     }
     
     body.dark-mode .chat-section {
@@ -670,7 +672,7 @@
       color: #adb5bd;
     }
     
-    /* Chat Box */
+    /* Chat Box with modified positioning for welcome message */
     .chat-box {
       flex: 1;
       display: flex;
@@ -678,11 +680,13 @@
       overflow-y: auto;
       border: 1px solid var(--light-border);
       padding: var(--spacing-lg);
+      padding-top: calc(100px + var(--spacing-md)); /* Space for welcome message */
       background-color: var(--light-bg);
       border-radius: var(--border-radius-lg);
       transition: var(--transition);
       margin-bottom: var(--spacing-md);
       scroll-behavior: smooth;
+      position: relative;
     }
     
     body.dark-mode .chat-box {
@@ -814,11 +818,35 @@
       border-color: var(--dark-border);
     }
     
-    /* Welcome Message */
+    /* Welcome Message with improved fade effect */
     .welcome-message {
       text-align: center;
-      margin-bottom: var(--spacing-lg);
       animation: fadeIn 0.5s ease-out;
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: var(--light-bg);
+      padding: 30px 0;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 10;
+      opacity: 1;
+      transform: translateY(0);
+      border-top-left-radius: var(--border-radius-lg);
+      border-top-right-radius: var(--border-radius-lg);
+      border-bottom: 1px solid var(--light-border);
+      margin-bottom: 0;
+    }
+    
+    body.dark-mode .welcome-message {
+      background-color: var(--dark-bg);
+      border-color: var(--dark-border);
+    }
+    
+    .welcome-message.hidden {
+      opacity: 0;
+      transform: translateY(-20px);
+      pointer-events: none;
     }
     
     .welcome-message h2 {
@@ -831,13 +859,13 @@
       color: transparent;
       margin-bottom: var(--spacing-xs);
     }
-    
+
     .welcome-message p {
       margin-top: var(--spacing-xs);
       font-size: 1.1rem;
       color: #6c757d;
     }
-    
+
     body.dark-mode .welcome-message p {
       color: #adb5bd;
     }
@@ -902,16 +930,29 @@
         max-height: calc(60vh - 180px);
       }
       
-      /* Fixed document preview display */
+      /* Fixed document preview visibility */
       .sidebar.collapsed .documents-preview {
         display: none !important;
       }
       
       .sidebar:not(.collapsed) .documents-preview {
-        display: block !important;
-        max-height: 250px;
-        overflow-y: auto;
+        display: flex !important;
+        max-height: none;
+        overflow: visible;
         margin-bottom: var(--spacing-md);
+      }
+      
+      /* Ensure toggle button is always visible */
+      .documents-toggle {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        height: 35px;
+        border-radius: 0;
+        position: relative;
+        bottom: 0;
+        margin-top: 0;
+        z-index: 100;
       }
       
       .documents-preview {
@@ -926,14 +967,6 @@
       #documentPreviews {
         max-height: 200px;
         padding: 8px;
-      }
-      
-      .documents-toggle {
-        height: 35px;
-        border-radius: 0;
-        position: relative;
-        bottom: 0;
-        margin-top: 0;
       }
     }
 
@@ -1391,13 +1424,12 @@
         </div>
       </div>
 
-      <!-- Welcome Message -->
-      <div class="welcome-message">
-        <h2>Hi, I'm LegalMind.</h2>
-        <p>Ask me anything about legal documents and concepts.</p>
+      <div class="chat-box" id="chatBox">
+        <div class="welcome-message">
+          <h2>Hi, I'm LegalMind.</h2>
+          <p>Ask me anything about legal documents and concepts.</p>
+        </div>
       </div>
-
-      <div class="chat-box" id="chatBox"></div>
       
       <div class="chat-input">
         <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
@@ -1472,32 +1504,52 @@
         });
       }
       
-      // Make document preview fully visible on page load
-      const previewSection = document.querySelector('.documents-preview');
-      if (previewSection) {
-        setTimeout(() => {
-          previewSection.style.display = 'block';
-          previewSection.style.visibility = 'visible';
-          previewSection.style.opacity = '1';
-          previewSection.style.zIndex = '5';
-          
-          // Initialize preview area
-          const documentPreviews = document.getElementById('documentPreviews');
-          if (documentPreviews && documentPreviews.children.length === 0) {
-            const welcomeText = document.createElement('p');
-            welcomeText.className = 'empty-preview-message';
-            welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
-            documentPreviews.appendChild(welcomeText);
+      // Handle welcome message visibility on scroll
+      const welcomeMessage = document.querySelector('.welcome-message');
+      
+      if (chatBox && welcomeMessage) {
+        // Show welcome message initially
+        welcomeMessage.classList.remove('hidden');
+        
+        // Check scroll position on load
+        if (chatBox.scrollTop > 10) {
+          welcomeMessage.classList.add('hidden');
+        }
+        
+        // Check on scroll
+        chatBox.addEventListener('scroll', function() {
+          if (chatBox.scrollTop > 10) {
+            welcomeMessage.classList.add('hidden');
+          } else {
+            welcomeMessage.classList.remove('hidden');
           }
-        }, 100); // Short delay to ensure DOM is fully loaded
+        });
       }
       
-      // Simplified documents toggle functionality
+      // Make document preview fully visible on page load with enhanced visibility
+      const previewSection = document.querySelector('.documents-preview');
+      if (previewSection) {
+        previewSection.style.display = 'block';
+        previewSection.style.visibility = 'visible';
+        previewSection.style.opacity = '1';
+        previewSection.style.zIndex = '5';
+        
+        // Initialize preview area
+        const documentPreviews = document.getElementById('documentPreviews');
+        if (documentPreviews && documentPreviews.children.length === 0) {
+          const welcomeText = document.createElement('p');
+          welcomeText.className = 'empty-preview-message';
+          welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
+          documentPreviews.appendChild(welcomeText);
+        }
+      }
+      
+      // Simplified documents toggle functionality with forced visibility
       const documentsToggle = document.getElementById('documentsToggle');
       const documentPreviews = document.getElementById('documentPreviews');
       
       if (documentsToggle && documentPreviews) {
-        // Initialize with visible previews
+        // Make sure it starts visible
         documentPreviews.style.display = 'block';
         
         documentsToggle.addEventListener('click', function() {
@@ -1512,6 +1564,12 @@
           }
         });
       }
+      
+      // Add mobile menu button to toggle document visibility
+      document.getElementById('toggleSidebarBtn').addEventListener('click', function() {
+        toggleSidebar();
+        document.getElementById('mobileMenu').classList.remove('active');
+      });
     });
 
     function addNewChat() {
@@ -1581,10 +1639,19 @@
 
     function appendMessage(sender, text) {
       const chatBox = document.getElementById("chatBox");
+      const welcomeMessage = document.querySelector('.welcome-message');
+      
       const msgDiv = document.createElement("div");
       msgDiv.textContent = text;
       msgDiv.classList.add("message", sender);
       chatBox.appendChild(msgDiv);
+      
+      // If we have any messages, hide welcome when scrolled
+      if (chatBox.scrollHeight > chatBox.clientHeight) {
+        welcomeMessage.classList.add('hidden');
+      }
+      
+      // Scroll to bottom
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
@@ -1918,26 +1985,28 @@
       });
     });
 
-    // Create a toggle function for sidebar that can be used from a mobile menu button
+    // Update the toggleSidebar function to properly handle document preview visibility
     function toggleSidebar() {
       const sidebar = document.querySelector('.sidebar');
+      const documentsPreview = document.querySelector('.documents-preview');
+      
       if (sidebar) {
         sidebar.classList.toggle('collapsed');
+        
+        if (sidebar.classList.contains('collapsed')) {
+          if (documentsPreview) {
+            documentsPreview.style.display = 'none';
+          }
+        } else {
+          if (documentsPreview) {
+            documentsPreview.style.display = 'flex';
+            const documentPreviews = document.getElementById('documentPreviews');
+            if (documentPreviews) {
+              documentPreviews.style.display = 'block';
+            }
+          }
+        }
       }
-    }
-
-    // Add a button to the mobile menu to toggle sidebar
-    const mobileMenuContent = document.querySelector('.mobile-menu-content');
-    if (mobileMenuContent) {
-      const toggleSidebarBtn = document.createElement('button');
-      toggleSidebarBtn.className = 'mobile-menu-btn';
-      toggleSidebarBtn.innerHTML = '<i class="fas fa-folder-open"></i> Toggle Documents';
-      toggleSidebarBtn.addEventListener('click', function() {
-        toggleSidebar();
-        // Close mobile menu after action
-        document.getElementById('mobileMenu').classList.remove('active');
-      });
-      mobileMenuContent.appendChild(toggleSidebarBtn);
     }
   </script>
 </body>
