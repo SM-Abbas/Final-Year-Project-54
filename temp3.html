@@ -1669,20 +1669,12 @@
       document.getElementById("plansDropdown").style.display = "none";
     }
 
-    document.getElementById("profilePicNav").addEventListener("click", () => {
-      document.getElementById("profileMenu").classList.toggle("active");
-    });
-
     // Close dropdowns when clicking outside
     document.addEventListener('click', function(event) {
       if (!event.target.closest('.dropdown') && !event.target.closest('.dropdown-content')) {
         document.querySelectorAll('.dropdown-content').forEach(dropdown => {
           dropdown.style.display = 'none';
         });
-      }
-      
-      if (!event.target.closest('.nav-profile') && !event.target.closest('.profile-menu')) {
-        document.getElementById("profileMenu").classList.remove("active");
       }
     });
 
@@ -1824,7 +1816,8 @@
       }
       
       // Profile menu toggle
-      document.getElementById('profilePicNav').addEventListener('click', () => {
+      document.getElementById('profilePicNav').addEventListener('click', (e) => {
+        e.stopPropagation();
         document.getElementById('profileMenu').classList.toggle('active');
       });
       
