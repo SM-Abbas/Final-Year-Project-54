@@ -13,12 +13,13 @@ import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10
 
 // Firebase Configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyBI4a2N54sk8KezV6Pd1ekFvBjFbJOSQFA",
-    authDomain: "legalmind-57478.firebaseapp.com",
-    projectId: "legalmind-57478",
-    storageBucket: "legalmind-57478.firebasestorage.app",
-    messagingSenderId: "16031728897",
-    appId: "1:16031728897:web:148ed8cc946ce56f47c700"
+  apiKey: "AIzaSyB9TKLmKIVO7-YWKv1iORqnax0sru249sY",
+  authDomain: "legalmind-users.firebaseapp.com",
+  projectId: "legalmind-users",
+  storageBucket: "legalmind-users.firebasestorage.app",
+  messagingSenderId: "321034025311",
+  appId: "1:321034025311:web:d8a01ac0c02d5b152b1eea",
+  measurementId: "G-RQK886CH91"
 };
 
 // Initialize Firebase
