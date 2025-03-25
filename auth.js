@@ -27,11 +27,18 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+// Fix for GitHub Pages domain
+// Set the domain for cookies
+auth.settings.appVerificationDisabledForTesting = true;
+provider.setCustomParameters({
+    prompt: 'select_account'
+});
+
 // DOM elements
 document.addEventListener('DOMContentLoaded', () => {
     // Login elements
     const loginForm = document.getElementById('login-content');
-    const loginBtn = document.querySelector('#login-content button');
+    const loginBtn = document.getElementById('login-button');
     const googleLoginBtn = document.getElementById('google-login');
     
     console.log("Login button found:", loginBtn ? "Yes" : "No");
@@ -39,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Signup elements
     const signupForm = document.getElementById('signup-content');
-    const signupBtn = document.querySelector('#signup-content button');
+    const signupBtn = document.getElementById('signup-button');
     const googleSignupBtn = document.getElementById('google-signup');
     
     // Logout element
@@ -116,7 +123,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Google Sign-In (Login tab)
     if (googleLoginBtn) {
-        googleLoginBtn.addEventListener("click", () => {
+        // Remove any existing click event listeners
+        const newGoogleLoginBtn = googleLoginBtn.cloneNode(true);
+        googleLoginBtn.parentNode.replaceChild(newGoogleLoginBtn, googleLoginBtn);
+        
+        newGoogleLoginBtn.addEventListener("click", () => {
             console.log("Google login clicked - using popup");
             signInWithPopup(auth, provider)
                 .then((result) => {
@@ -125,14 +136,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch((error) => {
                     console.error("Google login error:", error);
-                    alert("Google login failed: " + error.message);
+                    if (error.code !== 'auth/cancelled-popup-request') {
+                        alert("Google login failed: " + error.message);
+                    }
                 });
         });
     }
     
     // Google Sign-In (Signup tab)
     if (googleSignupBtn) {
-        googleSignupBtn.addEventListener("click", () => {
+        // Remove any existing click event listeners
+        const newGoogleSignupBtn = googleSignupBtn.cloneNode(true);
+        googleSignupBtn.parentNode.replaceChild(newGoogleSignupBtn, googleSignupBtn);
+        
+        newGoogleSignupBtn.addEventListener("click", () => {
             console.log("Google signup clicked - using popup");
             signInWithPopup(auth, provider)
                 .then((result) => {
@@ -141,7 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch((error) => {
                     console.error("Google signup error:", error);
-                    alert("Google signup failed: " + error.message);
+                    if (error.code !== 'auth/cancelled-popup-request') {
+                        alert("Google signup failed: " + error.message);
+                    }
                 });
         });
     }
