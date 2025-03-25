@@ -22,9 +22,9 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getFirestore();
+const app = initializeApp(firebaseConfig, "MainAuth");
+const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // DOM elements
@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-content');
     const loginBtn = document.querySelector('#login-content button');
     const googleLoginBtn = document.getElementById('google-login');
+    
+    console.log("Login button found:", loginBtn ? "Yes" : "No");
+    console.log("Google login button found:", googleLoginBtn ? "Yes" : "No");
     
     // Signup elements
     const signupForm = document.getElementById('signup-content');
@@ -46,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginBtn) {
         loginBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            console.log("Login button clicked in auth.js");
             const email = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
@@ -54,9 +58,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
+            console.log("Attempting to sign in with email and password");
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    console.log("User signed in:", userCredential.user);
+                    console.log("User signed in successfully:", userCredential.user);
                     window.location.href = "temp3.html";
                 })
                 .catch((error) => {
@@ -99,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }).then(() => {
                         console.log("User created successfully:", userCredential.user);
-                        alert("Account created successfully!");
                         window.location.href = "temp3.html";
                     });
                 })
@@ -113,21 +117,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Google Sign-In (Login tab)
     if (googleLoginBtn) {
         googleLoginBtn.addEventListener("click", () => {
+            console.log("Google login clicked - using popup");
             signInWithPopup(auth, provider)
-                .then(async (result) => {
-                    const user = result.user;
-                    await setDoc(doc(db, "users", user.uid), {
-                        name: user.displayName,
-                        email: user.email,
-                        profilePic: user.photoURL,
-                        lastLogin: new Date()
-                    });
-                    console.log("User signed in:", user);
+                .then((result) => {
+                    console.log("Google login successful:", result.user);
                     window.location.href = "temp3.html";
                 })
                 .catch((error) => {
-                    console.error("Google login error:", error.message);
-                    alert("Google sign-in failed: " + error.message);
+                    console.error("Google login error:", error);
+                    alert("Google login failed: " + error.message);
                 });
         });
     }
@@ -135,21 +133,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Google Sign-In (Signup tab)
     if (googleSignupBtn) {
         googleSignupBtn.addEventListener("click", () => {
+            console.log("Google signup clicked - using popup");
             signInWithPopup(auth, provider)
-                .then(async (result) => {
-                    const user = result.user;
-                    await setDoc(doc(db, "users", user.uid), {
-                        name: user.displayName,
-                        email: user.email,
-                        profilePic: user.photoURL,
-                        createdAt: new Date()
-                    });
-                    console.log("User signed up:", user);
+                .then((result) => {
+                    console.log("Google signup successful:", result.user);
                     window.location.href = "temp3.html";
                 })
                 .catch((error) => {
-                    console.error("Google signup error:", error.message);
-                    alert("Google sign-up failed: " + error.message);
+                    console.error("Google signup error:", error);
+                    alert("Google signup failed: " + error.message);
                 });
         });
     }

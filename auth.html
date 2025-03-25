@@ -361,9 +361,100 @@
     </div> 
  
     <script src="auth.js" type="module"></script> 
+    <script type="module">
+        // Direct Firebase authentication as a fallback
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getAuth, 
+            GoogleAuthProvider, 
+            signInWithEmailAndPassword,
+            signInWithPopup
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB9TKLmKIVO7-YWKv1iORqnax0sru249sY",
+            authDomain: "legalmind-users.firebaseapp.com",
+            projectId: "legalmind-users",
+            storageBucket: "legalmind-users.firebasestorage.app",
+            messagingSenderId: "321034025311",
+            appId: "1:321034025311:web:d8a01ac0c02d5b152b1eea"
+        };
+        
+        // Initialize Firebase (second instance for direct access)
+        const directApp = initializeApp(firebaseConfig, "DirectAuth");
+        const directAuth = getAuth(directApp);
+        const provider = new GoogleAuthProvider();
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Email/Password login
+            const loginButton = document.getElementById('login-button');
+            if (loginButton) {
+                loginButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log("Login button clicked in direct script");
+                    
+                    const email = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    
+                    if (!email || !password) {
+                        alert("Please enter both email and password");
+                        return;
+                    }
+                    
+                    signInWithEmailAndPassword(directAuth, email, password)
+                        .then((userCredential) => {
+                            console.log("Direct login successful");
+                            window.location.href = "temp3.html";
+                        })
+                        .catch((error) => {
+                            console.error("Direct login error:", error.message);
+                            alert("Login failed: " + error.message);
+                        });
+                });
+            }
+            
+            // Google login
+            const googleLoginBtn = document.getElementById('google-login');
+            if (googleLoginBtn) {
+                googleLoginBtn.addEventListener('click', function() {
+                    console.log("Google login clicked - using popup");
+                    signInWithPopup(directAuth, provider)
+                        .then((result) => {
+                            console.log("Google login successful");
+                            window.location.href = "temp3.html";
+                        })
+                        .catch((error) => {
+                            console.error("Google login error:", error);
+                            alert("Google login failed: " + error.message);
+                        });
+                });
+            }
+            
+            // Google signup
+            const googleSignupBtn = document.getElementById('google-signup');
+            if (googleSignupBtn) {
+                googleSignupBtn.addEventListener('click', function() {
+                    console.log("Google signup clicked - using popup");
+                    signInWithPopup(directAuth, provider)
+                        .then((result) => {
+                            console.log("Google signup successful");
+                            window.location.href = "temp3.html";
+                        })
+                        .catch((error) => {
+                            console.error("Google signup error:", error);
+                            alert("Google signup failed: " + error.message);
+                        });
+                });
+            }
+        });
+    </script>
     <script>
         // Tab switching functionality
         document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM loaded in auth.html");
+            
+            // Tab switching
             const tabs = document.querySelectorAll('.tab');
             
             tabs.forEach(tab => {
@@ -382,6 +473,7 @@
                     // Show the corresponding tab content
                     const tabId = this.getAttribute('data-tab');
                     document.getElementById(tabId + '-content').classList.add('active');
+                    console.log("Switched to tab:", tabId);
                 });
             });
         });

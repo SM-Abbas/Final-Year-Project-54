@@ -47,51 +47,8 @@
     </script>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-    // Firebase Configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyBI4a2N54sk8KezV6Pd1ekFvBjFbJOSQFA",
-        authDomain: "legalmind-57478.firebaseapp.com",
-        projectId: "legalmind-57478",
-        storageBucket: "legalmind-57478.firebasestorage.app",
-        messagingSenderId: "16031728897",
-        appId: "1:16031728897:web:148ed8cc946ce56f47c700"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth();
-    const db = getFirestore();
-    const provider = new GoogleAuthProvider();
-
-    // Google Sign-In
-    document.getElementById("google-login").addEventListener("click", () => {
-        signInWithPopup(auth, provider)
-            .then(async (result) => {
-                const user = result.user;
-                await setDoc(doc(db, "users", user.uid), {
-                    name: user.displayName,
-                    email: user.email,
-                    profilePic: user.photoURL
-                });
-                console.log("User signed in:", user);
-            })
-            .catch((error) => {
-                console.error(error);
-            });
-    });
-
-    // Logout
-    document.getElementById("logout").addEventListener("click", () => {
-        signOut(auth).then(() => {
-            console.log("User signed out.");
-        }).catch((error) => {
-            console.error(error);
-        });
-    });
+    // No need for Google authentication in this page
+    // The auth.js import will handle authentication state
 </script>
 
 </head>
@@ -233,101 +190,18 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const loginBtn = document.getElementById('open-popup');
+        const loginLink = document.getElementById('login-link');
         const logoutBtn = document.getElementById('logout');
         const googleLoginBtn = document.getElementById('google-login');
         const signupForm = document.getElementById('signup-form');
         const loginForm = document.getElementById('login-form');
 
-        // Firebase Authentication State Listener
-        firebase.auth().onAuthStateChanged((user) => {
-            if (user) {
-                // User is logged in
-                loginBtn.style.display = 'none';
-                logoutBtn.style.display = 'block';
-            } else {
-                // User is logged out
-                loginBtn.style.display = 'block';
-                logoutBtn.style.display = 'none';
-            }
-        });
-
-        // Logout Function
-        logoutBtn.addEventListener('click', function () {
-            firebase.auth().signOut().then(() => {
-                alert("You have been logged out.");
-                window.location.href = "index.html"; // Redirect to home after logout
-            }).catch((error) => {
-                console.error("Logout error:", error);
-            });
-        });
-
-        // Google Login
-        if (googleLoginBtn) {
-            googleLoginBtn.addEventListener('click', function (event) {
-                event.preventDefault();
-                const provider = new firebase.auth.GoogleAuthProvider();
-                firebase.auth().signInWithRedirect(provider);
-            });
-
-            // Handle Redirect Result
-            firebase.auth().getRedirectResult().then((result) => {
-                if (result.user) {
-                    console.log("User signed in:", result.user);
-                    alert(`Welcome, ${result.user.displayName}!`);
-                    window.location.href = "temp3.html"; // Redirect after login
-                }
-            }).catch((error) => {
-                console.error("Google login error:", error.message);
-                alert("Login failed. Check the console for errors.");
-            });
-        }
-
-        // Firebase Email/Password Sign-Up
-        if (signupForm) {
-            signupForm.addEventListener('submit', function (event) {
-                event.preventDefault();
-
-                const name = document.getElementById('signup-name').value;
-                const email = document.getElementById('signup-email').value;
-                const password = document.getElementById('signup-password').value;
-
-                firebase.auth().createUserWithEmailAndPassword(email, password)
-                    .then((userCredential) => {
-                        return userCredential.user.updateProfile({ displayName: name });
-                    })
-                    .then(() => {
-                        alert("Account created successfully!");
-                        window.location.href = "temp3.html"; // Redirect after signup
-                    })
-                    .catch((error) => {
-                        console.error("Sign-up error:", error.message);
-                        alert(error.message);
-                    });
-            });
-        }
-
-        // Firebase Email/Password Login
-        if (loginForm) {
-            loginForm.addEventListener('submit', function (event) {
-                event.preventDefault();
-
-                const email = document.getElementById('login-email').value;
-                const password = document.getElementById('login-password').value;
-
-                firebase.auth().signInWithEmailAndPassword(email, password)
-                    .then((userCredential) => {
-                        alert(`Welcome back, ${userCredential.user.displayName || "User"}!`);
-                        window.location.href = "temp3.html"; // Redirect after login
-                    })
-                    .catch((error) => {
-                        console.error("Login error:", error.message);
-                        alert(error.message);
-                    });
-            });
-        }
+        // Don't use firebase directly - this page already imports auth.js as a module
+        // All authentication is handled by auth.js
+        
+        // If for some reason we need to handle authentication here,
+        // we should follow the pattern in auth.js and use the imported auth module
     });
-
 </script>
 
 
