@@ -13,13 +13,12 @@ import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10
 
 // Firebase Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyB9TKLmKIVO7-YWKv1iORqnax0sru249sY",
-  authDomain: "legalmind-users.firebaseapp.com",
-  projectId: "legalmind-users",
-  storageBucket: "legalmind-users.firebasestorage.app",
-  messagingSenderId: "321034025311",
-  appId: "1:321034025311:web:d8a01ac0c02d5b152b1eea",
-  measurementId: "G-RQK886CH91"
+    apiKey: "AIzaSyB9TKLmKIVO7-YWKv1iORqnax0sru249sY",
+    authDomain: "legalmind-users.firebaseapp.com",
+    projectId: "legalmind-users",
+    storageBucket: "legalmind-users.firebasestorage.app",
+    messagingSenderId: "321034025311",
+    appId: "1:321034025311:web:d8a01ac0c02d5b152b1eea"
 };
 
 // Initialize Firebase
@@ -172,16 +171,35 @@ document.addEventListener('DOMContentLoaded', () => {
 onAuthStateChanged(auth, (user) => {
     const loginLink = document.getElementById("login-link");
     const logoutBtn = document.getElementById("logout");
+    const logoutButtonProfile = document.getElementById("logoutButton");
     
     if (user) {
         // User is signed in
         console.log("User is logged in:", user.displayName);
         if (loginLink) loginLink.style.display = "none";
         if (logoutBtn) logoutBtn.style.display = "block";
+        
+        // Set user name in profile menu if we're on the temp3.html page
+        const profileMenuName = document.querySelector(".profile-menu p strong");
+        if (profileMenuName) {
+            profileMenuName.textContent = user.displayName || "User";
+        }
     } else {
         // User is signed out
         console.log("User is logged out");
         if (loginLink) loginLink.style.display = "block";
         if (logoutBtn) logoutBtn.style.display = "none";
+    }
+    
+    // Setup logout button in profile menu (temp3.html)
+    if (logoutButtonProfile) {
+        logoutButtonProfile.addEventListener("click", () => {
+            signOut(auth).then(() => {
+                console.log("User signed out from profile menu.");
+                window.location.href = "index.html";
+            }).catch((error) => {
+                console.error("Logout error:", error.message);
+            });
+        });
     }
 });

@@ -115,7 +115,6 @@
                     <li><a href="services.html">Services</a></li>
                     <li><a href="contact.html">Contact Us</a></li>
                     <li><a href="auth.html" id="login-link">Login / Sign Up</a></li>
-                    <button id="logout" class="btn" style="display: none;">Logout</button>
                     <li id="close-flyout"><span class="fas fa-times"></span></li>
                 </ul>
             </nav>
@@ -276,7 +275,7 @@
                 if (result.user) {
                     console.log("User signed in:", result.user);
                     alert(`Welcome, ${result.user.displayName}!`);
-                    window.location.href = "temp2.html"; // Redirect after login
+                    window.location.href = "temp3.html"; // Redirect after login
                 }
             }).catch((error) => {
                 console.error("Google login error:", error.message);
@@ -299,7 +298,7 @@
                     })
                     .then(() => {
                         alert("Account created successfully!");
-                        window.location.href = "temp2.html"; // Redirect after signup
+                        window.location.href = "temp3.html"; // Redirect after signup
                     })
                     .catch((error) => {
                         console.error("Sign-up error:", error.message);
@@ -319,7 +318,7 @@
                 firebase.auth().signInWithEmailAndPassword(email, password)
                     .then((userCredential) => {
                         alert(`Welcome back, ${userCredential.user.displayName || "User"}!`);
-                        window.location.href = "temp2.html"; // Redirect after login
+                        window.location.href = "temp3.html"; // Redirect after login
                     })
                     .catch((error) => {
                         console.error("Login error:", error.message);

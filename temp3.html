@@ -463,6 +463,7 @@
               </label>
               <input type="file" id="uploadProfile" onchange="uploadProfilePicture(event)" accept="image/*">
               <p id="uploadedFileName"></p>
+              <button class="logout" id="logoutButton" style="margin-top: 10px; background-color: #f44336; color: white; border: none; padding: 8px 12px; border-radius: 10px; cursor: pointer;">Logout</button>
             </div>
           </div>
         </div>
@@ -484,6 +485,7 @@
     </div>
   </div>
 
+  <script src="auth.js" type="module"></script>
   <script>
     // Global storage for chat conversations
     let chats = {};
