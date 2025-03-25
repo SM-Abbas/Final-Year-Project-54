@@ -9,4 +9,4 @@ We have shared our training results of our final model
 
 
 We have also worked on a website and hosted it on GitHub Pages and on our website, 
-(https://legalmind.space/) Check it out 
+(https://legalmind.cloud/) Check it out 
