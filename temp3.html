@@ -1289,16 +1289,16 @@
                   <div class="settings-section-header">
                     <i class="fas fa-moon"></i> Appearance
                   </div>
-                  <label class="switch">
-                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+              <label class="switch">
+                <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
                     <span>Dark Mode</span>
-                  </label>
-                </div>
+              </label>
+            </div>
                 
                 <div class="settings-section">
                   <div class="settings-section-header">
                     <i class="fas fa-user"></i> Profile Picture
-                  </div>
+          </div>
                   <div class="profile-pic-upload">
                     <div class="profile-preview">
                       <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile Preview" id="profilePreview">
@@ -1569,7 +1569,7 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer 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"
+         "Authorization": "Bearer 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"
         },
         body: JSON.stringify({ inputs: text })
       };
@@ -1734,15 +1734,15 @@
       fileNameContainer.appendChild(fileName);
       
       // Create delete button
-      const closeBtn = document.createElement("button");
+        const closeBtn = document.createElement("button");
       closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-      closeBtn.classList.add("delete-file");
+        closeBtn.classList.add("delete-file");
       closeBtn.setAttribute('aria-label', 'Remove file');
       
       closeBtn.addEventListener("click", function(e) {
         e.stopPropagation();
-        filePreview.removeChild(fileItem);
-      });
+          filePreview.removeChild(fileItem);
+        });
       
       // Add name container and delete button to header
       fileHeader.appendChild(fileNameContainer);
@@ -1777,8 +1777,8 @@
           
           fileItem.appendChild(previewContainer);
         };
-        reader.readAsDataURL(file);
-      }
+      reader.readAsDataURL(file);
+    }
       
       filePreview.appendChild(fileItem);
       

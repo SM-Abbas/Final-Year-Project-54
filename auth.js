@@ -129,10 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         newGoogleLoginBtn.addEventListener("click", () => {
             console.log("Google login clicked - using popup");
-            signInWithPopup(auth, provider)
+    signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google login successful:", result.user);
-                    window.location.href = "temp3.html";
+            window.location.href = "temp3.html";
                 })
                 .catch((error) => {
                     console.error("Google login error:", error);
@@ -155,8 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then((result) => {
                     console.log("Google signup successful:", result.user);
                     window.location.href = "temp3.html";
-                })
-                .catch((error) => {
+        })
+        .catch((error) => {
                     console.error("Google signup error:", error);
                     if (error.code !== 'auth/cancelled-popup-request') {
                         alert("Google signup failed: " + error.message);
@@ -164,17 +164,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
-    
-    // Logout
+
+// Logout
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
-            signOut(auth).then(() => {
-                console.log("User signed out.");
+    signOut(auth).then(() => {
+        console.log("User signed out.");
                 window.location.href = "index.html";
-            }).catch((error) => {
+    }).catch((error) => {
                 console.error("Logout error:", error.message);
             });
-        });
+    });
     }
 });
 
