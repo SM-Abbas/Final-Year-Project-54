@@ -79,14 +79,15 @@
     
     /* Left Sidebar */
     .sidebar {
-      width: 300px;
-      padding: var(--spacing-lg);
-      border-right: 1px solid var(--light-border);
-      background: var(--light-surface);
-      transition: var(--transition);
-      overflow-y: auto;
+      position: relative;
       display: flex;
       flex-direction: column;
+      width: 300px;
+      height: 100%;
+      background-color: var(--bg-color-surface);
+      overflow-y: auto;
+      transition: all 0.3s ease;
+      padding-bottom: 0; /* No need for bottom padding with hidden button */
     }
     
     body.dark-mode .sidebar {
@@ -195,20 +196,8 @@
     
     /* Document Preview Enhanced - Improved using reference code */
     .documents-preview {
-      display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      position: relative;
-      z-index: 5;
-      flex-shrink: 0;
-      background-color: var(--bg-color-card);
-      border-radius: var(--border-radius);
-      margin: 0 0 15px 0;
-      padding: 15px;
-      max-height: 40vh;
-      overflow-y: auto;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.3s ease;
+      margin-top: auto; /* Push to bottom of sidebar */
+      margin-bottom: 0;
     }
     
     body.dark-mode .documents-preview {
@@ -231,9 +220,8 @@
     
     #documentPreviews {
       min-height: 50px;
-      display: flex;
-      flex-direction: column;
-      gap: var(--spacing-md);
+      max-height: 300px;
+      overflow-y: auto;
     }
     
     .file-item {
@@ -864,15 +852,7 @@
       }
       
       .sidebar-toggle {
-        display: block;
-        width: 100%;
-        text-align: center;
-        padding: var(--spacing-xs);
-        background: rgba(0, 123, 255, 0.1);
-        border: none;
-        border-radius: var(--border-radius-sm);
-        cursor: pointer;
-        margin-top: var(--spacing-xs);
+        display: none !important;
       }
       
       body.dark-mode .sidebar {
@@ -1153,27 +1133,29 @@
 
     /* Document preview toggle button */
     .documents-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
       width: 100%;
-      padding: var(--spacing-xs);
-      background: var(--light-bg);
+      background: var(--bg-color-card);
       border: none;
-      border-radius: var(--border-radius-md);
-      color: var(--light-text);
+      border-radius: 0 0 var(--border-radius) var(--border-radius);
+      padding: 10px;
+      color: var(--text-color-muted);
       cursor: pointer;
-      margin-top: var(--spacing-xs);
-      transition: var(--transition);
+      transition: all 0.3s ease;
+      text-align: center;
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
     }
 
     .documents-toggle:hover {
-      background: rgba(0, 123, 255, 0.1);
+      background-color: rgba(0,0,0,0.05);
     }
 
-    body.dark-mode .documents-toggle {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--dark-text);
+    body.dark-mode .documents-toggle:hover {
+      background-color: rgba(255,255,255,0.05);
     }
 
     .documents-preview.collapsed {
@@ -1275,6 +1257,36 @@
       height: 200px;
       overflow: hidden;
     }
+
+    /* Responsive styles for document preview */
+    @media (max-width: 992px) {
+      .documents-preview {
+        max-height: 250px;
+        border-top: 1px solid var(--border-color);
+        margin-top: 15px;
+      }
+      
+      .documents-toggle {
+        position: relative;
+        bottom: auto;
+        border-radius: var(--border-radius);
+        margin-top: 5px;
+      }
+      
+      #documentPreviews {
+        max-height: 200px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .documents-preview {
+        max-height: 200px;
+      }
+      
+      #documentPreviews {
+        max-height: 150px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1298,14 +1310,10 @@
       <div class="documents-preview">
         <h3><i class="fas fa-file-alt"></i> Documents</h3>
         <div id="documentPreviews"></div>
-        <button class="documents-toggle" id="documentsToggle">
+        <button class="documents-toggle" id="documentsToggle" style="display: block; visibility: visible; opacity: 1;">
           <i class="fas fa-chevron-up"></i>
         </button>
       </div>
-      
-      <button class="sidebar-toggle" id="sidebarToggle">
-        <i class="fas fa-chevron-up"></i>
-      </button>
     </div>
 
     <!-- Chat Section -->
@@ -1463,26 +1471,6 @@
         document.getElementById('mobileMenu').classList.remove('active');
       });
       
-      // Add sidebar toggle functionality
-      const sidebarToggle = document.getElementById('sidebarToggle');
-      const sidebar = document.querySelector('.sidebar');
-      
-      if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function() {
-          sidebar.classList.toggle('collapsed');
-          
-          // Change icon based on collapsed state
-          const icon = this.querySelector('i');
-          if (sidebar.classList.contains('collapsed')) {
-            icon.classList.remove('fa-chevron-up');
-            icon.classList.add('fa-chevron-down');
-          } else {
-            icon.classList.remove('fa-chevron-down');
-            icon.classList.add('fa-chevron-up');
-          }
-        });
-      }
-      
       // Check screen width and adapt layout
       function checkScreenWidth() {
         if (window.innerWidth <= 992) {
@@ -1532,23 +1520,25 @@
           }
         }, 100); // Short delay to ensure DOM is fully loaded
       }
-
-      // Documents toggle functionality
+      
+      // Documents toggle functionality - restored but keeping button visible
       const documentsToggle = document.getElementById('documentsToggle');
       const documentsPreview = document.querySelector('.documents-preview');
       
       if (documentsToggle && documentsPreview) {
         documentsToggle.addEventListener('click', function() {
-          documentsPreview.classList.toggle('collapsed');
-          
-          // Change icon based on collapsed state
-          const icon = this.querySelector('i');
-          if (documentsPreview.classList.contains('collapsed')) {
-            icon.classList.remove('fa-chevron-up');
-            icon.classList.add('fa-chevron-down');
-          } else {
-            icon.classList.remove('fa-chevron-down');
-            icon.classList.add('fa-chevron-up');
+          // Toggle only the document previews, not the entire section
+          const previewsContainer = document.getElementById('documentPreviews');
+          if (previewsContainer) {
+            if (previewsContainer.style.display === 'none') {
+              previewsContainer.style.display = 'block';
+              this.querySelector('i').classList.remove('fa-chevron-down');
+              this.querySelector('i').classList.add('fa-chevron-up');
+            } else {
+              previewsContainer.style.display = 'none';
+              this.querySelector('i').classList.remove('fa-chevron-up');
+              this.querySelector('i').classList.add('fa-chevron-down');
+            }
           }
         });
       }
@@ -1787,12 +1777,31 @@
       }
     }
 
-    // Enhanced file preview functionality that properly displays previews
+    // Updated previewFile function to work with modified UI
     function previewFile(event) {
       const filePreview = document.getElementById("documentPreviews");
       const file = event.target.files[0];
       
       if (!file) return;
+      
+      // Clear welcome message if it exists
+      const welcomeMessage = filePreview.querySelector('.empty-preview-message');
+      if (welcomeMessage) {
+        filePreview.removeChild(welcomeMessage);
+      }
+      
+      // Make sure the document previews container is visible
+      filePreview.style.display = 'block';
+      
+      // Update toggle button icon if needed
+      const toggleBtn = document.getElementById('documentsToggle');
+      if (toggleBtn) {
+        const icon = toggleBtn.querySelector('i');
+        if (icon.classList.contains('fa-chevron-down')) {
+          icon.classList.remove('fa-chevron-down');
+          icon.classList.add('fa-chevron-up');
+        }
+      }
       
       const fileItem = document.createElement("div");
       fileItem.classList.add("file-item");
@@ -1829,15 +1838,23 @@
       fileNameContainer.appendChild(fileName);
       
       // Create delete button
-        const closeBtn = document.createElement("button");
+      const closeBtn = document.createElement("button");
       closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-        closeBtn.classList.add("delete-file");
+      closeBtn.classList.add("delete-file");
       closeBtn.setAttribute('aria-label', 'Remove file');
       
       closeBtn.addEventListener("click", function(e) {
         e.stopPropagation();
-          filePreview.removeChild(fileItem);
-        });
+        filePreview.removeChild(fileItem);
+        
+        // If no more files, show welcome message
+        if (filePreview.children.length === 0) {
+          const welcomeText = document.createElement('p');
+          welcomeText.className = 'empty-preview-message';
+          welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
+          filePreview.appendChild(welcomeText);
+        }
+      });
       
       // Add name container and delete button to header
       fileHeader.appendChild(fileNameContainer);
@@ -1872,8 +1889,8 @@
           
           fileItem.appendChild(previewContainer);
         };
-      reader.readAsDataURL(file);
-    }
+        reader.readAsDataURL(file);
+      }
       
       filePreview.appendChild(fileItem);
       
@@ -1882,17 +1899,6 @@
       previewSection.style.display = 'block';
       previewSection.style.visibility = 'visible';
       previewSection.style.opacity = '1';
-      
-      // Expand sidebar if it's collapsed to show uploaded file
-      const sidebar = document.querySelector('.sidebar');
-      if (sidebar.classList.contains('collapsed')) {
-        sidebar.classList.remove('collapsed');
-        const icon = document.querySelector('#sidebarToggle i');
-        if (icon) {
-          icon.classList.remove('fa-chevron-down');
-          icon.classList.add('fa-chevron-up');
-        }
-      }
       
       // If it's a chat context, add a message about the upload
       if (currentChatId) {
