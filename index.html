@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>LegalMind</title>
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" />
+    <link href="style1.css" type="text/css" rel="Stylesheet" />
+
+    </head>
+
+<body>
+    <header>
+        <div class="flex container">
+            <a id="logo" href="index.html">LegalMind</a>
+            <div id="nav-toggle" class="menu-toggle">
+                <div class="strip"></div>
+                <div class="strip"></div>
+                <div class="strip"></div>
+            </div>
+            <nav>
+                <ul id="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="#about">About Us</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
+                    <li><a href="auth.html" id="login-link">Login / Sign Up</a></li>
+                    <button id="logout" class="btn" style="display: none;">Logout</button>
+                    <li id="close-flyout"><span class="fas fa-times"></span></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section id="home">
+        <div class="home-container">
+            <h1><span class="animated-text">Welcome to Legal Mind</span></h1>
+            <p>Your trusted partner for legal document solutions. Simplify your legal needs with our AI-driven platform.</p>
+            <a href="services.html" class="btn">Explore Our Services</a>
+        </div>
+    </section>
+
+    <footer>
+        <div class="flex container">
+            <div id="about" class="footer-about">
+                <h5>About Us</h5>
+                <p1>We are working on legal documents ML model</p1>
+            </div>
+            <div class="footer-quick-links">
+                <h5>Quick Links</h5>
+                <ul>
+                    <li><a href="#Sub.html">Plans</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-quick-links">
+                <h5>Follow Us</h5>
+                <ul>
+                    <li><a href="https://github.com/SM-Abbas">Github</a></li>
+                    <li><a href="https://www.instagram.com/abbasgamer_1/#">Instagram</a></li>
+                    <li><a href="https://www.linkedin.com/in/mohammad-suheb-abbas-026428220/">Linkedin</a></li>
+                </ul>
+            </div>
+        </div>
+        <small>Copyright &copy; 2025 All rights reserved</small>
+    </footer>
+
+    <script src="auth.js" type="module"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://kit.fontawesome.com/95dc93da07.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+    <script>
+        $(function () {
+            let headerElem = $('header');
+            let logo = $('#logo');
+            let navMenu = $('#nav-menu');
+            let navToggle = $('#nav-toggle');
+
+            navToggle.on('click', function() {
+                navToggle.toggleClass('active');
+                navMenu.toggleClass('active');
+            });
+
+            $('#close-flyout').on('click', function() {
+                navToggle.removeClass('active');
+                navMenu.removeClass('active');
+            });
+
+            $(document).on('click', function(e) {
+                let target = $(e.target);
+                if (!(target.closest('#nav-toggle').length > 0 || target.closest('#nav-menu').length > 0)) {
+                    navToggle.removeClass('active');
+                    navMenu.removeClass('active');
+                }
+            });
+
+            $(document).scroll(function() {
+                let scrollTop = $(document).scrollTop();
+
+                if (scrollTop > 0) {
+                    navMenu.addClass('is-sticky');
+                    logo.css('color', '#000');
+                    headerElem.css('background', '#fff');
+                    navToggle.css('border-color', '#000');
+                    navToggle.find('.strip').css('background-color', '#000');
+                } else {
+                    navMenu.removeClass('is-sticky');
+                    logo.css('color', '#b2aaaa');
+                    headerElem.css('background', 'transparent');
+                    navToggle.css('border-color', '#fff');
+                    navToggle.find('.strip').css('background-color', '#fff');
+                }
+
+                headerElem.css(scrollTop >= 200 ? { 'padding': '0.5rem', 'box-shadow': '0 -4px 10px 1px #999' } : { 'padding': '1rem 0', 'box-shadow': 'none' });
+            });
+
+            $(document).trigger('scroll');
+        });
+    </script>
+</body>
+
+</html>

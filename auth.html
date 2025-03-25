@@ -1,0 +1,390 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>LegalMind - Authentication</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style> 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body { 
+            background-image: url('img/img1.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            color: #333;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 0;
+        }
+        
+        .container { 
+            width: 100%;
+            max-width: 420px;
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 40px 30px; 
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2); 
+            border-radius: 12px; 
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .logo {
+            margin-bottom: 20px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2196F3;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px 0;
+            font-weight: 600;
+            color: #777;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+        }
+        
+        .tab.active {
+            color: #2196F3;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #2196F3;
+            border-radius: 3px 3px 0 0;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .form-group {
+            position: relative;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        
+        .form-group .input-wrapper {
+            position: relative;
+        }
+        
+        .form-group .input-wrapper i {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        input { 
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+            outline: none;
+            color: #333;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+        
+        input:focus {
+            border-color: #2196F3;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+        
+        .button-group {
+            margin-top: 30px;
+        }
+        
+        button { 
+            padding: 15px; 
+            width: 100%;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #2196F3, #0d8aee);
+            color: white; 
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer; 
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:hover {
+            background: linear-gradient(90deg, #0d8aee, #0a6fc5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .or-divider {
+            display: flex;
+            align-items: center;
+            margin: 25px 0;
+            color: #777;
+        }
+        
+        .or-divider::before,
+        .or-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #ddd;
+        }
+        
+        .or-divider span {
+            padding: 0 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .google-btn {
+            background: #fff;
+            color: #333;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .google-btn:hover {
+            background: #f5f5f5;
+        }
+        
+        .google-btn img {
+            margin-right: 5px;
+        }
+        
+        .home-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #2196F3;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        
+        .home-link:hover {
+            color: #0a6fc5;
+            text-decoration: underline;
+        }
+        
+        /* Responsive styles */
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+                margin: 0 15px;
+            }
+            
+            .tab {
+                padding: 12px 0;
+                font-size: 0.9rem;
+            }
+            
+            input {
+                padding: 12px 12px 12px 40px;
+                font-size: 0.9rem;
+            }
+            
+            button {
+                padding: 12px;
+            }
+        }
+    </style> 
+</head> 
+<body> 
+    <div class="container"> 
+        <a href="index.html" class="logo">LegalMind</a>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="login">Login</div>
+            <div class="tab" data-tab="signup">Sign Up</div>
+        </div>
+        
+        <!-- Login Tab Content -->
+        <div class="tab-content active" id="login-content">
+            <div class="form-group">
+                <label for="username">Username or Email</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" placeholder="Enter your username or email">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="login-button">
+                    <i class="fas fa-sign-in-alt"></i>&nbsp; Sign In
+                </button>
+            </div>
+            
+            <div class="or-divider">
+                <span>OR</span>
+            </div>
+            
+            <button id="google-login" class="google-btn"> 
+                <img src="https://developers.google.com/identity/images/g-logo.png" width="20px"> 
+                Sign in with Google 
+            </button>
+        </div>
+        
+        <!-- Signup Tab Content -->
+        <div class="tab-content" id="signup-content">
+            <div class="form-group">
+                <label for="signup-name">Full Name</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="signup-name" placeholder="Enter your full name">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="signup-email">Email Address</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="signup-email" placeholder="Enter your email address">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="signup-password">Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="signup-password" placeholder="Create a password">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="signup-confirm">Confirm Password</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="signup-confirm" placeholder="Confirm your password">
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button id="signup-button">
+                    <i class="fas fa-user-plus"></i>&nbsp; Create Account
+                </button>
+            </div>
+            
+            <div class="or-divider">
+                <span>OR</span>
+            </div>
+            
+            <button id="google-signup" class="google-btn">
+                <img src="https://developers.google.com/identity/images/g-logo.png" width="20px"> 
+                Sign up with Google
+            </button>
+        </div>
+        
+        <a href="index.html" class="home-link">
+            <i class="fas fa-arrow-left"></i> Back to Home
+        </a>
+    </div> 
+ 
+    <script src="auth.js" type="module"></script> 
+    <script>
+        // Tab switching functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('.tab');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Hide all tab contents
+                    document.querySelectorAll('.tab-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    
+                    // Show the corresponding tab content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId + '-content').classList.add('active');
+                });
+            });
+        });
+    </script>
+</body> 
+</html>

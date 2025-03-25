@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat Dashboard</title>
+  <style>
+    /* Global Styles */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: white;
+      color: black;
+      transition: background-color 0.3s, color 0.3s;
+      overflow-x: hidden;
+    }
+    .dark-mode {
+      background-color: #121212;
+      color: white;
+    }
+
+    .dashboard {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      transition: all 0.3s;
+    }
+
+    /* Left Sidebar */
+    .sidebar {
+      width: 25%;
+      padding: 20px;
+      border-right: 1px solid #ccc;
+      background: #f5f5f5;
+      border-radius: 20px 0 0 20px;
+      transition: background 0.3s;
+      overflow-y: auto;
+    }
+    .dark-mode .sidebar {
+      background: #1e1e1e;
+      border-right: 1px solid #444;
+    }
+
+    .chat-header {
+      margin-bottom: 15px;
+    }
+    .chat-header h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0;
+    }
+
+    .new-chat {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      border: none;
+      border-radius: 10px;
+      background: #007bff;
+      color: white;
+      transition: background 0.3s, transform 0.2s;
+      font-size: 16px;
+    }
+    .new-chat:hover {
+      background: #0056b3;
+      transform: scale(1.05);
+    }
+
+    .chat-list {
+      padding: 0;
+      overflow-y: auto;
+      max-height: 300px;
+    }
+    .chat-list li {
+      list-style: none;
+      padding: 12px;
+      margin: 5px 0;
+      background-color: #ddd;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.3s;
+      cursor: pointer;
+    }
+    .dark-mode .chat-list li {
+      background: #444;
+    }
+    .chat-list li .delete-chat {
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 16px;
+      color: red;
+    }
+
+    .documents-preview {
+      margin-top: 20px;
+      background: #f1f1f1;
+      border-radius: 15px;
+      padding: 15px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      overflow-y: auto;
+      max-height: 300px;
+    }
+    .dark-mode .documents-preview {
+      background: #333;
+      color: #fff;
+    }
+    .documents-preview h3 {
+      margin-bottom: 10px;
+    }
+    .documents-preview .file-item {
+      margin-bottom: 12px;
+    }
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9f9f9;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .file-item span {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .delete-file {
+      cursor: pointer;
+      color: red;
+      font-weight: bold;
+      margin-left: 10px;
+      background: none;
+      border: none;
+      font-size: 14px;
+    }
+
+    /* Chat Section */
+    .chat-section {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Navigation Bar above the Chat Box with rounded edges */
+    .chat-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #f5f5f5;
+      padding: 10px 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 10px;
+      border-radius: 10px;
+      transition: background-color 0.3s;
+    }
+    .dark-mode .chat-nav {
+      background-color: #333;
+    }
+
+    /* Nav Left: LegalMind.Space */
+    .nav-left {
+      font-weight: bold;
+      font-size: 18px;
+      color: #333;
+    }
+    .dark-mode .nav-left {
+      color: #fff;
+    }
+
+    /* Nav Right: Dropdowns, Contact Us, and Profile */
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 30px;
+      font-weight: bold;
+      align-items: center;
+    }
+    .nav-links a {
+      text-decoration: none;
+      color: #333;
+      cursor: pointer;
+    }
+    .dark-mode .nav-links a {
+      color: #fff;
+    }
+
+    /* Dropdown styling for nav items */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #f9f9f9;
+      min-width: 160px;
+      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      z-index: 1;
+    }
+    .dropdown-content a {
+      color: black;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+    }
+    .dropdown-content a:hover {
+      background-color: #f1f1f1;
+    }
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+    .dark-mode .dropdown-content {
+      background-color: #222;
+      color: white;
+    }
+    .dark-mode .dropdown-content a {
+      color: white;
+    }
+
+    /* Nav Profile */
+    .nav-profile {
+      position: relative;
+    }
+    .nav-profile img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid #ddd;
+    }
+    .nav-profile img:hover {
+      transform: scale(1.1);
+    }
+
+    /* Profile Menu for Nav Profile: vertical list */
+    .profile-menu {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      right: 0;
+      top: 60px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      width: 230px;
+      transition: all 0.3s ease;
+      z-index: 99;
+    }
+    .profile-menu.active {
+      display: flex;
+    }
+    .profile-menu p,
+    .profile-menu button,
+    .profile-menu label,
+    .profile-menu input,
+    .profile-menu p#uploadedFileName {
+      margin: 4px 0;
+    }
+    .profile-menu input[type="file"] {
+      margin-top: 10px;
+      display: block;
+      width: 100%;
+      border-radius: 8px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    /* Dark mode adjustments for Profile Menu */
+    .dark-mode .profile-menu {
+      background: #222;
+      color: #fff;
+    }
+    .dark-mode .profile-menu p,
+    .dark-mode .profile-menu button,
+    .dark-mode .profile-menu label,
+    .dark-mode .profile-menu input,
+    .dark-mode .profile-menu p#uploadedFileName {
+      color: #fff;
+    }
+
+    /* Settings button with rounded edges */
+    .profile-menu button.settings {
+      border-radius: 10px;
+      padding: 8px 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    .profile-menu button.settings:hover {
+      background: #0056b3;
+    }
+
+    .switch input {
+      appearance: none;
+      width: 40px;
+      height: 20px;
+      background: #ccc;
+      border-radius: 10px;
+      position: relative;
+      transition: background 0.3s ease;
+      cursor: pointer;
+    }
+    .switch input:checked {
+      background: #007bff;
+    }
+    .switch input::before {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+    }
+    .switch input:checked::before {
+      transform: translateX(20px);
+    }
+
+    .chat-box {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 20px;
+      background-color: #f8f8f8;
+      border-radius: 15px;
+      transition: background 0.3s;
+    }
+    .dark-mode .chat-box {
+      background: #222;
+      border-color: #555;
+    }
+
+    .chat-input {
+      display: flex;
+      margin-top: 15px;
+      gap: 10px;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      font-size: 16px;
+    }
+    #sendBtn {
+      padding: 12px 20px;
+      margin-left: 10px;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      background: #28a745;
+      color: white;
+      transition: background 0.3s;
+    }
+    #sendBtn:hover {
+      background: #218838;
+    }
+    .attach-btn {
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    /* Chat Bubble Styling */
+    .message {
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 20px;
+      max-width: 70%;
+      word-wrap: break-word;
+      font-size: 16px;
+    }
+    .user {
+      background-color: #007bff;
+      color: white;
+      align-self: flex-end;
+    }
+    .bot {
+      background-color: #444;
+      color: white;
+      align-self: flex-start;
+    }
+
+    /* NEW: Welcome message (Below nav bar, above chat area) */
+    .welcome-message {
+      text-align: center;
+      margin-bottom: 15px; /* some space above chat-box */
+      color: #333;
+    }
+    .dark-mode .welcome-message {
+      color: #fff;
+    }
+    .welcome-message h2 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: normal;
+    }
+    .welcome-message p {
+      margin-top: 5px;
+      font-size: 16px;
+      color: inherit; /* inherit from .welcome-message color */
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+      <div class="chat-header">
+        <h1>LegalMind</h1>
+      </div>
+      <div id="currentChat" style="margin-bottom: 15px; font-weight: bold;">Current Chat: None</div>
+      <button class="new-chat" onclick="addNewChat()">New Chat</button>
+      <ul class="chat-list" id="chatList"></ul>
+      <div class="documents-preview">
+        <h3>Documents Preview</h3>
+        <div id="documentPreviews"></div>
+      </div>
+    </div>
+
+    <!-- Chat Section -->
+    <div class="chat-section">
+      <!-- Navigation Bar -->
+      <div class="chat-nav">
+        <div class="nav-left">
+          <span>LegalMind.Space</span>
+        </div>
+        <div class="nav-right">
+          <div class="nav-links">
+            <div class="dropdown">
+              <a href="#" onclick="togglePlansDropdown(event)">Plans</a>
+              <div class="dropdown-content" id="plansDropdown">
+                <a href="#">1 Month – $10</a>
+                <a href="#">3 Months – $25</a>
+                <a href="#">1 Year – $50</a>
+              </div>
+            </div>
+            <div class="dropdown">
+              <a href="#" onclick="toggleModelsDropdown(event)">Models</a>
+              <div class="dropdown-content" id="modelsDropdown">
+                <a href="#">Llama Model</a>
+                <a href="#">ChatGPT Model</a>
+              </div>
+            </div>
+            <a href="#">Contact Us</a>
+          </div>
+          <div class="nav-profile">
+            <img src="profile-pic.jpg" alt="Profile" id="profilePicNav" />
+            <div class="profile-menu" id="profileMenu">
+              <p><strong>User Name</strong></p>
+              <p>Subscription: Premium</p>
+              <button class="settings">Settings</button>
+              <label class="switch">
+                <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                Dark Mode
+              </label>
+              <input type="file" id="uploadProfile" onchange="uploadProfilePicture(event)" accept="image/*">
+              <p id="uploadedFileName"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEW: Welcome message below nav bar, above chat area -->
+      <div class="welcome-message">
+        <h2>Hi, I'm LegalMind.</h2>
+        <p>How can I help you today?</p>
+      </div>
+
+      <div class="chat-box" id="chatBox"></div>
+      <div class="chat-input">
+        <span class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</span>
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/*,.pdf,.txt,.png,.jpg"
+          style="display:none;"
+          onchange="previewFile(event)"
+        >
+        <input type="text" id="messageInput" placeholder="Type your message...">
+        <button id="sendBtn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Global storage for chat conversations
+    let chats = {};
+    let currentChatId = null;
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+    }
+
+    function togglePlansDropdown(event) {
+      event.preventDefault();
+      const dropdown = document.getElementById("plansDropdown");
+      dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+    }
+
+    function toggleModelsDropdown(event) {
+      event.preventDefault();
+      const dropdown = document.getElementById("modelsDropdown");
+      dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+    }
+
+    // Toggle profile menu when nav profile pic is clicked
+    document.getElementById("profilePicNav").addEventListener("click", () => {
+      document.getElementById("profileMenu").classList.toggle("active");
+    });
+
+    function addNewChat() {
+      const chatList = document.getElementById("chatList");
+      const chatId = "Chat " + (chatList.children.length + 1);
+
+      const chatItem = document.createElement("li");
+      chatItem.setAttribute("data-chat-id", chatId);
+      chatItem.innerHTML = chatId + ' <button class="delete-chat" onclick="deleteChat(event, this)">❌</button>';
+      chatItem.addEventListener("click", function(e) {
+        if (e.target.classList.contains("delete-chat")) return;
+        loadChat(chatId);
+      });
+      chatList.appendChild(chatItem);
+
+      // Create a new conversation for this chat
+      chats[chatId] = [];
+      loadChat(chatId);
+    }
+
+    function loadChat(chatId) {
+      currentChatId = chatId;
+      const chatBox = document.getElementById("chatBox");
+      chatBox.innerHTML = "";
+      document.getElementById("currentChat").textContent = "Current Chat: " + chatId;
+
+      if (chats[chatId]) {
+        chats[chatId].forEach(msg => {
+          const msgDiv = document.createElement("div");
+          msgDiv.textContent = msg.text;
+          if (msg.sender === "bot") {
+            msgDiv.classList.add("message", "bot");
+          } else {
+            msgDiv.classList.add("message", "user");
+          }
+          chatBox.appendChild(msgDiv);
+        });
+      }
+    }
+
+    function deleteChat(event, button) {
+      event.stopPropagation();
+      const chatItem = button.parentElement;
+      const chatId = chatItem.getAttribute("data-chat-id");
+
+      if (chats[chatId]) {
+        delete chats[chatId];
+      }
+      chatItem.remove();
+
+      if (currentChatId === chatId) {
+        currentChatId = null;
+        document.getElementById("chatBox").innerHTML = "";
+        document.getElementById("currentChat").textContent = "Current Chat: None";
+      }
+    }
+
+    function sendMessage() {
+      const messageInput = document.getElementById("messageInput");
+      const chatBox = document.getElementById("chatBox");
+      const defaultReplies = [
+        "Hello! How can I help you today?",
+        "What can I assist you with?",
+        "Need help? Just ask!",
+        "Hi there! Ask me anything.",
+        "How can I assist you with LegalMind?"
+      ];
+
+      if (messageInput.value.trim() && currentChatId) {
+        // Create user message
+        const userMsg = { sender: "user", text: messageInput.value };
+        chats[currentChatId].push(userMsg);
+
+        // Display user message (right side, .user)
+        const userMessage = document.createElement("div");
+        userMessage.textContent = userMsg.text;
+        userMessage.classList.add("message", "user");
+        chatBox.appendChild(userMessage);
+
+        messageInput.value = "";
+        chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
+
+        // Bot reply after delay
+        setTimeout(() => {
+          const botMsgText = defaultReplies[Math.floor(Math.random() * defaultReplies.length)];
+          const botMsg = { sender: "bot", text: botMsgText };
+          chats[currentChatId].push(botMsg);
+
+          // Display bot message (left side, .bot)
+          const botReply = document.createElement("div");
+          botReply.textContent = botMsgText;
+          botReply.classList.add("message", "bot");
+          chatBox.appendChild(botReply);
+
+          chatBox.scrollTop = chatBox.scrollHeight; // Scroll to bottom
+        }, 1000);
+      }
+    }
+
+    function uploadProfilePicture(event) {
+      const file = event.target.files[0];
+      if (file) {
+        document.getElementById("uploadedFileName").textContent = file.name;
+        const reader = new FileReader();
+        reader.onload = function() {
+          document.getElementById("profilePicNav").src = reader.result;
+        }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function previewFile(event) {
+      const filePreview = document.getElementById("documentPreviews");
+      const file = event.target.files[0];
+      const fileItem = document.createElement("div");
+      fileItem.classList.add("file-item");
+
+      const fileType = file.type.split('/')[0];
+      let filePreviewElement;
+      if (fileType === 'image') {
+        filePreviewElement = document.createElement('img');
+      } else {
+        filePreviewElement = document.createElement('object');
+        filePreviewElement.type = file.type;
+        filePreviewElement.width = "100%";
+        filePreviewElement.height = "150";
+      }
+
+      const reader = new FileReader();
+      reader.onload = function() {
+        if (fileType === 'image') {
+          filePreviewElement.src = reader.result;
+        } else {
+          filePreviewElement.data = reader.result;
+        }
+        fileItem.appendChild(filePreviewElement);
+
+        // Add close button for each file
+        const closeBtn = document.createElement("button");
+        closeBtn.textContent = "Close";
+        closeBtn.classList.add("delete-file");
+        closeBtn.addEventListener("click", function() {
+          filePreview.removeChild(fileItem);
+        });
+        fileItem.appendChild(closeBtn);
+
+        filePreview.appendChild(fileItem);
+      }
+      reader.readAsDataURL(file);
+    }
+  </script>
+</body>
+</html>

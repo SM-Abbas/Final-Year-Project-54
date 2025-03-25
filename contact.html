@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>LegalMind</title>
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" />
+    <link href="style1.css" type="text/css" rel="Stylesheet" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://kit.fontawesome.com/95dc93da07.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
+
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
+    <!-- EmailJS Initialization and Form Submission -->
+    <script type="text/javascript">
+        window.onload = function () {
+            // Initialize EmailJS with the public key
+            emailjs.init("nRkiNarshSvzovvmK");
+            console.log("EmailJS Initialized");
+
+            document.getElementById('contact-form').addEventListener('submit', function (event) {
+                event.preventDefault();
+                console.log("Form Submitted");
+
+                // Collect form data manually
+                const templateParams = {
+                    name: document.querySelector('input[name="name"]').value,
+                    email: document.querySelector('input[name="email"]').value,
+                    message: document.querySelector('textarea[name="message"]').value,
+                };
+
+                // Send the email using emailjs.send
+                emailjs.send("service_u2jkyxh", "template_uj5xvuj", templateParams)
+                    .then(function (response) {
+                        console.log('SUCCESS!', response.status, response.text);
+                        alert("We've received your details, and we will contact you soon.");
+                    }, function (error) {
+                        console.log('FAILED...Please try again', error);
+                        alert('Failed to send message. Please try again.');
+                    });
+            });
+        }
+    </script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyBI4a2N54sk8KezV6Pd1ekFvBjFbJOSQFA",
+        authDomain: "legalmind-57478.firebaseapp.com",
+        projectId: "legalmind-57478",
+        storageBucket: "legalmind-57478.firebasestorage.app",
+        messagingSenderId: "16031728897",
+        appId: "1:16031728897:web:148ed8cc946ce56f47c700"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const db = getFirestore();
+    const provider = new GoogleAuthProvider();
+
+    // Google Sign-In
+    document.getElementById("google-login").addEventListener("click", () => {
+        signInWithPopup(auth, provider)
+            .then(async (result) => {
+                const user = result.user;
+                await setDoc(doc(db, "users", user.uid), {
+                    name: user.displayName,
+                    email: user.email,
+                    profilePic: user.photoURL
+                });
+                console.log("User signed in:", user);
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+    });
+
+    // Logout
+    document.getElementById("logout").addEventListener("click", () => {
+        signOut(auth).then(() => {
+            console.log("User signed out.");
+        }).catch((error) => {
+            console.error(error);
+        });
+    });
+</script>
+
+
+</head>
+
+<body>
+
+    <!--<div id="header-hero-container">-->
+    <header>
+        <div class="flex container">
+            <a id="logo" href="index.html">LegalMind</a>
+            <div id="nav-toggle" class="menu-toggle">
+                <div class="strip"></div>
+                <div class="strip"></div>
+                <div class="strip"></div>
+            </div>
+            <nav>
+                <ul id="nav-menu">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="#about">About Us</a></li>
+                    <li><a href="services.html">Services</a></li>
+                    <li><a href="contact.html">Contact Us</a></li>
+                    <li><a href="auth.html" id="login-link">Login / Sign Up</a></li>
+                    <button id="logout" class="btn" style="display: none;">Logout</button>
+                    <li id="close-flyout"><span class="fas fa-times"></span></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+
+    <section id="contact">
+        <div class="container">
+            <h2>Contact Us</h2>
+
+            <div class="flex">
+                <div id="form-container">
+                    <h3>Send Us a Message</h3>
+                    <form id="contact-form">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" placeholder="Your name" required>
+                        
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" placeholder="Your email address" required>
+                        
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" placeholder="How can we help you?" required></textarea>
+                        
+                        <input type="submit" value="Send Message" class="submit-btn">
+                    </form>
+                </div>
+
+                <div id="address-container">
+                    <label><i class="fas fa-map-marker-alt"></i> Address</label>
+                    <address>
+                        Vellore Institute of Technology, Vellore<br>
+                        Tamil Nadu, India
+                    </address>
+
+                    <label><i class="fas fa-envelope"></i> Email Us</label>
+                    <div class="email-reveal" onclick="toggleEmail()">
+                        <i class="fas fa-eye"></i> Click to reveal email address
+                    </div>
+                    <div class="email-address" id="email-address">
+                        Mohammadsuheb.abbas2021@vitstudent.ac.in
+                    </div>
+
+                    <label><i class="fas fa-clock"></i> Office Hours</label>
+                    <p>Monday - Friday: 9:00 AM - 5:00 PM</p>
+                    <p>Saturday: 10:00 AM - 2:00 PM</p>
+
+                    <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3888.0410799269457!2d79.153744914822!3d12.969223190857457!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bad479f0ccbe067%3A0xfef222e5f36ecdeb!2sVellore%20Institute%20of%20Technology!5e0!3m2!1sen!2sin!4v1663677139786!5m2!1sen!2sin"
+                        width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Email reveal functionality
+        function toggleEmail() {
+            const emailElement = document.getElementById('email-address');
+            const emailReveal = document.querySelector('.email-reveal');
+            
+            if (emailElement.style.display === 'block') {
+                emailElement.style.display = 'none';
+                emailReveal.innerHTML = '<i class="fas fa-eye"></i> Click to reveal email address';
+            } else {
+                emailElement.style.display = 'block';
+                emailReveal.innerHTML = '<i class="fas fa-eye-slash"></i> Hide email address';
+            }
+        }
+    </script>
+    
+    <script src="auth.js" type="module"></script>
+    <script>
+        $(function () {
+            let headerElem = $('header');
+            let logo = $('#logo');
+            let navMenu = $('#nav-menu');
+            let navToggle = $('#nav-toggle');
+
+            navToggle.on('click', function() {
+                navToggle.toggleClass('active');
+                navMenu.toggleClass('active');
+            });
+
+            $('#close-flyout').on('click', function() {
+                navToggle.removeClass('active');
+                navMenu.removeClass('active');
+            });
+
+            $(document).on('click', function(e) {
+                let target = $(e.target);
+                if (!(target.closest('#nav-toggle').length > 0 || target.closest('#nav-menu').length > 0)) {
+                    navToggle.removeClass('active');
+                    navMenu.removeClass('active');
+                }
+            });
+
+            $(document).scroll(function() {
+                let scrollTop = $(document).scrollTop();
+
+                if (scrollTop > 0) {
+                    navMenu.addClass('is-sticky');
+                    logo.css('color', '#000');
+                    headerElem.css('background', '#fff');
+                    navToggle.css('border-color', '#000');
+                    navToggle.find('.strip').css('background-color', '#000');
+                } else {
+                    navMenu.removeClass('is-sticky');
+                    logo.css('color', '#b2aaaa');
+                    headerElem.css('background', 'transparent');
+                    navToggle.css('border-color', '#fff');
+                    navToggle.find('.strip').css('background-color', '#fff');
+                }
+
+                headerElem.css(scrollTop >= 200 ? { 'padding': '0.5rem', 'box-shadow': '0 -4px 10px 1px #999' } : { 'padding': '1rem 0', 'box-shadow': 'none' });
+            });
+
+            $(document).trigger('scroll');
+        });
+    </script>
+
+</body>
+<footer>
+    <div class="flex container">
+        <div id="about" class="footer-about">
+            <h5>About Us</h5>
+            <p1>We are working on legal documents ML model</p1>
+
+        </div>
+
+        <div class="footer-quick-links">
+            <h5>Quick Links</h5>
+            <ul>
+                <li><a href="#Sub.html">Plans</a></li>
+
+                <li><a href="services.html">Services</a></li>
+
+                <li><a href="contact.html">Contact Us</a></li>
+
+            </ul>
+        </div>
+
+
+
+        <div class="footer-quick-links">
+            <h5>Follow Us</h5>
+            <ul>
+                <li><a href="https://github.com/SM-Abbas">Github</a></li>
+                <li><a href="https://www.instagram.com/abbasgamer_1/#">Instagram</a></li>
+                <li><a href="https://www.linkedin.com/in/mohammad-suheb-abbas-026428220/">Linkedin</a></li>
+            </ul>
+
+        </div>
+    </div>
+
+    <small>
+        Copyright &copy; 2025 All rights reserved </a>
+    </small>
+</footer>
+
+
+
+<script src="/app.js"></script>
+
+
+
+
+</html>
