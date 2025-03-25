@@ -117,6 +117,27 @@
                 width: 260px;
             }
         }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+        
+        .chatbot-btn {
+            background-color: #8e44ad;
+        }
+        
+        .chatbot-btn:hover {
+            background-color: #7d3c98;
+        }
+        
+        /* Updated nav styles to properly position profile pic */
+        nav {
+            display: flex;
+            align-items: center;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -136,35 +157,39 @@
                     <li><a href="#about">About Us</a></li>
                     <li><a href="services.html">Services</a></li>
                     <li><a href="contact.html">Contact Us</a></li>
-                    <li class="nav-profile">
-                        <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" />
-                        <div class="profile-menu" id="profileMenu">
-                            <div class="profile-menu-header">
-                                <span class="user-name" id="profileUserName">User Name</span>
-                                <span class="user-plan">Subscription: Basic</span>
-                            </div>
-                            
-                            <div class="profile-menu-actions" id="profileMainMenu">
-                                <button class="profile-menu-btn" id="settingsButton" onclick="window.location.href='temp3.html'">
-                                    <i class="fas fa-cog"></i> Settings
-                                </button>
-                                <button class="profile-menu-btn logout" id="logoutButton">
-                                    <i class="fas fa-sign-out-alt"></i> Logout
-                                </button>
-                            </div>
-                        </div>
-                    </li>
                     <li><a href="auth.html" id="login-link">Login / Sign Up</a></li>
                 </ul>
+                <!-- Profile menu moved outside of ul to be at the same level as Contact Us -->
+                <div class="nav-profile">
+                    <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" />
+                    <div class="profile-menu" id="profileMenu">
+                        <div class="profile-menu-header">
+                            <span class="user-name" id="profileUserName">User Name</span>
+                            <span class="user-plan">Subscription: Basic</span>
+                        </div>
+                        
+                        <div class="profile-menu-actions" id="profileMainMenu">
+                            <button class="profile-menu-btn" id="settingsButton" onclick="window.location.href='temp3.html'">
+                                <i class="fas fa-cog"></i> Settings
+                            </button>
+                            <button class="profile-menu-btn logout" id="logoutButton">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </nav>
         </div>
     </header>
 
     <section id="home">
         <div class="home-container">
-            <h1><span class="animated-text">Welcome to Legal Mind</span></h1>
-            <p>Your trusted partner for legal document solutions. Simplify your legal needs with our AI-driven platform.</p>
-            <a href="services.html" class="btn">Explore Our Services</a>
+            <h1 style="text-align: center;"><span class="animated-text">Welcome to Legal Mind</span></h1>
+            <p style="text-align: center;">Your trusted partner for legal document solutions. Simplify your legal needs with our AI-driven platform.</p>
+            <div class="button-group">
+                <a href="services.html" class="btn">Explore Our Services</a>
+                <a href="temp3.html" class="btn chatbot-btn"><i class="fas fa-robot"></i> Open Chatbot</a>
+            </div>
         </div>
     </section>
 

@@ -195,20 +195,20 @@
     
     /* Document Preview Enhanced - Improved using reference code */
     .documents-preview {
-      margin-top: var(--spacing-lg);
-      background: var(--light-bg);
-      border-radius: var(--border-radius-md);
-      padding: var(--spacing-md);
-      box-shadow: var(--box-shadow);
-      overflow-y: auto;
-      min-height: 150px;
-      max-height: 300px;
-      flex-shrink: 0;
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
       position: relative;
       z-index: 5;
+      flex-shrink: 0;
+      background-color: var(--bg-color-card);
+      border-radius: var(--border-radius);
+      margin: 0 0 15px 0;
+      padding: 15px;
+      max-height: 40vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
     }
     
     body.dark-mode .documents-preview {
@@ -279,33 +279,27 @@
     }
     
     .file-preview-container {
-      padding: 0;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      padding: 10px;
+      max-height: 200px;
+      overflow: hidden;
     }
     
-    .file-preview-container img,
-    .file-preview-container object {
-      width: 100%;
-      max-height: 200px;
+    .file-preview-container img {
+      max-width: 100%;
+      max-height: 180px;
       object-fit: contain;
+      display: block;
+      margin: 0 auto;
     }
     
     .delete-file {
-      color: var(--danger-color);
+      cursor: pointer;
       background: none;
       border: none;
-      cursor: pointer;
       font-size: 0.85rem;
-      opacity: 0.8;
+      color: var(--danger-color);
+      opacity: 0.7;
       transition: var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
     }
     
     .delete-file:hover {
@@ -318,9 +312,8 @@
     }
     
     .pdf-preview {
-      background: #f5f5f5;
-      border-top: none;
-      min-height: 100px;
+      height: 200px;
+      overflow: hidden;
     }
     
     body.dark-mode .pdf-preview {
@@ -1107,12 +1100,11 @@
       }
       
       .mobile-menu-content {
-        background-color: var(--light-surface);
-        padding: var(--spacing-lg);
-        border-radius: var(--border-radius-lg);
-        width: 80%;
-        max-width: 400px;
         position: relative;
+        padding: 50px 20px 20px;
+        height: 100%;
+        overflow-y: auto;
+        /* Comment: All duplicate menu items have been removed */
       }
       
       body.dark-mode .mobile-menu-content {
@@ -1191,6 +1183,97 @@
 
     .documents-preview.collapsed #documentPreviews {
       display: none;
+    }
+
+    .empty-preview-message {
+      text-align: center;
+      color: var(--text-color-muted);
+      font-size: 0.9rem;
+      padding: 15px 10px;
+      border: 1px dashed var(--border-color);
+      border-radius: var(--border-radius);
+      margin: 10px 0;
+      background-color: rgba(0,0,0,0.03);
+    }
+
+    body.dark-mode .empty-preview-message {
+      background-color: rgba(255,255,255,0.05);
+    }
+
+    .file-item {
+      margin-bottom: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+    }
+
+    .file-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      background-color: rgba(0,0,0,0.03);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    body.dark-mode .file-header {
+      background-color: rgba(255,255,255,0.05);
+    }
+
+    .file-name-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .file-name-container i {
+      color: var(--primary-color);
+      font-size: 1rem;
+    }
+
+    .file-name-container span {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 0.9rem;
+    }
+
+    .delete-file {
+      background: none;
+      border: none;
+      color: var(--text-color-muted);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .delete-file:hover {
+      background-color: rgba(220, 53, 69, 0.1);
+      color: var(--danger-color);
+    }
+
+    .file-preview-container {
+      padding: 10px;
+      max-height: 200px;
+      overflow: hidden;
+    }
+
+    .file-preview-container img {
+      max-width: 100%;
+      max-height: 180px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .pdf-preview {
+      height: 200px;
+      overflow: hidden;
     }
   </style>
 </head>
@@ -1433,9 +1516,21 @@
       // Make document preview fully visible on page load
       const previewSection = document.querySelector('.documents-preview');
       if (previewSection) {
-        previewSection.style.display = 'block';
-        previewSection.style.visibility = 'visible';
-        previewSection.style.opacity = '1';
+        setTimeout(() => {
+          previewSection.style.display = 'block';
+          previewSection.style.visibility = 'visible';
+          previewSection.style.opacity = '1';
+          previewSection.style.zIndex = '5';
+          
+          // Initialize preview area
+          const documentPreviews = document.getElementById('documentPreviews');
+          if (documentPreviews && documentPreviews.children.length === 0) {
+            const welcomeText = document.createElement('p');
+            welcomeText.className = 'empty-preview-message';
+            welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
+            documentPreviews.appendChild(welcomeText);
+          }
+        }, 100); // Short delay to ensure DOM is fully loaded
       }
 
       // Documents toggle functionality

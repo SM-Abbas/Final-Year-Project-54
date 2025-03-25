@@ -164,6 +164,12 @@
             width: 260px;
         }
     }
+    
+    /* Updated nav styles to properly position profile pic */
+    nav {
+        display: flex;
+        align-items: center;
+    }
 </style>
 
 </head>
@@ -185,26 +191,27 @@
                     <li><a href="#about">About Us</a></li>
                     <li><a href="services.html">Services</a></li>
                     <li><a href="contact.html">Contact Us</a></li>
-                    <li class="nav-profile">
-                        <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" />
-                        <div class="profile-menu" id="profileMenu">
-                            <div class="profile-menu-header">
-                                <span class="user-name" id="profileUserName">User Name</span>
-                                <span class="user-plan">Subscription: Basic</span>
-                            </div>
-                            
-                            <div class="profile-menu-actions" id="profileMainMenu">
-                                <button class="profile-menu-btn" id="settingsButton" onclick="window.location.href='temp3.html'">
-                                    <i class="fas fa-cog"></i> Settings
-                                </button>
-                                <button class="profile-menu-btn logout" id="logoutButton">
-                                    <i class="fas fa-sign-out-alt"></i> Logout
-                                </button>
-                            </div>
-                        </div>
-                    </li>
                     <li><a href="auth.html" id="login-link">Login / Sign Up</a></li>
                 </ul>
+                <!-- Profile menu moved outside of ul to be at the same level as Contact Us -->
+                <div class="nav-profile">
+                    <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" />
+                    <div class="profile-menu" id="profileMenu">
+                        <div class="profile-menu-header">
+                            <span class="user-name" id="profileUserName">User Name</span>
+                            <span class="user-plan">Subscription: Basic</span>
+                        </div>
+                        
+                        <div class="profile-menu-actions" id="profileMainMenu">
+                            <button class="profile-menu-btn" id="settingsButton" onclick="window.location.href='temp3.html'">
+                                <i class="fas fa-cog"></i> Settings
+                            </button>
+                            <button class="profile-menu-btn logout" id="logoutButton">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </nav>
         </div>
     </header>
