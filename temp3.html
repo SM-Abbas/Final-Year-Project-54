@@ -3,408 +3,1138 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chat Dashboard</title>
+  <meta name="description" content="LegalMind - AI-powered legal document assistant">
+  <title>LegalMind Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    /* CSS Variables for theming */
+    :root {
+      --primary-color: #007bff;
+      --primary-hover: #0056b3;
+      --success-color: #28a745;
+      --success-hover: #218838;
+      --danger-color: #dc3545;
+      --light-bg: #f8f9fa;
+      --dark-bg: #121212;
+      --light-surface: #ffffff;
+      --dark-surface: #1e1e1e;
+      --light-text: #212529;
+      --dark-text: #f8f9fa;
+      --light-border: #dee2e6;
+      --dark-border: #444;
+      --box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      --dark-box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      --transition: all 0.3s ease;
+      --border-radius-sm: 8px;
+      --border-radius-md: 12px;
+      --border-radius-lg: 16px;
+      --border-radius-xl: 24px;
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+    }
+
     /* Global Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Inter', sans-serif;
       margin: 0;
       padding: 0;
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background-color: white;
-      color: black;
-      transition: background-color 0.3s, color 0.3s;
+      min-height: 100vh;
+      background-color: var(--light-bg);
+      color: var(--light-text);
+      transition: var(--transition);
       overflow-x: hidden;
     }
-    .dark-mode {
-      background-color: #121212;
-      color: white;
+    
+    body.dark-mode {
+      background-color: var(--dark-bg);
+      color: var(--dark-text);
     }
+    
     .dashboard {
       display: flex;
       width: 100%;
       height: 100vh;
-      border-radius: 20px;
+      border-radius: var(--border-radius-lg);
       overflow: hidden;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-      transition: all 0.3s;
+      box-shadow: var(--box-shadow);
+      transition: var(--transition);
     }
+    
+    body.dark-mode .dashboard {
+      box-shadow: var(--dark-box-shadow);
+    }
+    
     /* Left Sidebar */
     .sidebar {
-      width: 25%;
-      padding: 20px;
-      border-right: 1px solid #ccc;
-      background: #f5f5f5;
-      border-radius: 20px 0 0 20px;
-      transition: background 0.3s;
+      width: 300px;
+      padding: var(--spacing-lg);
+      border-right: 1px solid var(--light-border);
+      background: var(--light-surface);
+      transition: var(--transition);
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
-    .dark-mode .sidebar {
-      background: #1e1e1e;
-      border-right: 1px solid #444;
+    
+    body.dark-mode .sidebar {
+      background: var(--dark-surface);
+      border-right: 1px solid var(--dark-border);
     }
+    
     .chat-header {
-      margin-bottom: 15px;
+      margin-bottom: var(--spacing-lg);
+      display: flex;
+      align-items: center;
     }
+    
     .chat-header h1 {
-      font-size: 24px;
-      font-weight: bold;
+      font-size: 1.5rem;
+      font-weight: 700;
       margin: 0;
+      background: linear-gradient(90deg, var(--primary-color), #6b47fb);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
     
     .new-chat {
       width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
+      padding: var(--spacing-md);
+      margin-bottom: var(--spacing-lg);
       cursor: pointer;
       border: none;
-      border-radius: 10px;
-      background: #007bff;
+      border-radius: var(--border-radius-md);
+      background: var(--primary-color);
       color: white;
-      transition: background 0.3s, transform 0.2s;
-      font-size: 16px;
+      transition: var(--transition);
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--spacing-sm);
     }
+    
     .new-chat:hover {
-      background: #0056b3;
-      transform: scale(1.05);
+      background: var(--primary-hover);
+      transform: translateY(-2px);
     }
+    
+    .new-chat i {
+      margin-right: var(--spacing-xs);
+    }
+    
     .chat-list {
       padding: 0;
       overflow-y: auto;
-      max-height: 300px;
+      margin-bottom: var(--spacing-lg);
+      flex-grow: 1;
     }
+    
     .chat-list li {
       list-style: none;
-      padding: 12px;
-      margin: 5px 0;
-      background-color: #ddd;
-      border-radius: 10px;
+      padding: var(--spacing-md);
+      margin: var(--spacing-xs) 0;
+      background-color: var(--light-bg);
+      border-radius: var(--border-radius-md);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: background 0.3s;
+      transition: var(--transition);
       cursor: pointer;
+      font-weight: 500;
     }
-    .dark-mode .chat-list li {
-      background: #444;
+    
+    .chat-list li:hover {
+      background-color: rgba(0, 123, 255, 0.1);
     }
+    
+    .chat-list li.active {
+      background-color: rgba(0, 123, 255, 0.2);
+      border-left: 3px solid var(--primary-color);
+    }
+    
+    body.dark-mode .chat-list li {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    body.dark-mode .chat-list li:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    body.dark-mode .chat-list li.active {
+      background: rgba(0, 123, 255, 0.3);
+    }
+    
     .chat-list li .delete-chat {
       cursor: pointer;
       background: none;
       border: none;
-      font-size: 16px;
-      color: red;
+      font-size: 0.9rem;
+      color: var(--danger-color);
+      opacity: 0.7;
+      transition: var(--transition);
     }
+    
+    .chat-list li .delete-chat:hover {
+      opacity: 1;
+    }
+    
+    /* Document Preview Enhanced - Improved using reference code */
     .documents-preview {
-      margin-top: 20px;
-      background: #f1f1f1;
-      border-radius: 15px;
-      padding: 15px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      margin-top: var(--spacing-lg);
+      background: var(--light-bg);
+      border-radius: var(--border-radius-md);
+      padding: var(--spacing-md);
+      box-shadow: var(--box-shadow);
       overflow-y: auto;
+      min-height: 150px;
       max-height: 300px;
+      flex-shrink: 0;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: relative;
+      z-index: 5;
     }
-    .dark-mode .documents-preview {
-      background: #333;
-      color: #fff;
+    
+    body.dark-mode .documents-preview {
+      background: rgba(255, 255, 255, 0.05);
     }
+    
     .documents-preview h3 {
-      margin-bottom: 10px;
+      margin-bottom: var(--spacing-md);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--light-text);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
     }
-    .documents-preview .file-item {
-      margin-bottom: 12px;
+    
+    body.dark-mode .documents-preview h3 {
+      color: var(--dark-text);
     }
+    
+    #documentPreviews {
+      min-height: 50px;
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    
     .file-item {
+      display: flex;
+      flex-direction: column;
+      background: var(--light-surface);
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--light-border);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      transition: var(--transition);
+      overflow: hidden;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .file-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #f9f9f9;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #ddd;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-bottom: 1px solid var(--light-border);
     }
-    .file-item span {
-      flex: 1;
+    
+    .file-name-container {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+    
+    .file-name-container i {
+      color: #555;
+    }
+    
+    body.dark-mode .file-name-container i {
+      color: #ddd;
+    }
+    
+    .file-name-container span {
+      font-weight: 500;
+      font-size: 0.9rem;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    
+    .file-preview-container {
+      padding: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .file-preview-container img,
+    .file-preview-container object {
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+    }
+    
     .delete-file {
-      cursor: pointer;
-      color: red;
-      font-weight: bold;
-      margin-left: 10px;
+      color: var(--danger-color);
       background: none;
       border: none;
-      font-size: 14px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      opacity: 0.8;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
     }
+    
+    .delete-file:hover {
+      opacity: 1;
+    }
+    
+    /* PDF specific styling to match screenshot */
+    .pdf-icon {
+      color: #e74c3c;
+    }
+    
+    .pdf-preview {
+      background: #f5f5f5;
+      border-top: none;
+      min-height: 100px;
+    }
+    
+    body.dark-mode .pdf-preview {
+      background: #2a2a2a;
+    }
+    
     /* Chat Section */
     .chat-section {
       flex: 1;
-      padding: 20px;
+      padding: var(--spacing-lg);
       display: flex;
       flex-direction: column;
+      background-color: var(--light-surface);
+      transition: var(--transition);
     }
-    /* Navigation Bar above the Chat Box with rounded edges */
+    
+    body.dark-mode .chat-section {
+      background-color: var(--dark-surface);
+    }
+    
+    /* Navigation Bar */
     .chat-nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: #f5f5f5;
-      padding: 10px 20px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      margin-bottom: 10px;
-      border-radius: 10px;
-      transition: background-color 0.3s;
+      background-color: var(--light-bg);
+      padding: var(--spacing-md) var(--spacing-lg);
+      box-shadow: var(--box-shadow);
+      margin-bottom: var(--spacing-md);
+      border-radius: var(--border-radius-md);
+      transition: var(--transition);
     }
-    .dark-mode .chat-nav {
-      background-color: #333;
+    
+    body.dark-mode .chat-nav {
+      background-color: rgba(255, 255, 255, 0.05);
+      box-shadow: var(--dark-box-shadow);
     }
+    
     /* Nav Left: LegalMind.Space */
     .nav-left {
-      font-weight: bold;
-      font-size: 18px;
-      color: #333;
+      font-weight: 700;
+      font-size: 1.2rem;
+      background: linear-gradient(90deg, var(--primary-color), #6b47fb);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
-    .dark-mode .nav-left {
-      color: #fff;
-    }
+    
     /* Nav Right: Dropdowns, Contact Us, and Profile */
     .nav-right {
       display: flex;
       align-items: center;
-      gap: 30px;
+      gap: var(--spacing-xl);
     }
+    
     .nav-links {
       display: flex;
-      gap: 30px;
-      font-weight: bold;
+      gap: var(--spacing-xl);
+      font-weight: 500;
       align-items: center;
     }
+    
     .nav-links a {
       text-decoration: none;
-      color: #333;
+      color: var(--light-text);
       cursor: pointer;
+      transition: var(--transition);
     }
-    .dark-mode .nav-links a {
-      color: #fff;
+    
+    .nav-links a:hover {
+      color: var(--primary-color);
     }
-    /* Dropdown styling for nav items */
+    
+    body.dark-mode .nav-links a {
+      color: var(--dark-text);
+    }
+    
+    /* Dropdown styling */
     .dropdown {
       position: relative;
       display: inline-block;
     }
+    
     .dropdown-content {
       display: none;
       position: absolute;
-      background-color: #f9f9f9;
-      min-width: 160px;
-      box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+      top: 100%;
+      left: 0;
+      background-color: var(--light-surface);
+      min-width: 180px;
+      box-shadow: var(--box-shadow);
+      border-radius: var(--border-radius-md);
       z-index: 1;
+      overflow: hidden;
+      transition: var(--transition);
     }
+    
+    body.dark-mode .dropdown-content {
+      background-color: var(--dark-surface);
+      box-shadow: var(--dark-box-shadow);
+    }
+    
     .dropdown-content a {
-      color: black;
-      padding: 12px 16px;
+      color: var(--light-text);
+      padding: var(--spacing-md);
       text-decoration: none;
       display: block;
+      transition: var(--transition);
     }
+    
+    body.dark-mode .dropdown-content a {
+      color: var(--dark-text);
+    }
+    
     .dropdown-content a:hover {
-      background-color: #f1f1f1;
+      background-color: rgba(0, 123, 255, 0.1);
     }
-    .dropdown:hover .dropdown-content {
-      display: block;
+    
+    body.dark-mode .dropdown-content a:hover {
+      background-color: rgba(255, 255, 255, 0.05);
     }
-    .dark-mode .dropdown-content {
-      background-color: #222;
-      color: white;
-    }
-    .dark-mode .dropdown-content a {
-      color: white;
-    }
+    
     /* Nav Profile */
     .nav-profile {
       position: relative;
     }
+    
     .nav-profile img {
-      width: 45px;
-      height: 45px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       cursor: pointer;
-      border: 2px solid #ddd;
+      border: 2px solid var(--light-border);
+      object-fit: cover;
+      transition: var(--transition);
     }
+    
+    body.dark-mode .nav-profile img {
+      border-color: var(--dark-border);
+    }
+    
     .nav-profile img:hover {
-      transform: scale(1.1);
+      transform: scale(1.05);
+      border-color: var(--primary-color);
     }
-    /* Profile Menu for Nav Profile: vertical list */
+    
+    /* Profile Menu */
     .profile-menu {
       display: none;
       flex-direction: column;
       position: absolute;
       right: 0;
-      top: 60px;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
-      width: 230px;
-      transition: all 0.3s ease;
+      top: 50px;
+      background: var(--light-surface);
+      padding: var(--spacing-lg);
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--box-shadow);
+      width: 280px;
+      transition: var(--transition);
       z-index: 99;
     }
+    
+    body.dark-mode .profile-menu {
+      background: var(--dark-surface);
+      box-shadow: var(--dark-box-shadow);
+    }
+    
     .profile-menu.active {
       display: flex;
     }
-    .profile-menu p,
-    .profile-menu button,
-    .profile-menu label,
-    .profile-menu input,
-    .profile-menu p#uploadedFileName {
-      margin: 4px 0;
+    
+    .profile-menu p strong {
+      font-weight: 600;
+      font-size: 1.1rem;
     }
-    .profile-menu input[type="file"] {
-      margin-top: 10px;
-      display: block;
+    
+    .profile-menu p:nth-child(2) {
+      color: #6c757d;
+      font-size: 0.9rem;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    body.dark-mode .profile-menu p:nth-child(2) {
+      color: #adb5bd;
+    }
+    
+    /* Modernized Profile Picture Section */
+    .profile-pic-section {
+      margin: var(--spacing-md) 0;
+      padding: var(--spacing-md);
+      background: var(--light-bg);
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--light-border);
+    }
+    
+    body.dark-mode .profile-pic-section {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--dark-border);
+    }
+    
+    .profile-pic-section p {
+      margin-bottom: var(--spacing-md);
+      font-weight: 500;
+    }
+    
+    .profile-pic-upload {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--spacing-md);
+    }
+    
+    .profile-preview {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid var(--primary-color);
+    }
+    
+    .profile-preview img {
       width: 100%;
-      border-radius: 8px;
-      padding: 8px;
-      border: 1px solid #ccc;
-      font-size: 14px;
+      height: 100%;
+      object-fit: cover;
     }
-    /* Dark mode adjustments for Profile Menu */
-    .dark-mode .profile-menu {
-      background: #222;
-      color: #fff;
-    }
-    .dark-mode .profile-menu p,
-    .dark-mode .profile-menu button,
-    .dark-mode .profile-menu label,
-    .dark-mode .profile-menu input,
-    .dark-mode .profile-menu p#uploadedFileName {
-      color: #fff;
-    }
-    /* Settings button with rounded edges */
-    .profile-menu button.settings {
-      border-radius: 10px;
-      padding: 8px 12px;
-      background: #007bff;
+    
+    .upload-btn {
+      background: var(--primary-color);
       color: white;
-      border: none;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.9rem;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+    }
+    
+    .upload-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+    
+    .file-name {
+      font-size: 0.8rem;
+      color: #6c757d;
+      text-align: center;
+      margin-top: var(--spacing-xs);
+      word-break: break-all;
+    }
+    
+    body.dark-mode .file-name {
+      color: #adb5bd;
+    }
+    
+    /* Dark mode toggle */
+    .switch {
+      display: flex;
+      align-items: center;
+      margin: var(--spacing-md) 0;
       cursor: pointer;
     }
-    .profile-menu button.settings:hover {
-      background: #0056b3;
-    }
+    
     .switch input {
       appearance: none;
-      width: 40px;
-      height: 20px;
+      width: 44px;
+      height: 22px;
       background: #ccc;
-      border-radius: 10px;
+      border-radius: 11px;
       position: relative;
-      transition: background 0.3s ease;
+      transition: var(--transition);
       cursor: pointer;
+      margin-right: var(--spacing-md);
     }
+    
     .switch input:checked {
-      background: #007bff;
+      background: var(--primary-color);
     }
+    
     .switch input::before {
       content: "";
       position: absolute;
       top: 2px;
-      left: 3px;
-      width: 16px;
-      height: 16px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
       background: white;
       border-radius: 50%;
-      transition: transform 0.3s ease;
+      transition: var(--transition);
     }
+    
     .switch input:checked::before {
-      transform: translateX(20px);
+      transform: translateX(22px);
     }
+    
+    /* File upload */
+    .profile-menu input[type="file"] {
+      margin-top: var(--spacing-md);
+      display: block;
+      width: 100%;
+      border-radius: var(--border-radius-md);
+      padding: var(--spacing-sm);
+      border: 1px solid var(--light-border);
+      font-size: 0.9rem;
+    }
+    
+    body.dark-mode .profile-menu input[type="file"] {
+      border-color: var(--dark-border);
+      color: var(--dark-text);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .profile-menu #uploadedFileName {
+      font-size: 0.8rem;
+      color: #6c757d;
+      margin-top: var(--spacing-xs);
+    }
+    
+    body.dark-mode .profile-menu #uploadedFileName {
+      color: #adb5bd;
+    }
+    
+    /* Logout button */
+    .profile-menu button.logout {
+      margin-top: var(--spacing-md);
+      background-color: var(--danger-color);
+      color: white;
+      border: none;
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+    
+    .profile-menu button.logout:hover {
+      background-color: #c82333;
+    }
+
+    /* Chat Box */
     .chat-box {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow-y: auto;
-      border: 1px solid #ccc;
-      padding: 20px;
-      background-color: #f8f8f8;
-      border-radius: 15px;
-      transition: background 0.3s;
+      border: 1px solid var(--light-border);
+      padding: var(--spacing-lg);
+      background-color: var(--light-bg);
+      border-radius: var(--border-radius-lg);
+      transition: var(--transition);
+      margin-bottom: var(--spacing-md);
+      scroll-behavior: smooth;
     }
-    .dark-mode .chat-box {
-      background: #222;
-      border-color: #555;
+    
+    body.dark-mode .chat-box {
+      background: rgba(255, 255, 255, 0.02);
+      border-color: var(--dark-border);
     }
+    
+    /* Chat Input */
     .chat-input {
       display: flex;
-      margin-top: 15px;
-      gap: 10px;
+      margin-top: var(--spacing-md);
+      gap: var(--spacing-md);
+      position: relative;
     }
+    
     .chat-input input {
       flex: 1;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 20px;
-      font-size: 16px;
+      padding: var(--spacing-md) var(--spacing-lg);
+      padding-left: 40px;
+      border: 1px solid var(--light-border);
+      border-radius: 30px;
+      font-size: 1rem;
+      background-color: var(--light-surface);
+      color: var(--light-text);
+      transition: var(--transition);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
-    #sendBtn {
-      padding: 12px 20px;
-      margin-left: 10px;
-      border: none;
-      border-radius: 20px;
-      cursor: pointer;
-      background: #28a745;
-      color: white;
-      transition: background 0.3s;
+    
+    body.dark-mode .chat-input input {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--dark-text);
+      border-color: var(--dark-border);
     }
-    #sendBtn:hover {
-      background: #218838;
+    
+    .chat-input input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
     }
+    
     .attach-btn {
-      font-size: 24px;
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+      font-size: 1.2rem;
       cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
     }
-    /* Chat Bubble Styling */
+    
+    .attach-btn:hover {
+      color: var(--primary-color);
+    }
+    
+    body.dark-mode .attach-btn {
+      color: #adb5bd;
+    }
+    
+    #sendBtn {
+      padding: var(--spacing-md) var(--spacing-lg);
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      background: var(--success-color);
+      color: white;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-xs);
+      font-weight: 500;
+    }
+    
+    #sendBtn:hover {
+      background: var(--success-hover);
+      transform: translateY(-2px);
+    }
+    
+    #sendBtn i {
+      font-size: 0.9rem;
+    }
+    
+    /* Chat Messages */
     .message {
-      margin-bottom: 10px;
-      padding: 10px;
+      margin-bottom: var(--spacing-md);
+      padding: var(--spacing-md) var(--spacing-lg);
       border-radius: 20px;
       max-width: 70%;
       word-wrap: break-word;
-      font-size: 16px;
+      line-height: 1.5;
+      animation: fadeIn 0.3s ease-out;
+      position: relative;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
     .user {
-      background-color: #007bff;
+      background-color: var(--primary-color);
       color: white;
       align-self: flex-end;
+      border-bottom-right-radius: 5px;
     }
+    
     .bot {
-      background-color: #444;
-      color: white;
+      background-color: var(--light-surface);
+      color: var(--light-text);
       align-self: flex-start;
+      border-bottom-left-radius: 5px;
+      border: 1px solid var(--light-border);
     }
-    /* NEW: Welcome message (Below nav bar, above chat area) */
+    
+    body.dark-mode .bot {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--dark-text);
+      border-color: var(--dark-border);
+    }
+    
+    /* Welcome Message */
     .welcome-message {
       text-align: center;
-      margin-bottom: 15px;
-      color: #333;
+      margin-bottom: var(--spacing-lg);
+      animation: fadeIn 0.5s ease-out;
     }
-    .dark-mode .welcome-message {
-      color: #fff;
-    }
+    
     .welcome-message h2 {
       margin: 0;
-      font-size: 24px;
-      font-weight: normal;
+      font-size: 1.8rem;
+      font-weight: 600;
+      background: linear-gradient(90deg, var(--primary-color), #6b47fb);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: var(--spacing-xs);
     }
+    
     .welcome-message p {
-      margin-top: 5px;
-      font-size: 16px;
-      color: inherit;
+      margin-top: var(--spacing-xs);
+      font-size: 1.1rem;
+      color: #6c757d;
+    }
+    
+    body.dark-mode .welcome-message p {
+      color: #adb5bd;
+    }
+    
+    /* Responsive Styles - Fixed document preview */
+    @media (max-width: 992px) {
+      .dashboard {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+      }
+      
+      .sidebar {
+        width: 100%;
+        height: auto;
+        max-height: 40vh; /* Increased to show documents */
+        overflow-y: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--light-border);
+        transition: max-height 0.3s ease;
+      }
+      
+      .sidebar.collapsed {
+        max-height: 60px;
+        overflow: hidden;
+      }
+      
+      .sidebar-toggle {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: var(--spacing-xs);
+        background: rgba(0, 123, 255, 0.1);
+        border: none;
+        border-radius: var(--border-radius-sm);
+        cursor: pointer;
+        margin-top: var(--spacing-xs);
+      }
+      
+      body.dark-mode .sidebar {
+        border-bottom: 1px solid var(--dark-border);
+      }
+      
+      .chat-section {
+        height: 60vh; /* Adjusted to accommodate larger sidebar */
+        max-height: calc(100vh - 40vh - 20px);
+      }
+      
+      .nav-links {
+        display: none;
+      }
+      
+      .nav-right {
+        gap: var(--spacing-md);
+      }
+      
+      .menu-toggle {
+        display: block;
+        position: relative;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--light-text);
+        cursor: pointer;
+        transition: var(--transition);
+      }
+      
+      body.dark-mode .menu-toggle {
+        color: var(--dark-text);
+      }
+      
+      .chat-box {
+        max-height: calc(60vh - 180px);
+      }
+      
+      /* Fixed document preview display */
+      .sidebar.collapsed .documents-preview {
+        display: none !important;
+      }
+      
+      .sidebar:not(.collapsed) .documents-preview {
+        display: block !important;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-bottom: var(--spacing-md);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .message {
+        max-width: 85%;
+      }
+      
+      .profile-menu {
+        width: 260px;
+        right: -10px;
+        padding: var(--spacing-md);
+      }
+      
+      .profile-pic-section {
+        padding: var(--spacing-sm);
+      }
+      
+      .profile-preview {
+        width: 60px;
+        height: 60px;
+      }
+      
+      .chat-input {
+        display: grid;
+        grid-template-columns: 40px 1fr;
+        grid-template-rows: auto auto;
+        gap: var(--spacing-sm);
+      }
+      
+      .attach-btn {
+        position: relative;
+        grid-row: 2;
+        grid-column: 1;
+        transform: none;
+        top: auto;
+        left: auto;
+        height: 100%;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--light-bg);
+        border-radius: var(--border-radius-md);
+        border: 1px solid var(--light-border);
+      }
+      
+      body.dark-mode .attach-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--dark-border);
+      }
+      
+      .chat-input input {
+        grid-row: 2;
+        grid-column: 2;
+        padding-left: var(--spacing-md);
+      }
+      
+      #sendBtn {
+        grid-row: 3;
+        grid-column: 1 / span 2;
+        width: 100%;
+        margin-top: var(--spacing-xs);
+      }
+      
+      .chat-nav {
+        flex-wrap: wrap;
+      }
+      
+      .nav-profile img {
+        width: 35px;
+        height: 35px;
+      }
+    }
+    
+    @media (max-width: 576px) {
+      .chat-nav {
+        padding: var(--spacing-sm) var(--spacing-md);
+      }
+      
+      .nav-left {
+        font-size: 1rem;
+      }
+      
+      .chat-section {
+        padding: var(--spacing-md);
+      }
+      
+      .sidebar {
+        padding: var(--spacing-md);
+      }
+      
+      .welcome-message h2 {
+        font-size: 1.5rem;
+      }
+      
+      .welcome-message p {
+        font-size: 1rem;
+      }
+      
+      .chat-box {
+        padding: var(--spacing-md);
+      }
+      
+      .message {
+        max-width: 90%;
+        padding: var(--spacing-sm) var(--spacing-md);
+      }
+      
+      #currentChat {
+        font-size: 0.8rem;
+      }
+      
+      .chat-header h1 {
+        font-size: 1.3rem;
+      }
+      
+      .documents-preview {
+        margin-top: var(--spacing-md);
+      }
+    }
+    
+    @media (max-width: 400px) {
+      .message {
+        max-width: 95%;
+      }
+      
+      .chat-nav {
+        padding: var(--spacing-xs) var(--spacing-sm);
+      }
+      
+      .nav-left {
+        font-size: 0.9rem;
+      }
+      
+      .nav-profile img {
+        width: 30px;
+        height: 30px;
+      }
+      
+      .profile-menu {
+        width: 240px;
+        right: -15px;
+        padding: var(--spacing-md);
+      }
+    }
+    
+    /* Mobile menu improved */
+    @media (max-width: 992px) {
+      .menu-toggle {
+        display: block;
+      }
+      
+      .mobile-menu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        z-index: 999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .mobile-menu.active {
+        display: flex;
+      }
+      
+      .mobile-menu-content {
+        background-color: var(--light-surface);
+        padding: var(--spacing-lg);
+        border-radius: var(--border-radius-lg);
+        width: 80%;
+        max-width: 400px;
+        position: relative;
+      }
+      
+      body.dark-mode .mobile-menu-content {
+        background-color: var(--dark-surface);
+      }
+      
+      .mobile-menu-links {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-md);
+      }
+      
+      .mobile-menu-links a {
+        color: var(--light-text);
+        text-decoration: none;
+        font-size: 1.2rem;
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius-md);
+        transition: var(--transition);
+      }
+      
+      body.dark-mode .mobile-menu-links a {
+        color: var(--dark-text);
+      }
+      
+      .mobile-menu-links a:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+      }
+      
+      .mobile-menu-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 1.5rem;
+        color: var(--light-text);
+        background: none;
+        border: none;
+        cursor: pointer;
+        z-index: 1000;
+      }
+      
+      body.dark-mode .mobile-menu-close {
+        color: var(--dark-text);
+      }
     }
   </style>
 </head>
@@ -413,16 +1143,27 @@
     <!-- Left Sidebar -->
     <div class="sidebar">
       <div class="chat-header">
-        <h1>LegalMind</h1>
+        <h1><i class="fas fa-scale-balanced"></i> LegalMind</h1>
       </div>
      
-      <div id="currentChat" style="margin-bottom: 15px; font-weight: bold;">Current Chat: None</div>
-      <button class="new-chat" onclick="addNewChat()">New Chat</button>
+      <div id="currentChat" style="margin-bottom: var(--spacing-md); font-weight: 500; font-size: 0.9rem; color: #6c757d;">
+        <span>Current Chat:</span> <span id="currentChatName">None</span>
+      </div>
+      
+      <button class="new-chat" onclick="addNewChat()">
+        <i class="fas fa-plus"></i> New Chat
+      </button>
+      
       <ul class="chat-list" id="chatList"></ul>
+      
       <div class="documents-preview">
-        <h3>Documents Preview</h3>
+        <h3><i class="fas fa-file-alt"></i> Documents</h3>
         <div id="documentPreviews"></div>
       </div>
+      
+      <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-chevron-up"></i>
+      </button>
     </div>
 
     <!-- Chat Section -->
@@ -432,100 +1173,247 @@
         <div class="nav-left">
           <span>LegalMind.Space</span>
         </div>
+        
+        <button class="menu-toggle" id="mobileMenuToggle">
+          <i class="fas fa-bars"></i>
+        </button>
+        
         <div class="nav-right">
           <div class="nav-links">
             <div class="dropdown">
-              <a href="#" onclick="togglePlansDropdown(event)">Plans</a>
+              <a href="#" onclick="togglePlansDropdown(event)">
+                <i class="fas fa-crown"></i> Plans
+              </a>
               <div class="dropdown-content" id="plansDropdown">
-                <a href="#">1 Month – ₹100</a>
-                <a href="#">3 Months – ₹250</a>
-                <a href="#">1 Year – ₹800</a>
+                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Month – ₹100</a>
+                <a href="#"><i class="fas fa-calendar-alt"></i> 3 Months – ₹250</a>
+                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Year – ₹800</a>
               </div>
             </div>
+            
             <div class="dropdown">
-              <a href="#" onclick="toggleModelsDropdown(event)">Models</a>
+              <a href="#" onclick="toggleModelsDropdown(event)">
+                <i class="fas fa-microchip"></i> Models
+              </a>
               <div class="dropdown-content" id="modelsDropdown">
-                <a href="#">Distl-BERT Model</a>
-                <a href="#">Llama Model</a>
+                <a href="#"><i class="fas fa-brain"></i> Distl-BERT Model</a>
+                <a href="#"><i class="fas fa-brain"></i> Llama Model</a>
               </div>
             </div>
-            <a href="#">Contact Us</a>
+            
+            <a href="contact.html"><i class="fas fa-envelope"></i> Contact Us</a>
           </div>
+          
           <div class="nav-profile">
-            <img src="profile-pic.jpg" alt="Profile" id="profilePicNav" />
+            <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" />
             <div class="profile-menu" id="profileMenu">
               <p><strong>User Name</strong></p>
               <p>Subscription: Basic</p>
-              <button class="settings">Settings</button>
+              <button class="settings">
+                <i class="fas fa-cog"></i> Settings
+              </button>
+              
               <label class="switch">
                 <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
-                Dark Mode
+                <span>Dark Mode</span>
               </label>
-              <input type="file" id="uploadProfile" onchange="uploadProfilePicture(event)" accept="image/*">
-              <p id="uploadedFileName"></p>
+              
+              <div class="profile-pic-section">
+                <p><i class="fas fa-image"></i> Change Profile Picture</p>
+                <div class="profile-pic-upload">
+                  <div class="profile-preview">
+                    <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile Preview" id="profilePreview">
+                  </div>
+                  <label for="uploadProfile" class="upload-btn">
+                    <i class="fas fa-upload"></i> Choose File
+                  </label>
+                  <input type="file" id="uploadProfile" onchange="uploadProfilePicture(event)" accept="image/*" style="display: none;">
+                </div>
+                <p id="uploadedFileName" class="file-name"></p>
+              </div>
+              
+              <button class="logout" id="logoutButton">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-content">
+          <button class="mobile-menu-close" id="mobileMenuClose">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
       </div>
 
       <!-- Welcome Message -->
       <div class="welcome-message">
         <h2>Hi, I'm LegalMind.</h2>
-        <p>How can I help you today?</p>
+        <p>Ask me anything about legal documents and concepts.</p>
       </div>
 
       <div class="chat-box" id="chatBox"></div>
+      
       <div class="chat-input">
-        <span class="attach-btn" onclick="document.getElementById('fileInput').click()">📎</span>
-        <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.png,.jpg" style="display:none;" onchange="previewFile(event)">
-        <input type="text" id="messageInput" placeholder="Type your message...">
-        <button id="sendBtn" onclick="sendMessage()">Send</button>
+        <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
+          <i class="fas fa-paperclip"></i>
+        </span>
+        <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.png,.jpg,.docx" style="display:none;" onchange="previewFile(event)">
+        <input 
+          type="text" 
+          id="messageInput" 
+          placeholder="Type your message..." 
+          aria-label="Type your message"
+          onkeypress="if(event.key === 'Enter') sendMessage()"
+        >
+        <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
+          <i class="fas fa-paper-plane"></i> Send
+        </button>
       </div>
     </div>
   </div>
 
+  <script src="auth.js" type="module"></script>
   <script>
     // Global storage for chat conversations
     let chats = {};
     let currentChatId = null;
 
+    // Initialize dark mode from preferences
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check for saved dark mode preference
+      if (localStorage.getItem('darkMode') === 'enabled') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('darkModeToggle').checked = true;
+        if (document.getElementById('darkModeIcon')) {
+          document.getElementById('darkModeIcon').classList.remove('fa-moon');
+          document.getElementById('darkModeIcon').classList.add('fa-sun');
+          document.getElementById('darkModeText').textContent = 'Light Mode';
+        }
+      }
+      
+      // Mobile menu handlers
+      document.getElementById('mobileMenuToggle').addEventListener('click', function() {
+        document.getElementById('mobileMenu').classList.add('active');
+      });
+      
+      document.getElementById('mobileMenuClose').addEventListener('click', function() {
+        document.getElementById('mobileMenu').classList.remove('active');
+      });
+      
+      // Add sidebar toggle functionality
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const sidebar = document.querySelector('.sidebar');
+      
+      if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+          sidebar.classList.toggle('collapsed');
+          
+          // Change icon based on collapsed state
+          const icon = this.querySelector('i');
+          if (sidebar.classList.contains('collapsed')) {
+            icon.classList.remove('fa-chevron-up');
+            icon.classList.add('fa-chevron-down');
+          } else {
+            icon.classList.remove('fa-chevron-down');
+            icon.classList.add('fa-chevron-up');
+          }
+        });
+      }
+      
+      // Check screen width and adapt layout
+      function checkScreenWidth() {
+        if (window.innerWidth <= 992) {
+          if (sidebar && !sidebar.classList.contains('collapsed')) {
+            sidebar.classList.add('collapsed');
+            if (sidebarToggle) {
+              const icon = sidebarToggle.querySelector('i');
+              icon.classList.remove('fa-chevron-up');
+              icon.classList.add('fa-chevron-down');
+            }
+          }
+        }
+      }
+      
+      // Initial check
+      checkScreenWidth();
+      
+      // Listen for window resize
+      window.addEventListener('resize', checkScreenWidth);
+      
+      // Fix mobile scrolling issues for chat box
+      const chatBox = document.getElementById('chatBox');
+      if (chatBox) {
+        window.addEventListener('resize', function() {
+          if (window.innerWidth <= 992) {
+            chatBox.scrollTop = chatBox.scrollHeight;
+          }
+        });
+      }
+      
+      // Make document preview fully visible on page load
+      const previewSection = document.querySelector('.documents-preview');
+      if (previewSection) {
+        previewSection.style.display = 'block';
+        previewSection.style.visibility = 'visible';
+        previewSection.style.opacity = '1';
+      }
+    });
+
     function addNewChat() {
       const chatList = document.getElementById("chatList");
-      const chatId = "Chat " + (chatList.children.length + 1);
+      const chatId = "chat_" + Date.now();
+      const chatName = "Chat " + (chatList.children.length + 1);
 
       const chatItem = document.createElement("li");
       chatItem.setAttribute("data-chat-id", chatId);
-      chatItem.innerHTML = chatId + ' <button class="delete-chat" onclick="deleteChat(event, this)">❌</button>';
+      chatItem.innerHTML = `
+        <span>${chatName}</span>
+        <button class="delete-chat" onclick="deleteChat(event, this)" aria-label="Delete chat">
+          <i class="fas fa-times"></i>
+        </button>
+      `;
+      
       chatItem.addEventListener("click", function(e) {
-        if (e.target.classList.contains("delete-chat")) return;
-        loadChat(chatId);
+        if (e.target.classList.contains("delete-chat") || e.target.closest('.delete-chat')) return;
+        
+        // Remove active class from all chats
+        document.querySelectorAll('#chatList li').forEach(item => {
+          item.classList.remove('active');
+        });
+        
+        // Add active class to current chat
+        this.classList.add('active');
+        
+        loadChat(chatId, chatName);
       });
+      
       chatList.appendChild(chatItem);
 
       // Create a new conversation for this chat
       chats[chatId] = [];
-      loadChat(chatId);
+      loadChat(chatId, chatName);
     }
 
-    function loadChat(chatId) {
+    function loadChat(chatId, chatName) {
       currentChatId = chatId;
       const chatBox = document.getElementById("chatBox");
       chatBox.innerHTML = "";
-      document.getElementById("currentChat").textContent = "Current Chat: " + chatId;
+      document.getElementById("currentChatName").textContent = chatName;
 
       if (chats[chatId]) {
         chats[chatId].forEach(msg => {
-          const msgDiv = document.createElement("div");
-          msgDiv.textContent = msg.text;
-          msgDiv.classList.add("message", msg.sender === "bot" ? "bot" : "user");
-          chatBox.appendChild(msgDiv);
+          appendMessage(msg.sender, msg.text);
         });
       }
     }
 
     function deleteChat(event, button) {
       event.stopPropagation();
-      const chatItem = button.parentElement;
+      const chatItem = button.closest('li');
       const chatId = chatItem.getAttribute("data-chat-id");
 
       if (chats[chatId]) {
@@ -536,42 +1424,56 @@
       if (currentChatId === chatId) {
         currentChatId = null;
         document.getElementById("chatBox").innerHTML = "";
-        document.getElementById("currentChat").textContent = "Current Chat: None";
+        document.getElementById("currentChatName").textContent = "None";
       }
     }
 
-    // Updated sendMessage function that calls the Hugging Face API
+    function appendMessage(sender, text) {
+      const chatBox = document.getElementById("chatBox");
+      const msgDiv = document.createElement("div");
+      msgDiv.textContent = text;
+      msgDiv.classList.add("message", sender);
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Send message function
     function sendMessage() {
       const messageInput = document.getElementById("messageInput");
-      const chatBox = document.getElementById("chatBox");
       const userMessageText = messageInput.value.trim();
       
       if (userMessageText && currentChatId) {
         // Append user's message
         const userMsg = { sender: "user", text: userMessageText };
         chats[currentChatId].push(userMsg);
-        const userMessage = document.createElement("div");
-        userMessage.textContent = userMsg.text;
-        userMessage.classList.add("message", "user");
-        chatBox.appendChild(userMessage);
+        appendMessage("user", userMessageText);
         messageInput.value = "";
-        chatBox.scrollTop = chatBox.scrollHeight;
+        
+        // Show loading indicator
+        const loadingMsg = { sender: "bot", text: "Thinking..." };
+        const loadingId = setTimeout(() => {
+          appendMessage("bot", loadingMsg.text);
+          chats[currentChatId].push(loadingMsg);
+        }, 500);
         
         // Call the Hugging Face API with the user's message
-        fetchPrediction(userMessageText);
+        fetchPrediction(userMessageText, loadingId);
+      } else if (!currentChatId) {
+        // If no chat is active, create one
+        addNewChat();
+        setTimeout(() => sendMessage(), 100);
       }
     }
 
     // Function to call the Hugging Face Inference API
-    function fetchPrediction(text) {
+    function fetchPrediction(text, loadingId) {
       // Replace with your actual API endpoint URL for your model
       const url = "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind";
       const options = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-         "Authorization": "Bearer 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"
-
+          "Authorization": "Bearer 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"
         },
         body: JSON.stringify({ inputs: text })
       };
@@ -579,6 +1481,18 @@
       fetch(url, options)
         .then(response => response.json())
         .then(data => {
+          // Clear loading message if it exists
+          clearTimeout(loadingId);
+          
+          // Remove the last message if it was "Thinking..."
+          if (chats[currentChatId].length > 0 && chats[currentChatId][chats[currentChatId].length-1].text === "Thinking...") {
+            chats[currentChatId].pop();
+            const chatBox = document.getElementById("chatBox");
+            if (chatBox.lastChild && chatBox.lastChild.textContent === "Thinking...") {
+              chatBox.removeChild(chatBox.lastChild);
+            }
+          }
+          
           let botResponse = "";
           if (data.error) {
             botResponse = "Error: " + data.error;
@@ -590,44 +1504,90 @@
               botResponse = JSON.stringify(data);
             }
           }
+          
+          // Add the actual response
           addBotMessage(botResponse);
         })
         .catch(err => {
-          addBotMessage("Error fetching prediction.");
+          // Clear loading message
+          clearTimeout(loadingId);
+          
+          // Remove the last message if it was "Thinking..."
+          if (chats[currentChatId].length > 0 && chats[currentChatId][chats[currentChatId].length-1].text === "Thinking...") {
+            chats[currentChatId].pop();
+            const chatBox = document.getElementById("chatBox");
+            if (chatBox.lastChild && chatBox.lastChild.textContent === "Thinking...") {
+              chatBox.removeChild(chatBox.lastChild);
+            }
+          }
+          
+          addBotMessage("I'm having trouble connecting to the server. Please try again later.");
           console.error(err);
         });
     }
 
     // Append the bot's response to the chat
     function addBotMessage(text) {
-      const chatBox = document.getElementById("chatBox");
       const botMsg = { sender: "bot", text: text };
       chats[currentChatId].push(botMsg);
-      const botMessage = document.createElement("div");
-      botMessage.textContent = text;
-      botMessage.classList.add("message", "bot");
-      chatBox.appendChild(botMessage);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      appendMessage("bot", text);
     }
 
     function toggleDarkMode() {
-      document.body.classList.toggle("dark-mode");
+      const isDarkMode = document.body.classList.toggle("dark-mode");
+      const darkModeIcon = document.getElementById('darkModeIcon');
+      const darkModeText = document.getElementById('darkModeText');
+      
+      if (isDarkMode) {
+        localStorage.setItem('darkMode', 'enabled');
+        if (darkModeIcon) {
+          darkModeIcon.classList.remove('fa-moon');
+          darkModeIcon.classList.add('fa-sun');
+          darkModeText.textContent = 'Light Mode';
+        }
+      } else {
+        localStorage.setItem('darkMode', 'disabled');
+        if (darkModeIcon) {
+          darkModeIcon.classList.remove('fa-sun');
+          darkModeIcon.classList.add('fa-moon');
+          darkModeText.textContent = 'Dark Mode';
+        }
+      }
     }
 
     function togglePlansDropdown(event) {
       event.preventDefault();
       const dropdown = document.getElementById("plansDropdown");
       dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+      
+      // Close other dropdowns
+      document.getElementById("modelsDropdown").style.display = "none";
     }
 
     function toggleModelsDropdown(event) {
       event.preventDefault();
       const dropdown = document.getElementById("modelsDropdown");
       dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+      
+      // Close other dropdowns
+      document.getElementById("plansDropdown").style.display = "none";
     }
 
     document.getElementById("profilePicNav").addEventListener("click", () => {
       document.getElementById("profileMenu").classList.toggle("active");
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(event) {
+      if (!event.target.closest('.dropdown') && !event.target.closest('.dropdown-content')) {
+        document.querySelectorAll('.dropdown-content').forEach(dropdown => {
+          dropdown.style.display = 'none';
+        });
+      }
+      
+      if (!event.target.closest('.nav-profile') && !event.target.closest('.profile-menu')) {
+        document.getElementById("profileMenu").classList.remove("active");
+      }
     });
 
     function uploadProfilePicture(event) {
@@ -636,46 +1596,129 @@
         document.getElementById("uploadedFileName").textContent = file.name;
         const reader = new FileReader();
         reader.onload = function() {
+          // Update both profile images
           document.getElementById("profilePicNav").src = reader.result;
+          document.getElementById("profilePreview").src = reader.result;
         }
         reader.readAsDataURL(file);
       }
     }
 
+    // Enhanced file preview functionality that properly displays previews
     function previewFile(event) {
       const filePreview = document.getElementById("documentPreviews");
       const file = event.target.files[0];
+      
+      if (!file) return;
+      
       const fileItem = document.createElement("div");
       fileItem.classList.add("file-item");
-      const fileType = file.type.split('/')[0];
-      let filePreviewElement;
-      if (fileType === 'image') {
-        filePreviewElement = document.createElement('img');
+      
+      // Create file header with name and delete button
+      const fileHeader = document.createElement("div");
+      fileHeader.classList.add("file-header");
+      
+      // Create the name container with icon and name
+      const fileNameContainer = document.createElement("div");
+      fileNameContainer.classList.add("file-name-container");
+      
+      // Create icon based on file type
+      const fileIcon = document.createElement('i');
+      fileIcon.classList.add('fas');
+      
+      if (file.name.endsWith('.pdf')) {
+        fileIcon.classList.add('fa-file-pdf');
+        fileIcon.classList.add('pdf-icon');
+      } else if (file.name.endsWith('.txt')) {
+        fileIcon.classList.add('fa-file-alt');
+      } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        fileIcon.classList.add('fa-file-word');
       } else {
-        filePreviewElement = document.createElement('object');
-        filePreviewElement.type = file.type;
-        filePreviewElement.width = "100%";
-        filePreviewElement.height = "150";
+        fileIcon.classList.add('fa-file');
       }
-      const reader = new FileReader();
-      reader.onload = function() {
-        if (fileType === 'image') {
-          filePreviewElement.src = reader.result;
-        } else {
-          filePreviewElement.data = reader.result;
+      
+      // Create filename span
+      const fileName = document.createElement('span');
+      fileName.textContent = file.name;
+      
+      // Add icon and filename to the name container
+      fileNameContainer.appendChild(fileIcon);
+      fileNameContainer.appendChild(fileName);
+      
+      // Create delete button
+      const closeBtn = document.createElement("button");
+      closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+      closeBtn.classList.add("delete-file");
+      closeBtn.setAttribute('aria-label', 'Remove file');
+      
+      closeBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        filePreview.removeChild(fileItem);
+      });
+      
+      // Add name container and delete button to header
+      fileHeader.appendChild(fileNameContainer);
+      fileHeader.appendChild(closeBtn);
+      
+      // Add header to file item
+      fileItem.appendChild(fileHeader);
+      
+      // Add file preview for images and PDFs
+      const fileType = file.type.split('/')[0];
+      
+      if (fileType === 'image' || file.name.endsWith('.pdf')) {
+        const reader = new FileReader();
+        reader.onload = function() {
+          const previewContainer = document.createElement('div');
+          previewContainer.className = 'file-preview-container';
+          
+          if (fileType === 'image') {
+            const img = document.createElement('img');
+            img.src = reader.result;
+            img.alt = file.name;
+            previewContainer.appendChild(img);
+          } else if (file.name.endsWith('.pdf')) {
+            previewContainer.classList.add('pdf-preview');
+            const obj = document.createElement('object');
+            obj.data = reader.result;
+            obj.type = 'application/pdf';
+            obj.width = '100%';
+            obj.height = '200px';
+            previewContainer.appendChild(obj);
+          }
+          
+          fileItem.appendChild(previewContainer);
+        };
+        reader.readAsDataURL(file);
+      }
+      
+      filePreview.appendChild(fileItem);
+      
+      // Force document preview section visible
+      const previewSection = document.querySelector('.documents-preview');
+      previewSection.style.display = 'block';
+      previewSection.style.visibility = 'visible';
+      previewSection.style.opacity = '1';
+      
+      // Expand sidebar if it's collapsed to show uploaded file
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar.classList.contains('collapsed')) {
+        sidebar.classList.remove('collapsed');
+        const icon = document.querySelector('#sidebarToggle i');
+        if (icon) {
+          icon.classList.remove('fa-chevron-down');
+          icon.classList.add('fa-chevron-up');
         }
-        fileItem.appendChild(filePreviewElement);
-        const closeBtn = document.createElement("button");
-        closeBtn.textContent = "Close";
-        closeBtn.classList.add("delete-file");
-        closeBtn.addEventListener("click", function() {
-          filePreview.removeChild(fileItem);
-        });
-        fileItem.appendChild(closeBtn);
-        filePreview.appendChild(fileItem);
       }
-      reader.readAsDataURL(file);
+      
+      // If it's a chat context, add a message about the upload
+      if (currentChatId) {
+        const userMsg = { sender: "user", text: `[Uploaded ${file.name}]` };
+        chats[currentChatId].push(userMsg);
+        appendMessage("user", userMsg.text);
+      }
     }
   </script>
 </body>
 </html>
+
