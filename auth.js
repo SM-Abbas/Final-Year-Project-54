@@ -183,28 +183,65 @@ onAuthStateChanged(auth, (user) => {
     const loginLink = document.getElementById("login-link");
     const logoutBtn = document.getElementById("logout");
     const logoutButtonProfile = document.getElementById("logoutButton");
+    const profileUserName = document.getElementById("profileUserName");
+    const profilePicNav = document.getElementById("profilePicNav");
+    const navProfile = document.querySelector(".nav-profile");
     
     if (user) {
         // User is signed in
         console.log("User is logged in:", user.displayName);
+        
+        // Show/hide login/logout links
         if (loginLink) loginLink.style.display = "none";
         if (logoutBtn) logoutBtn.style.display = "block";
         
-        // Set user name in profile menu if we're on the temp3.html page
-        const profileMenuName = document.querySelector(".profile-menu p strong");
-        if (profileMenuName) {
-            profileMenuName.textContent = user.displayName || "User";
+        // Show profile menu
+        if (navProfile) navProfile.style.display = "block";
+        
+        // Set user name in profile menu
+        if (profileUserName) {
+            profileUserName.textContent = user.displayName || "User";
+        }
+        
+        // Set profile picture if user has one
+        if (profilePicNav) {
+            if (user.photoURL) {
+                profilePicNav.src = user.photoURL;
+                // Also update the preview in settings if it exists
+                const profilePreview = document.getElementById("profilePreview");
+                if (profilePreview) {
+                    profilePreview.src = user.photoURL;
+                }
+            } else {
+                // Use initials or username for avatar if no photo
+                const initials = user.displayName ? user.displayName.charAt(0) : "U";
+                profilePicNav.src = `https://ui-avatars.com/api/?name=${initials}&background=random`;
+            }
         }
     } else {
         // User is signed out
         console.log("User is logged out");
+        
+        // Show/hide login/logout links
         if (loginLink) loginLink.style.display = "block";
         if (logoutBtn) logoutBtn.style.display = "none";
+        
+        // Hide profile menu
+        if (navProfile) navProfile.style.display = "none";
+        
+        // If on temp3.html page and not logged in, redirect to auth.html
+        if (window.location.pathname.includes("temp3.html")) {
+            window.location.href = "auth.html";
+        }
     }
     
-    // Setup logout button in profile menu (temp3.html)
+    // Setup logout button in profile menu (works on all pages)
     if (logoutButtonProfile) {
-        logoutButtonProfile.addEventListener("click", () => {
+        // Remove any existing listeners
+        const newLogoutBtn = logoutButtonProfile.cloneNode(true);
+        logoutButtonProfile.parentNode.replaceChild(newLogoutBtn, logoutButtonProfile);
+        
+        newLogoutBtn.addEventListener("click", () => {
             signOut(auth).then(() => {
                 console.log("User signed out from profile menu.");
                 window.location.href = "index.html";
