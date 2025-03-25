@@ -672,7 +672,7 @@
       color: #adb5bd;
     }
     
-    /* Chat Box with modified positioning for welcome message */
+    /* Chat Box with normal padding */
     .chat-box {
       flex: 1;
       display: flex;
@@ -680,7 +680,6 @@
       overflow-y: auto;
       border: 1px solid var(--light-border);
       padding: var(--spacing-lg);
-      padding-top: calc(100px + var(--spacing-md)); /* Space for welcome message */
       background-color: var(--light-bg);
       border-radius: var(--border-radius-lg);
       transition: var(--transition);
@@ -818,24 +817,23 @@
       border-color: var(--dark-border);
     }
     
-    /* Welcome Message with improved fade effect */
+    /* Welcome Message with fixed positioning */
     .welcome-message {
       text-align: center;
-      animation: fadeIn 0.5s ease-out;
-      position: absolute;
+      padding: 30px 0;
+      background-color: var(--light-bg);
+      border-bottom: 1px solid var(--light-border);
+      margin-bottom: 20px;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      position: sticky;
       top: 0;
       left: 0;
       right: 0;
-      background-color: var(--light-bg);
-      padding: 30px 0;
-      transition: opacity 0.3s ease, transform 0.3s ease;
-      z-index: 10;
+      z-index: 5;
       opacity: 1;
-      transform: translateY(0);
+      width: 100%;
       border-top-left-radius: var(--border-radius-lg);
       border-top-right-radius: var(--border-radius-lg);
-      border-bottom: 1px solid var(--light-border);
-      margin-bottom: 0;
     }
     
     body.dark-mode .welcome-message {
@@ -847,6 +845,7 @@
       opacity: 0;
       transform: translateY(-20px);
       pointer-events: none;
+      position: absolute;
     }
     
     .welcome-message h2 {
@@ -1502,28 +1501,23 @@
             chatBox.scrollTop = chatBox.scrollHeight;
           }
         });
-      }
-      
-      // Handle welcome message visibility on scroll
-      const welcomeMessage = document.querySelector('.welcome-message');
-      
-      if (chatBox && welcomeMessage) {
-        // Show welcome message initially
-        welcomeMessage.classList.remove('hidden');
         
-        // Check scroll position on load
-        if (chatBox.scrollTop > 10) {
-          welcomeMessage.classList.add('hidden');
+        // Handle welcome message visibility on scroll
+        const welcomeMessage = document.querySelector('.welcome-message');
+        
+        if (welcomeMessage) {
+          // Show welcome message initially
+          welcomeMessage.classList.remove('hidden');
+          
+          // Check on scroll
+          chatBox.addEventListener('scroll', function() {
+            if (chatBox.scrollTop > 10) {
+              welcomeMessage.classList.add('hidden');
+            } else {
+              welcomeMessage.classList.remove('hidden');
+            }
+          });
         }
-        
-        // Check on scroll
-        chatBox.addEventListener('scroll', function() {
-          if (chatBox.scrollTop > 10) {
-            welcomeMessage.classList.add('hidden');
-          } else {
-            welcomeMessage.classList.remove('hidden');
-          }
-        });
       }
       
       // Make document preview fully visible on page load with enhanced visibility
@@ -1610,13 +1604,32 @@
     function loadChat(chatId, chatName) {
       currentChatId = chatId;
       const chatBox = document.getElementById("chatBox");
-      chatBox.innerHTML = "";
+      
+      // Clear chat box while preserving the welcome message
+      const welcomeMessage = document.querySelector('.welcome-message');
+      if (welcomeMessage) {
+        // Reset welcome message (make it visible)
+        welcomeMessage.classList.remove('hidden');
+        // Remove all other content
+        chatBox.innerHTML = '';
+        // Add welcome message back
+        chatBox.appendChild(welcomeMessage);
+      } else {
+        chatBox.innerHTML = '';
+      }
+      
       document.getElementById("currentChatName").textContent = chatName;
 
-      if (chats[chatId]) {
+      // Load messages for this chat
+      if (chats[chatId] && chats[chatId].length > 0) {
         chats[chatId].forEach(msg => {
           appendMessage(msg.sender, msg.text);
         });
+        
+        // If there are messages, hide welcome message
+        if (welcomeMessage && chats[chatId].length > 0) {
+          welcomeMessage.classList.add('hidden');
+        }
       }
     }
 
@@ -1632,7 +1645,18 @@
 
       if (currentChatId === chatId) {
         currentChatId = null;
-        document.getElementById("chatBox").innerHTML = "";
+        const chatBox = document.getElementById("chatBox");
+        const welcomeMessage = document.querySelector('.welcome-message');
+        
+        // Clear chat and ensure welcome message is preserved
+        if (welcomeMessage) {
+          chatBox.innerHTML = '';
+          welcomeMessage.classList.remove('hidden');
+          chatBox.appendChild(welcomeMessage);
+        } else {
+          chatBox.innerHTML = '';
+        }
+        
         document.getElementById("currentChatName").textContent = "None";
       }
     }
@@ -1644,11 +1668,20 @@
       const msgDiv = document.createElement("div");
       msgDiv.textContent = text;
       msgDiv.classList.add("message", sender);
-      chatBox.appendChild(msgDiv);
       
-      // If we have any messages, hide welcome when scrolled
-      if (chatBox.scrollHeight > chatBox.clientHeight) {
-        welcomeMessage.classList.add('hidden');
+      // If this is the first message, we need to handle the welcome message
+      if (chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
+        chatBox.appendChild(msgDiv);
+      } else {
+        chatBox.appendChild(msgDiv);
+      }
+      
+      // Check scroll position to determine if welcome message should be hidden
+      if (chatBox.scrollTop > 10 || 
+         (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0)) {
+        if (welcomeMessage) {
+          welcomeMessage.classList.add('hidden');
+        }
       }
       
       // Scroll to bottom
