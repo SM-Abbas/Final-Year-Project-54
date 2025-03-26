@@ -1770,7 +1770,290 @@
         font-size: 1rem;
       }
     }
+
+    /* Enhanced mobile chat input styling */
+    @media (max-width: 992px) {
+      .chat-section {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        padding-bottom: 80px !important; /* Space for input */
+      }
+      
+      .chat-box {
+        flex: 1;
+        max-height: calc(100vh - 140px) !important;
+        margin-bottom: 5px;
+      }
+      
+      .chat-input {
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        right: 0;
+        padding: 0 15px;
+        margin: 0;
+        z-index: 20;
+      }
+      
+      .input-container {
+        width: 100%;
+        border-radius: 30px;
+        background-color: var(--light-surface);
+        box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        padding: 2px;
+        display: flex;
+        align-items: center;
+        border: 1px solid var(--light-border);
+        transition: all 0.3s ease;
+      }
+      
+      body.dark-mode .input-container {
+        background-color: var(--dark-surface);
+        border-color: var(--dark-border);
+        box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+      }
+      
+      .chat-input input {
+        height: 50px;
+        font-size: 16px;
+        padding: 12px 50px;
+        border: none;
+        background: transparent;
+      }
+      
+      .chat-input input:focus {
+        box-shadow: none;
+        outline: none;
+        border: none;
+      }
+      
+      .attach-btn {
+        position: absolute;
+        left: 25px;
+        font-size: 18px;
+        transform: scale(1);
+        transition: transform 0.2s ease;
+      }
+      
+      .attach-btn:active {
+        transform: scale(0.9);
+      }
+      
+      #sendBtn {
+        position: absolute;
+        right: 15px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        transform: scale(1) translateY(-50%);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      }
+      
+      #sendBtn:active {
+        transform: scale(0.9) translateY(-50%);
+      }
+      
+      #sendBtn i {
+        color: white;
+      }
+    }
+
+    /* Interactive effects for mobile inputs */
+    @media (max-width: 992px) {
+      /* Input animation when focused */
+      .input-container:focus-within {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        border-color: var(--primary-color);
+      }
+      
+      /* Message animations */
+      .message {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+      }
+      
+      .message.user {
+        animation: messageSlideInRight 0.3s ease forwards;
+      }
+      
+      .message.bot {
+        animation: messageSlideInLeft 0.3s ease forwards;
+      }
+      
+      @keyframes messageSlideInRight {
+        from {
+          opacity: 0;
+          transform: translateX(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      
+      @keyframes messageSlideInLeft {
+        from {
+          opacity: 0;
+          transform: translateX(-30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      
+      /* Send button ripple effect */
+      #sendBtn::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.4);
+        transform: scale(0);
+        transition: transform 0.3s ease-out;
+      }
+      
+      #sendBtn:active::after {
+        transform: scale(2);
+        opacity: 0;
+        transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+      }
+      
+      /* Attach button ripple effect */
+      .attach-btn::after {
+        content: '';
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.1);
+        transform: scale(0);
+        left: 50%;
+        top: 50%;
+        margin-left: -15px;
+        margin-top: -15px;
+      }
+      
+      .attach-btn:active::after {
+        transform: scale(1);
+        opacity: 0;
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+      }
+      
+      /* Input placeholder animation */
+      @keyframes placeholderPulse {
+        0% { opacity: 0.6; }
+        50% { opacity: 1; }
+        100% { opacity: 0.6; }
+      }
+      
+      .chat-input input::placeholder {
+        animation: placeholderPulse 2s infinite;
+      }
+      
+      /* Make sure input is always visible */
+      .chat-section {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+      }
+    }
+
+    /* Touch-specific styling for active elements */
+    .touch-active {
+      transform: scale(0.96) !important;
+      opacity: 0.8;
+      transition: transform 0.1s ease, opacity 0.1s ease;
+    }
+    
+    #sendBtn.touch-active {
+      background-color: var(--primary-hover);
+    }
+    
+    .attach-btn.touch-active {
+      color: var(--primary-color);
+    }
+    
+    /* Ensure iOS Safari specific improvements */
+    @supports (-webkit-touch-callout: none) {
+      .chat-input input {
+        font-size: 16px; /* Prevents iOS zoom on focus */
+      }
+      
+      .chat-section {
+        padding-bottom: 85px !important; /* Extra room for iOS virtual keyboard */
+      }
+    }
   </style>
+  
+  <script>
+    // Add haptic feedback for mobile interactions
+    document.addEventListener('DOMContentLoaded', function() {
+      // Haptic feedback function
+      function vibrateOnTouch(duration = 20) {
+        if ('vibrate' in navigator) {
+          navigator.vibrate(duration);
+        }
+      }
+      
+      // Add haptic feedback to send button
+      const sendBtn = document.getElementById('sendBtn');
+      if (sendBtn) {
+        sendBtn.addEventListener('touchstart', function() {
+          vibrateOnTouch(20);
+          this.classList.add('touch-active');
+        }, { passive: true });
+        
+        sendBtn.addEventListener('touchend', function() {
+          this.classList.remove('touch-active');
+        }, { passive: true });
+      }
+      
+      // Add haptic feedback to attach button
+      const attachBtn = document.querySelector('.attach-btn');
+      if (attachBtn) {
+        attachBtn.addEventListener('touchstart', function() {
+          vibrateOnTouch(15);
+          this.classList.add('touch-active');
+        }, { passive: true });
+        
+        attachBtn.addEventListener('touchend', function() {
+          this.classList.remove('touch-active');
+        }, { passive: true });
+      }
+      
+      // Improve message input focus handling
+      const messageInput = document.getElementById('messageInput');
+      if (messageInput) {
+        // Auto focus input when chat loads on mobile
+        // but only if a chat is already selected
+        if (window.innerWidth <= 992 && currentChatId) {
+          setTimeout(() => {
+            // Scroll to ensure input is visible without forcing focus
+            const chatSection = document.querySelector('.chat-section');
+            if (chatSection) {
+              chatSection.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }
+          }, 300);
+        }
+        
+        // Add haptic feedback when typing
+        messageInput.addEventListener('keydown', function() {
+          if (window.innerWidth <= 992) {
+            vibrateOnTouch(5); // Very subtle vibration
+          }
+        }, { passive: true });
+      }
+    });
+  </script>
 </head>
 <body>
   <div class="dashboard">
@@ -1938,11 +2221,11 @@
       </div>
 
       <div class="chat-input">
-        <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
-          <i class="fas fa-paperclip"></i>
-        </span>
-        <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.png,.jpg,.docx" style="display:none;" onchange="previewFile(event)">
         <div class="input-container">
+          <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-paperclip"></i>
+          </span>
+          <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.png,.jpg,.docx" style="display:none;" onchange="previewFile(event)">
           <input 
             type="text" 
             id="messageInput" 
@@ -2175,12 +2458,23 @@
             }
         });
         
-        // Scroll to bottom after loading content with a small delay to ensure rendering
+        // Focus input field to make keyboard appear on mobile
         setTimeout(() => {
-            chatBox.scrollTo({
-                top: chatBox.scrollHeight,
-                behavior: 'auto' // Use auto for initial load
-            });
+            const messageInput = document.getElementById("messageInput");
+            if (messageInput && window.innerWidth <= 992) {
+                // On mobile, scroll to make input visible and focus it
+                const chatSection = document.querySelector(".chat-section");
+                if (chatSection) {
+                    chatSection.scrollTop = chatSection.scrollHeight;
+                }
+                
+                // Gently scroll to show input without forcefully focusing
+                // (which would bring up keyboard automatically)
+                chatBox.scrollTo({
+                    top: chatBox.scrollHeight,
+                    behavior: 'auto'
+                });
+            }
             
             // Initialize the scroll button (check visibility)
             const scrollBottomBtn = document.getElementById('scrollBottomBtn');
