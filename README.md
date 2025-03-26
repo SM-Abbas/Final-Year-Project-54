@@ -1,8 +1,10 @@
-final year project on legal documents 
+Final year project on legal documents 
 we worked with a lot of models and merged our model and some pre-trained models 
 our model's accuracy is slightly better than the other models available on the internet, although it's a difference of 0.1% in accuracy 
 
-We have shared our training results of our final model
+We have shared the training results of our final model
+
+The model is available in Hugging Face https://huggingface.co/Abbasgamer1/legalMind
 
 
 # Model Card: final-merged-model3-pruned
