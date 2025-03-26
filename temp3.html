@@ -706,25 +706,36 @@
       color: #adb5bd;
     }
     
-    /* Chat Box with normal padding */
+    /* Chat Box with padding adjustments for welcome message */
     .chat-box {
       flex: 1;
       display: flex;
       flex-direction: column;
       overflow-y: auto;
       border: 1px solid var(--light-border);
-      padding: var(--spacing-lg);
+      /* Update padding to accommodate the sticky welcome message */
+      padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
       background-color: var(--light-bg);
       border-radius: var(--border-radius-lg);
       transition: var(--transition);
       margin-bottom: var(--spacing-md);
-      scroll-behavior: smooth;
       position: relative;
+      scroll-behavior: smooth;
+    }
+    
+    /* Add margin to first message to create space after welcome message */
+    .chat-box > .message:first-of-type {
+      margin-top: var(--spacing-lg);
     }
     
     body.dark-mode .chat-box {
       background: rgba(255, 255, 255, 0.02);
       border-color: var(--dark-border);
+    }
+    
+    /* Add padding after welcome message for better spacing */
+    .chat-box > .message:first-of-type {
+      margin-top: var(--spacing-lg);
     }
     
     /* Chat Input */
@@ -863,11 +874,10 @@
     /* Welcome Message with fixed positioning */
     .welcome-message {
       text-align: center;
-      padding: 30px 0;
+      padding: 20px 0;
       background-color: var(--light-bg);
       border-bottom: 1px solid var(--light-border);
-      margin-bottom: 20px;
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      margin-bottom: 0;
       position: sticky;
       top: 0;
       left: 0;
@@ -885,10 +895,7 @@
     }
     
     .welcome-message.hidden {
-      opacity: 0;
-      transform: translateY(-20px);
-      pointer-events: none;
-      position: absolute;
+      display: none;
     }
     
     .welcome-message h2 {
@@ -1711,7 +1718,7 @@
           <div class="model-dropdown">
             <span class="nav-brand">LegalMind</span>
             <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i>
-          </div>
+        </div>
         </div>
         
         <div class="nav-right">
@@ -1829,15 +1836,15 @@
       </div>
 
       <div class="chat-box" id="chatBox">
-        <div class="welcome-message">
-          <h2>Hi, I'm LegalMind.</h2>
+      <div class="welcome-message">
+        <h2>Hi, I'm LegalMind.</h2>
           <p>Ask me anything about legal documents and concepts.</p>
         </div>
         <button class="scroll-bottom-btn" id="scrollBottomBtn" aria-label="Scroll to bottom">
           <i class="fas fa-chevron-down"></i>
         </button>
       </div>
-      
+
       <div class="chat-input">
         <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
           <i class="fas fa-paperclip"></i>
@@ -2020,62 +2027,50 @@
       setTimeout(updateMobileChats, 100);
     }
 
-    function loadChat(chatId, chatName) {
-      currentChatId = chatId;
-      const chatBox = document.getElementById("chatBox");
-      
-      // Clear chat box while preserving the welcome message
-      const welcomeMessage = document.querySelector('.welcome-message');
-      
-      // On mobile, only show welcome message if there are no messages
-      if (window.innerWidth <= 992) {
+    function loadChat(chatId) {
+        // Set current chat
+        currentChatId = chatId;
+        
+        // Clear chat box
+        const chatBox = document.getElementById("chatBox");
         chatBox.innerHTML = '';
         
-        // Only show welcome message if there are no messages for this chat
-        if (welcomeMessage && (!chats[chatId] || chats[chatId].length === 0)) {
-          const clonedWelcome = welcomeMessage.cloneNode(true);
-          chatBox.appendChild(clonedWelcome);
+        // Always add welcome message
+        const welcomeMessage = document.createElement("div");
+        welcomeMessage.classList.add("welcome-message");
+        welcomeMessage.innerHTML = `
+            <h3>Hello, welcome to the chat!</h3>
+            <p>Start typing below to begin your conversation.</p>
+        `;
+        chatBox.appendChild(welcomeMessage);
+        
+        // Update current chat name
+        document.getElementById("currentChatName").textContent = chats[chatId]?.name || "New Chat";
+        
+        // Load messages for this chat and append them
+        if (chats[chatId] && chats[chatId].messages) {
+            chats[chatId].messages.forEach(msg => {
+                if (msg.type === "text") {
+                    appendMessage(msg.sender, msg.content);
+                } else if (msg.type === "html") {
+                    appendHtmlMessage(msg.sender, msg.content);
+                }
+            });
         }
-      } else {
-        // Desktop behavior - reset welcome message
-        if (welcomeMessage) {
-          welcomeMessage.classList.remove('hidden');
-          chatBox.innerHTML = '';
-          chatBox.appendChild(welcomeMessage);
-        } else {
-          chatBox.innerHTML = '';
-        }
-      }
-      
-      document.getElementById("currentChatName").textContent = chatName;
-
-      // Load messages for this chat
-      if (chats[chatId] && chats[chatId].length > 0) {
-        chats[chatId].forEach(msg => {
-          appendMessage(msg.sender, msg.text);
+        
+        // Set active class for mobile menu
+        const chatItems = document.querySelectorAll(".chat-item");
+        chatItems.forEach(item => {
+            item.classList.remove("active");
+            if (item.getAttribute("data-chat-id") === chatId) {
+                item.classList.add("active");
+            }
         });
         
-        // If there are messages and on mobile, ensure welcome message is gone
-        if (window.innerWidth <= 992) {
-          const currentWelcome = document.querySelector('.welcome-message');
-          if (currentWelcome) {
-            chatBox.removeChild(currentWelcome);
-          }
-        }
-        // If on desktop and there are messages, hide welcome message
-        else if (welcomeMessage && chats[chatId].length > 0) {
-          welcomeMessage.classList.add('hidden');
-        }
-      }
-      
-      // Update active state in mobile menu
-      document.querySelectorAll('.mobile-chat-item').forEach(item => {
-        if (item.getAttribute('data-chat-id') === chatId) {
-          item.classList.add('active');
-        } else {
-          item.classList.remove('active');
-        }
-      });
+        // Simple scroll to bottom
+        setTimeout(() => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 50);
     }
 
     function deleteChat(event, button) {
@@ -2109,69 +2104,41 @@
       setTimeout(updateMobileChats, 100);
     }
 
-    // Append message function
-    function appendMessage(sender, text) {
-      const chatBox = document.getElementById("chatBox");
-      const welcomeMessage = document.querySelector('.welcome-message');
-      
-      const msgDiv = document.createElement("div");
-      msgDiv.textContent = text;
-      msgDiv.classList.add("message", sender);
-      
-      // Special handling for mobile - remove welcome message after first message
-      if (window.innerWidth <= 992 && welcomeMessage) {
-        chatBox.removeChild(welcomeMessage);
-        chatBox.appendChild(msgDiv);
-      } else {
-        // Desktop behavior - hide welcome message when scrolled
-        if (chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
-          chatBox.appendChild(msgDiv);
-        } else {
-          chatBox.appendChild(msgDiv);
-        }
+    // Simplified appendMessage function with basic scroll behavior
+    window.appendMessage = function(sender, text) {
+        const chatBox = document.getElementById('chatBox');
+        if (!chatBox) return;
         
-        // Check scroll position to determine if welcome message should be hidden
-        if (welcomeMessage && (chatBox.scrollTop > 10 || 
-            (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
-          welcomeMessage.classList.add('hidden');
-        }
-      }
-      
-      // Scroll to bottom
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+        const msgDiv = document.createElement("div");
+        msgDiv.textContent = text;
+        msgDiv.classList.add("message", sender);
+        
+        // Simply append the message
+        chatBox.appendChild(msgDiv);
+        
+        // Simple scroll to bottom with a slight delay to ensure render
+        setTimeout(() => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 10);
+    };
     
-    // Function to append HTML messages
-    function appendHtmlMessage(sender, htmlContent) {
-      const chatBox = document.getElementById("chatBox");
-      const welcomeMessage = document.querySelector('.welcome-message');
-      
-      const msgDiv = document.createElement("div");
-      msgDiv.innerHTML = htmlContent;
-      msgDiv.classList.add("message", sender);
-      
-      // Special handling for mobile - remove welcome message after first message
-      if (window.innerWidth <= 992 && welcomeMessage) {
-        chatBox.removeChild(welcomeMessage);
-        chatBox.appendChild(msgDiv);
-      } else {
-        // Desktop behavior - hide welcome message when scrolled
-        if (chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
-          chatBox.appendChild(msgDiv);
-        } else {
-          chatBox.appendChild(msgDiv);
-        }
+    // Simplified appendHtmlMessage function
+    window.appendHtmlMessage = function(sender, htmlContent) {
+        const chatBox = document.getElementById('chatBox');
+        if (!chatBox) return;
         
-        // Check scroll position for welcome message visibility
-        if (welcomeMessage && (chatBox.scrollTop > 10 || 
-            (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
-          welcomeMessage.classList.add('hidden');
-        }
-      }
-      
-      // Scroll to bottom
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+        const msgDiv = document.createElement("div");
+        msgDiv.innerHTML = htmlContent;
+        msgDiv.classList.add("message", sender);
+        
+        // Simply append the message
+        chatBox.appendChild(msgDiv);
+        
+        // Simple scroll to bottom with a slight delay to ensure render
+        setTimeout(() => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 10);
+    };
 
     // Send message function
     function sendMessage() {
@@ -2247,7 +2214,7 @@
         }
       }
     }
-    
+
     function togglePlansDropdown(event) {
       event.preventDefault();
       const dropdown = document.getElementById("plansDropdown");
@@ -2256,7 +2223,7 @@
       // Close other dropdowns
       document.getElementById("modelsDropdown").style.display = "none";
     }
-    
+
     function toggleModelsDropdown(event) {
       event.preventDefault();
       const dropdown = document.getElementById("modelsDropdown");
@@ -2708,12 +2675,12 @@
       const fileType = file.type.split('/')[0];
       
       if (fileType === 'image' || file.name.endsWith('.pdf')) {
-        const reader = new FileReader();
-        reader.onload = function() {
+      const reader = new FileReader();
+      reader.onload = function() {
           const previewContainer = document.createElement('div');
           previewContainer.className = 'file-preview-container';
           
-          if (fileType === 'image') {
+        if (fileType === 'image') {
             const img = document.createElement('img');
             img.src = reader.result;
             img.alt = file.name;
@@ -2749,189 +2716,28 @@
       }
     }
 
-    // Improved scroll handling for chat box - simplified and more reliable
+    // Simple scroll-to-bottom button handler
     document.addEventListener('DOMContentLoaded', function() {
       const chatBox = document.getElementById('chatBox');
       const scrollBottomBtn = document.getElementById('scrollBottomBtn');
       
       if (!chatBox || !scrollBottomBtn) return;
       
-      // Variables to track scroll state
-      let isScrolledToBottom = true;
-      let userScrolledUp = false;
-      
-      // Function to check if scrolled to bottom (with a small threshold)
-      function checkIfScrolledToBottom() {
-        const threshold = 40; // px from bottom to still consider "at bottom"
-        return chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop <= threshold;
-      }
-      
-      // Function to update button visibility
-      function updateScrollButtonVisibility() {
-        if (!isScrolledToBottom && chatBox.scrollHeight > chatBox.clientHeight) {
-          scrollBottomBtn.classList.add('visible');
-        } else {
-          scrollBottomBtn.classList.remove('visible');
-        }
-      }
-      
-      // Function to force scroll to bottom
-      function forceScrollToBottom() {
-        chatBox.scrollTop = chatBox.scrollHeight;
-        isScrolledToBottom = true;
-        updateScrollButtonVisibility();
-      }
-      
-      // Handle scroll events
+      // Simple scroll position check
       chatBox.addEventListener('scroll', function() {
-        isScrolledToBottom = checkIfScrolledToBottom();
+        // Show button when not at bottom (with small threshold)
+        const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
         
-        // Track if user has intentionally scrolled up
-        if (!isScrolledToBottom) {
-          userScrolledUp = true;
+        if (isAtBottom) {
+          scrollBottomBtn.classList.remove('visible');
+        } else {
+          scrollBottomBtn.classList.add('visible');
         }
-        
-        updateScrollButtonVisibility();
       });
       
-      // Click handler for scroll bottom button
+      // Simple click handler
       scrollBottomBtn.addEventListener('click', function() {
-        smoothScrollToBottom();
-        userScrolledUp = false;
-      });
-      
-      // Function to smooth scroll to bottom
-      function smoothScrollToBottom() {
-        const startPosition = chatBox.scrollTop;
-        const targetPosition = chatBox.scrollHeight - chatBox.clientHeight;
-        const distance = targetPosition - startPosition;
-        const duration = 300; // ms
-        let startTime = null;
-        
-        function scrollAnimation(currentTime) {
-          if (!startTime) startTime = currentTime;
-          const elapsed = currentTime - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-          const easeInOutQuad = progress < 0.5
-            ? 2 * progress * progress
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-          
-          chatBox.scrollTop = startPosition + distance * easeInOutQuad;
-          
-          if (elapsed < duration) {
-            requestAnimationFrame(scrollAnimation);
-          } else {
-            chatBox.scrollTop = targetPosition;
-            isScrolledToBottom = true;
-            updateScrollButtonVisibility();
-          }
-        }
-        
-        requestAnimationFrame(scrollAnimation);
-      }
-      
-      // Create a MutationObserver to watch for changes in the chat box
-      const chatObserver = new MutationObserver(function(mutations) {
-        // If we're at the bottom already or user hasn't scrolled up, keep it at the bottom
-        if (isScrolledToBottom || !userScrolledUp) {
-          // Use setTimeout with 0ms to ensure this runs after DOM is updated
-          setTimeout(forceScrollToBottom, 0);
-        }
-      });
-      
-      // Start observing the chat box for changes
-      chatObserver.observe(chatBox, { 
-        childList: true,  // Watch for added/removed nodes
-        subtree: true,    // Watch children too
-        attributes: true  // Watch for attribute changes
-      });
-      
-      // Simplify the appendMessage function
-      window.appendMessage = function(sender, text) {
-        const chatBox = document.getElementById("chatBox");
-        const welcomeMessage = document.querySelector('.welcome-message');
-        
-        const msgDiv = document.createElement("div");
-        msgDiv.textContent = text;
-        msgDiv.classList.add("message", sender);
-        
-        // Special handling for mobile - remove welcome message after first message
-        if (window.innerWidth <= 992 && welcomeMessage && chatBox.contains(welcomeMessage)) {
-          chatBox.removeChild(welcomeMessage);
-        }
-        
-        // Handle welcome message on desktop
-        if (welcomeMessage && chatBox.contains(welcomeMessage) && 
-            chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
-          if ((chatBox.scrollTop > 10 || 
-              (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
-            welcomeMessage.classList.add('hidden');
-          }
-        }
-        
-        // Add the message directly
-        chatBox.appendChild(msgDiv);
-        
-        // Ensure scroll to bottom (MutationObserver will handle this too)
-        setTimeout(function() {
-          if (!userScrolledUp) {
-            forceScrollToBottom();
-          }
-        }, 10);
-      };
-      
-      // Similarly simplify appendHtmlMessage
-      window.appendHtmlMessage = function(sender, htmlContent) {
-        const chatBox = document.getElementById("chatBox");
-        const welcomeMessage = document.querySelector('.welcome-message');
-        
-        const msgDiv = document.createElement("div");
-        msgDiv.innerHTML = htmlContent;
-        msgDiv.classList.add("message", sender);
-        
-        // Special handling for mobile - remove welcome message after first message
-        if (window.innerWidth <= 992 && welcomeMessage && chatBox.contains(welcomeMessage)) {
-          chatBox.removeChild(welcomeMessage);
-        }
-        
-        // Handle welcome message on desktop
-        if (welcomeMessage && chatBox.contains(welcomeMessage) && 
-            chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
-          if ((chatBox.scrollTop > 10 || 
-              (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
-            welcomeMessage.classList.add('hidden');
-          }
-        }
-        
-        // Add the message directly
-        chatBox.appendChild(msgDiv);
-        
-        // Ensure scroll to bottom (MutationObserver will handle this too)
-        setTimeout(function() {
-          if (!userScrolledUp) {
-            forceScrollToBottom();
-          }
-        }, 10);
-      };
-      
-      // Listen for window resize events to maintain scroll position
-      window.addEventListener('resize', function() {
-        if (!userScrolledUp) {
-          forceScrollToBottom();
-        }
-      });
-      
-      // Force scroll to bottom on initial load
-      forceScrollToBottom();
-      
-      // Reset scroll state when changing chats
-      document.addEventListener('click', function(event) {
-        if (event.target.closest('.chat-list li') || event.target.closest('.mobile-chat-item')) {
-          userScrolledUp = false;
-          
-          // Add a slight delay to ensure chat has loaded
-          setTimeout(forceScrollToBottom, 100);
-        }
+        chatBox.scrollTop = chatBox.scrollHeight;
       });
     });
   </script>
