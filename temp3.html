@@ -874,7 +874,7 @@
     /* Welcome Message with fixed positioning */
     .welcome-message {
       text-align: center;
-      padding: 20px 0;
+      padding: 20px;
       background-color: var(--light-bg);
       border-bottom: 1px solid var(--light-border);
       margin-bottom: 0;
@@ -883,10 +883,10 @@
       left: 0;
       right: 0;
       z-index: 5;
-      opacity: 1;
       width: 100%;
       border-top-left-radius: var(--border-radius-lg);
       border-top-right-radius: var(--border-radius-lg);
+      transition: var(--transition);
     }
     
     body.dark-mode .welcome-message {
@@ -979,8 +979,8 @@
       }
       
       .chat-section {
-        height: 60vh; /* Adjusted to accommodate larger sidebar */
-        max-height: calc(100vh - 40vh - 20px);
+        padding: var(--spacing-md);
+        height: 100vh !important;
       }
       
       .nav-links {
@@ -1007,7 +1007,7 @@
       }
       
       .chat-box {
-        max-height: calc(60vh - 180px);
+        max-height: calc(100vh - 140px) !important;
       }
       
       /* Fixed document preview visibility */
@@ -1664,19 +1664,111 @@
       cursor: pointer;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.3s ease, transform 0.3s ease;
+      transform: scale(0.9);
+      transition: opacity 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
       z-index: 10;
       border: none;
     }
-
+    
     .scroll-bottom-btn.visible {
       opacity: 1;
-      transform: translateY(0);
+      transform: scale(1);
     }
-
+    
     .scroll-bottom-btn:hover {
       background-color: var(--primary-hover);
+      transform: scale(1.05);
+    }
+    
+    .scroll-bottom-btn:active {
+      transform: scale(0.95);
+    }
+    
+    /* Mobile-specific adjustments for chat input */
+    @media (max-width: 768px) {
+      .chat-input {
+        display: flex;
+        flex-direction: row;
+        position: relative;
+        margin-top: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+      }
+      
+      .input-container {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        position: relative;
+      }
+      
+      .chat-input input {
+        width: 100%;
+        padding: 12px 40px;
+        border-radius: 24px;
+        font-size: 1rem;
+      }
+      
+      .attach-btn {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: #6c757d;
+        z-index: 2;
+      }
+      
+      #sendBtn {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--primary-color);
+        font-size: 1.2rem;
+        z-index: 2;
+      }
+      
+      /* Ensure chat box fills available space */
+      .chat-box {
+        max-height: calc(100vh - 170px);
+      }
+    }
+    
+    /* Further mobile refinements */
+    @media (max-width: 576px) {
+      .chat-input {
+        margin-top: 6px;
+        margin-bottom: 6px;
+      }
+      
+      .chat-input input {
+        padding: 10px 38px;
+        font-size: 0.95rem;
+      }
+      
+      #sendBtn, .attach-btn {
+        font-size: 1.1rem;
+      }
+    }
+    
+    /* Small mobile screens */
+    @media (max-width: 480px) {
+      .chat-input {
+        margin-top: 4px;
+        margin-bottom: 4px;
+      }
+      
+      .chat-input input {
+        padding: 9px 36px;
+        font-size: 0.9rem;
+      }
+      
+      #sendBtn, .attach-btn {
+        font-size: 1rem;
+      }
     }
   </style>
 </head>
@@ -2039,10 +2131,18 @@
         const welcomeMessage = document.createElement("div");
         welcomeMessage.classList.add("welcome-message");
         welcomeMessage.innerHTML = `
-            <h3>Hello, welcome to the chat!</h3>
-            <p>Start typing below to begin your conversation.</p>
+            <h2>Hi, I'm LegalMind.</h2>
+            <p>Ask me anything about legal documents and concepts.</p>
         `;
         chatBox.appendChild(welcomeMessage);
+        
+        // Add scroll button
+        const scrollBtn = document.createElement("button");
+        scrollBtn.className = "scroll-bottom-btn";
+        scrollBtn.id = "scrollBottomBtn";
+        scrollBtn.setAttribute("aria-label", "Scroll to bottom");
+        scrollBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+        chatBox.appendChild(scrollBtn);
         
         // Update current chat name
         document.getElementById("currentChatName").textContent = chats[chatId]?.name || "New Chat";
@@ -2051,15 +2151,23 @@
         if (chats[chatId] && chats[chatId].messages) {
             chats[chatId].messages.forEach(msg => {
                 if (msg.type === "text") {
-                    appendMessage(msg.sender, msg.content);
+                    // Use a special version that doesn't auto-scroll during loading
+                    const msgDiv = document.createElement("div");
+                    msgDiv.textContent = msg.content;
+                    msgDiv.classList.add("message", msg.sender);
+                    chatBox.appendChild(msgDiv);
                 } else if (msg.type === "html") {
-                    appendHtmlMessage(msg.sender, msg.content);
+                    // Use a special version that doesn't auto-scroll during loading
+                    const msgDiv = document.createElement("div");
+                    msgDiv.innerHTML = msg.content;
+                    msgDiv.classList.add("message", msg.sender);
+                    chatBox.appendChild(msgDiv);
                 }
             });
         }
         
-        // Set active class for mobile menu
-        const chatItems = document.querySelectorAll(".chat-item");
+        // Set active class for chat items
+        const chatItems = document.querySelectorAll(".chat-item, .mobile-chat-item");
         chatItems.forEach(item => {
             item.classList.remove("active");
             if (item.getAttribute("data-chat-id") === chatId) {
@@ -2067,10 +2175,24 @@
             }
         });
         
-        // Simple scroll to bottom
+        // Scroll to bottom after loading content with a small delay to ensure rendering
         setTimeout(() => {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }, 50);
+            chatBox.scrollTo({
+                top: chatBox.scrollHeight,
+                behavior: 'auto' // Use auto for initial load
+            });
+            
+            // Initialize the scroll button (check visibility)
+            const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+            if (scrollBottomBtn) {
+                const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
+                if (isAtBottom) {
+                    scrollBottomBtn.classList.remove('visible');
+                } else {
+                    scrollBottomBtn.classList.add('visible');
+                }
+            }
+        }, 100);
     }
 
     function deleteChat(event, button) {
@@ -2104,7 +2226,7 @@
       setTimeout(updateMobileChats, 100);
     }
 
-    // Simplified appendMessage function with basic scroll behavior
+    // Improved appendMessage function with less intrusive scrolling
     window.appendMessage = function(sender, text) {
         const chatBox = document.getElementById('chatBox');
         if (!chatBox) return;
@@ -2113,16 +2235,34 @@
         msgDiv.textContent = text;
         msgDiv.classList.add("message", sender);
         
-        // Simply append the message
+        // Check if we're at the bottom before adding the message
+        const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
+        
+        // Append the message
         chatBox.appendChild(msgDiv);
         
-        // Simple scroll to bottom with a slight delay to ensure render
-        setTimeout(() => {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }, 10);
+        // Only auto-scroll if we were already at the bottom
+        if (wasAtBottom) {
+            chatBox.scrollTo({
+                top: chatBox.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+        
+        // Store in current chat if available
+        if (currentChatId && chats[currentChatId]) {
+            if (!chats[currentChatId].messages) {
+                chats[currentChatId].messages = [];
+            }
+            chats[currentChatId].messages.push({
+                type: 'text',
+                sender: sender,
+                content: text
+            });
+        }
     };
     
-    // Simplified appendHtmlMessage function
+    // Updated appendHtmlMessage function
     window.appendHtmlMessage = function(sender, htmlContent) {
         const chatBox = document.getElementById('chatBox');
         if (!chatBox) return;
@@ -2131,56 +2271,68 @@
         msgDiv.innerHTML = htmlContent;
         msgDiv.classList.add("message", sender);
         
-        // Simply append the message
+        // Check if we're at the bottom before adding the message
+        const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
+        
+        // Append the message
         chatBox.appendChild(msgDiv);
         
-        // Simple scroll to bottom with a slight delay to ensure render
-        setTimeout(() => {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }, 10);
+        // Only auto-scroll if we were already at the bottom
+        if (wasAtBottom) {
+            chatBox.scrollTo({
+                top: chatBox.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+        
+        // Store in current chat if available
+        if (currentChatId && chats[currentChatId]) {
+            if (!chats[currentChatId].messages) {
+                chats[currentChatId].messages = [];
+            }
+            chats[currentChatId].messages.push({
+                type: 'html',
+                sender: sender,
+                content: htmlContent
+            });
+        }
     };
 
-    // Send message function
+    // Improved send message function
     function sendMessage() {
       const messageInput = document.getElementById("messageInput");
       const userMessageText = messageInput.value.trim();
       
       if (userMessageText && currentChatId) {
-        // Append user's message
-        const userMsg = { sender: "user", text: userMessageText };
-        chats[currentChatId].push(userMsg);
-        appendMessage("user", userMessageText);
+        // Clear input immediately for better UX
         messageInput.value = "";
         
-        // Show loading indicator
-        const loadingMsg = { sender: "bot", text: "Thinking..." };
-        const loadingId = setTimeout(() => {
-          appendMessage("bot", loadingMsg.text);
-          chats[currentChatId].push(loadingMsg);
-        }, 500);
+        // Append user's message
+        appendMessage("user", userMessageText);
         
-        // Simulate a response after 1.5 seconds
-        setTimeout(() => {
-          // Remove the loading message
-          clearTimeout(loadingId);
+        // Show loading indicator with a slight delay
+        const typingIndicator = setTimeout(() => {
+          appendMessage("bot", "Thinking...");
           
-          // Remove the last message if it was "Thinking..."
-          if (chats[currentChatId].length > 0 && 
-              chats[currentChatId][chats[currentChatId].length-1].text === "Thinking...") {
-            chats[currentChatId].pop();
-            const chatBox = document.getElementById("chatBox");
-            if (chatBox.lastChild && chatBox.lastChild.textContent === "Thinking...") {
-              chatBox.removeChild(chatBox.lastChild);
+          // Reference to the thinking message to remove it later
+          const thinkingMsg = document.querySelector(".message.bot:last-child");
+          
+          // Simulate a response after 1-2 seconds
+          setTimeout(() => {
+            // Remove the thinking message if it exists
+            if (thinkingMsg && thinkingMsg.parentNode) {
+              thinkingMsg.parentNode.removeChild(thinkingMsg);
             }
-          }
-          
-          // Add bot response
-          const botResponse = "I understand your request about '" + userMessageText + "'. As a legal assistant, I can help you with documents and legal concepts. What specific information are you looking for?";
-          addBotMessage(botResponse);
-        }, 1500);
+            
+            // Add bot response
+            const botResponse = "I understand your request about '" + userMessageText + "'. As a legal assistant, I can help you with documents and legal concepts. What specific information are you looking for?";
+            appendMessage("bot", botResponse);
+          }, 1000 + Math.random() * 1000); // Random time between 1-2 seconds
+        }, 300);
       } else if (!currentChatId) {
         // If no chat is active, create one and then send
         addNewChat();
+        // Delay sending to ensure chat is created
         setTimeout(() => sendMessage(), 100);
       }
     }
@@ -2543,7 +2695,7 @@
       }
     });
 
-    // Updated previewFile function to handle mobile differently
+    // Updated previewFile function
     function previewFile(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -2565,26 +2717,8 @@
             </div>
           `;
           
-          // Add message to chat
-          const userMsg = { sender: "user", text: `[Uploaded ${file.name}]` };
-          chats[currentChatId].push(userMsg);
-          
           // Create and append the HTML message
-          const chatBox = document.getElementById("chatBox");
-          const welcomeMessage = document.querySelector('.welcome-message');
-          
-          const msgDiv = document.createElement("div");
-          msgDiv.innerHTML = fileMessage;
-          msgDiv.classList.add("message", "user");
-          
-          // Remove welcome message if needed
-          if (welcomeMessage && chatBox.contains(welcomeMessage)) {
-            chatBox.removeChild(welcomeMessage);
-          }
-          
-          // Add message and scroll
-          chatBox.appendChild(msgDiv);
-          chatBox.scrollTop = chatBox.scrollHeight;
+          appendHtmlMessage("user", fileMessage);
         }
         return;
       }
@@ -2675,12 +2809,12 @@
       const fileType = file.type.split('/')[0];
       
       if (fileType === 'image' || file.name.endsWith('.pdf')) {
-      const reader = new FileReader();
-      reader.onload = function() {
+        const reader = new FileReader();
+        reader.onload = function() {
           const previewContainer = document.createElement('div');
           previewContainer.className = 'file-preview-container';
           
-        if (fileType === 'image') {
+          if (fileType === 'image') {
             const img = document.createElement('img');
             img.src = reader.result;
             img.alt = file.name;
@@ -2710,9 +2844,21 @@
       
       // If it's a chat context, add a message about the upload
       if (currentChatId) {
-        const userMsg = { sender: "user", text: `[Uploaded ${file.name}]` };
-        chats[currentChatId].push(userMsg);
-        appendMessage("user", userMsg.text);
+        // Add a file upload message with icon based on file type
+        let fileIcon = 'fa-file';
+        if (file.name.endsWith('.pdf')) fileIcon = 'fa-file-pdf';
+        else if (file.name.endsWith('.txt')) fileIcon = 'fa-file-alt';
+        else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) fileIcon = 'fa-file-word';
+        else if (file.type.startsWith('image/')) fileIcon = 'fa-file-image';
+        
+        const fileMessage = `
+          <div class="file-upload">
+            <i class="fas ${fileIcon}"></i>
+            <span>${file.name}</span>
+          </div>
+        `;
+        
+        appendHtmlMessage("user", fileMessage);
       }
     }
 
@@ -2735,9 +2881,12 @@
         }
       });
       
-      // Simple click handler
+      // Simple click handler for scroll button
       scrollBottomBtn.addEventListener('click', function() {
-        chatBox.scrollTop = chatBox.scrollHeight;
+        chatBox.scrollTo({
+          top: chatBox.scrollHeight,
+          behavior: 'smooth'
+        });
       });
     });
   </script>
