@@ -1640,6 +1640,37 @@
         font-size: 1.2rem;
       }
     }
+
+    /* Scroll to bottom button */
+    .scroll-bottom-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--primary-color);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      z-index: 10;
+      border: none;
+    }
+
+    .scroll-bottom-btn.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .scroll-bottom-btn:hover {
+      background-color: var(--primary-hover);
+    }
   </style>
 </head>
 <body>
@@ -1802,6 +1833,9 @@
           <h2>Hi, I'm LegalMind.</h2>
           <p>Ask me anything about legal documents and concepts.</p>
         </div>
+        <button class="scroll-bottom-btn" id="scrollBottomBtn" aria-label="Scroll to bottom">
+          <i class="fas fa-chevron-down"></i>
+        </button>
       </div>
       
       <div class="chat-input">
@@ -2714,6 +2748,195 @@
         appendMessage("user", userMsg.text);
       }
     }
+
+    // Improved scroll handling for chat box
+    document.addEventListener('DOMContentLoaded', function() {
+      const chatBox = document.getElementById('chatBox');
+      const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+      
+      if (!chatBox || !scrollBottomBtn) return;
+      
+      // Variables to track scroll state
+      let isScrolledToBottom = true;
+      let isScrolling = false;
+      let scrollTimeout;
+      let pendingMessages = [];
+      let isProcessingMessages = false;
+      
+      // Function to check if scrolled to bottom (with a small threshold)
+      function checkIfScrolledToBottom() {
+        const threshold = 30; // px from bottom to still consider "at bottom"
+        return chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop <= threshold;
+      }
+      
+      // Function to update button visibility
+      function updateScrollButtonVisibility() {
+        if (!isScrolledToBottom && chatBox.scrollHeight > chatBox.clientHeight) {
+          scrollBottomBtn.classList.add('visible');
+        } else {
+          scrollBottomBtn.classList.remove('visible');
+        }
+      }
+      
+      // Handle scroll events
+      chatBox.addEventListener('scroll', function() {
+        isScrolledToBottom = checkIfScrolledToBottom();
+        updateScrollButtonVisibility();
+        
+        // Reset scroll timeout
+        clearTimeout(scrollTimeout);
+        isScrolling = true;
+        
+        // Set a timeout to detect when scrolling stops
+        scrollTimeout = setTimeout(function() {
+          isScrolling = false;
+          
+          // Process any pending messages once scrolling stops
+          if (pendingMessages.length > 0) {
+            processPendingMessages();
+          }
+        }, 100);
+      });
+      
+      // Click handler for scroll bottom button
+      scrollBottomBtn.addEventListener('click', function() {
+        smoothScrollToBottom();
+      });
+      
+      // Function to smooth scroll to bottom
+      function smoothScrollToBottom() {
+        const startPosition = chatBox.scrollTop;
+        const targetPosition = chatBox.scrollHeight - chatBox.clientHeight;
+        const distance = targetPosition - startPosition;
+        const duration = 300; // ms
+        let startTime = null;
+        
+        function scrollAnimation(currentTime) {
+          if (!startTime) startTime = currentTime;
+          const elapsed = currentTime - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const easeInOutQuad = progress < 0.5
+            ? 2 * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+          
+          chatBox.scrollTop = startPosition + distance * easeInOutQuad;
+          
+          if (elapsed < duration) {
+            requestAnimationFrame(scrollAnimation);
+          } else {
+            chatBox.scrollTop = targetPosition;
+            isScrolledToBottom = true;
+            updateScrollButtonVisibility();
+          }
+        }
+        
+        requestAnimationFrame(scrollAnimation);
+      }
+      
+      // Function to process pending messages with better timing
+      function processPendingMessages() {
+        if (isProcessingMessages || pendingMessages.length === 0) return;
+        
+        isProcessingMessages = true;
+        
+        // Use requestAnimationFrame to ensure DOM has updated
+        requestAnimationFrame(() => {
+          const msg = pendingMessages.shift();
+          const { msgDiv } = msg;
+          
+          chatBox.appendChild(msgDiv);
+          
+          // Wait for the message to render before scrolling
+          requestAnimationFrame(() => {
+            if (isScrolledToBottom || msg.forceScroll) {
+              chatBox.scrollTop = chatBox.scrollHeight;
+              isScrolledToBottom = true;
+            }
+            
+            // Process next message if any
+            isProcessingMessages = false;
+            if (pendingMessages.length > 0) {
+              processPendingMessages();
+            }
+          });
+        });
+      }
+      
+      // Override the appendMessage function for better behavior
+      window.appendMessage = function(sender, text, forceScroll = false) {
+        const welcomeMessage = document.querySelector('.welcome-message');
+        
+        const msgDiv = document.createElement("div");
+        msgDiv.textContent = text;
+        msgDiv.classList.add("message", sender);
+        
+        // Special handling for mobile - remove welcome message after first message
+        if (window.innerWidth <= 992 && welcomeMessage && chatBox.contains(welcomeMessage)) {
+          chatBox.removeChild(welcomeMessage);
+          
+          // Append and force scroll for the first message
+          pendingMessages.push({ msgDiv, forceScroll: true });
+          if (!isProcessingMessages && !isScrolling) {
+            processPendingMessages();
+          }
+        } else {
+          // Desktop behavior - handle welcome message
+          if (welcomeMessage && chatBox.contains(welcomeMessage) && 
+              chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
+            // First message after welcome
+            if ((chatBox.scrollTop > 10 || 
+                (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
+              welcomeMessage.classList.add('hidden');
+            }
+          }
+          
+          // Add message to processing queue
+          pendingMessages.push({ msgDiv, forceScroll: forceScroll || isScrolledToBottom });
+          if (!isProcessingMessages && !isScrolling) {
+            processPendingMessages();
+          }
+        }
+      };
+      
+      // Similarly override appendHtmlMessage for consistency
+      window.appendHtmlMessage = function(sender, htmlContent, forceScroll = false) {
+        const welcomeMessage = document.querySelector('.welcome-message');
+        
+        const msgDiv = document.createElement("div");
+        msgDiv.innerHTML = htmlContent;
+        msgDiv.classList.add("message", sender);
+        
+        // Special handling for mobile - remove welcome message after first message
+        if (window.innerWidth <= 992 && welcomeMessage && chatBox.contains(welcomeMessage)) {
+          chatBox.removeChild(welcomeMessage);
+          
+          // Append and force scroll for the first message
+          pendingMessages.push({ msgDiv, forceScroll: true });
+          if (!isProcessingMessages && !isScrolling) {
+            processPendingMessages();
+          }
+        } else {
+          // Desktop behavior - handle welcome message
+          if (welcomeMessage && chatBox.contains(welcomeMessage) && 
+              chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
+            // First message after welcome
+            if ((chatBox.scrollTop > 10 || 
+                (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
+              welcomeMessage.classList.add('hidden');
+            }
+          }
+          
+          // Add message to processing queue
+          pendingMessages.push({ msgDiv, forceScroll: forceScroll || isScrolledToBottom });
+          if (!isProcessingMessages && !isScrolling) {
+            processPendingMessages();
+          }
+        }
+      };
+      
+      // Initial check for scroll button visibility
+      updateScrollButtonVisibility();
+    });
   </script>
 </body>
 </html>
