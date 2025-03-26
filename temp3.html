@@ -332,6 +332,8 @@
       background-color: var(--light-surface);
       transition: var(--transition);
       position: relative;
+      height: 100vh;
+      overflow: hidden;
     }
     
     body.dark-mode .chat-section {
@@ -349,6 +351,8 @@
       margin-bottom: var(--spacing-md);
       border-radius: var(--border-radius-md);
       transition: var(--transition);
+      position: relative;
+      z-index: 10;
     }
     
     body.dark-mode .chat-nav {
@@ -367,10 +371,20 @@
       display: none;
       background: none;
       border: none;
-      font-size: 1.2rem;
       color: var(--light-text);
+      font-size: 1.2rem;
       cursor: pointer;
-      padding: 5px;
+      padding: 8px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .menu-toggle:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    body.dark-mode .menu-toggle:hover {
+      background-color: rgba(255, 255, 255, 0.1);
     }
     
     body.dark-mode .menu-toggle {
@@ -898,23 +912,54 @@
       }
       
       .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 990;
+        background-color: var(--light-surface);
+        display: none;
+        flex-direction: column;
         width: 100%;
-        height: auto;
-        max-height: 40vh; /* Increased to show documents */
+        height: 100vh;
         overflow-y: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--light-border);
-        transition: max-height 0.3s ease;
-        padding: 12px 10px 0;
-      }
-      
-      .sidebar.collapsed {
-        max-height: 60px;
-        overflow: hidden;
+        padding: 15px;
       }
       
       body.dark-mode .sidebar {
-        border-bottom: 1px solid var(--dark-border);
+        background-color: var(--dark-surface);
+      }
+      
+      .sidebar .chat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .sidebar .chat-header:after {
+        content: "\f00d";
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: var(--light-text);
+      }
+      
+      body.dark-mode .sidebar .chat-header:after {
+        color: var(--dark-text);
+      }
+      
+      .documents-preview {
+        margin-top: 15px;
+        flex: 1;
+        max-height: none;
+      }
+      
+      #documentPreviews {
+        max-height: none;
+        flex: 1;
+        overflow-y: auto;
       }
       
       .chat-section {
@@ -1157,131 +1202,115 @@
     }
 
     /* Mobile menu improved */
-    .menu-toggle {
-      display: none;
-    }
-
     .mobile-menu {
-      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100vh;
+      background-color: var(--light-surface);
+      z-index: 999;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      box-shadow: var(--dark-box-shadow);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
     }
-
-    @media (max-width: 992px) {
-      .menu-toggle {
-        display: block;
-      }
-      
-      .mobile-menu {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.8);
-        z-index: 999;
-        display: none;
-        align-items: center;
-        justify-content: center;
-      }
-      
-      .mobile-menu.active {
-        display: flex;
-      }
-      
-      .mobile-menu-content {
-        position: relative;
-        padding: 50px 20px 20px;
-        height: 100%;
-        overflow-y: auto;
-        /* Comment: All duplicate menu items have been removed */
-      }
-      
-      body.dark-mode .mobile-menu-content {
-        background-color: var(--dark-surface);
-      }
-      
-      .mobile-menu-close {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        font-size: 1.5rem;
-        color: var(--light-text);
-        background: none;
-        border: none;
-        cursor: pointer;
-        z-index: 1000;
-      }
-      
-      body.dark-mode .mobile-menu-close {
-        color: var(--dark-text);
-      }
+    
+    body.dark-mode .mobile-menu {
+      background-color: var(--dark-surface);
     }
-
-    /* Completely hide the sidebar-toggle button */
-    .sidebar-toggle {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      position: absolute !important;
-      pointer-events: none !important;
+    
+    .mobile-menu.active {
+      transform: translateX(0);
     }
-
-    /* Ensure the documents-toggle button is always visible and properly positioned */
-    .documents-toggle {
-      display: flex !important;
-      visibility: visible !important;
-      opacity: 1 !important;
+    
+    .mobile-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
-      height: 30px;
-      align-items: center;
-      justify-content: center;
-      background: var(--light-bg);
-      border: none;
-      border-top: 1px solid var(--light-border);
-      color: var(--light-text);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: sticky;
-      bottom: 0;
-      z-index: 10;
-      margin-top: 5px;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 998;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease;
     }
-
-    body.dark-mode .documents-toggle {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--dark-text);
+    
+    .mobile-menu-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .mobile-menu-header {
+      padding: var(--spacing-lg);
+      border-bottom: 1px solid var(--light-border);
+    }
+    
+    body.dark-mode .mobile-menu-header {
       border-color: var(--dark-border);
     }
-
-    .documents-toggle:hover {
-      background-color: rgba(0, 123, 255, 0.1);
+    
+    .mobile-menu-content {
+      padding: var(--spacing-md);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-sm);
     }
 
-    body.dark-mode .documents-toggle:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-
-    .documents-preview.collapsed {
-      max-height: 40px;
+    .chat-section {
+      flex: 1;
+      padding: var(--spacing-lg);
+      display: flex;
+      flex-direction: column;
+      background-color: var(--light-surface);
+      transition: var(--transition);
+      position: relative;
+      height: 100vh;
       overflow: hidden;
     }
-
-    .documents-preview.collapsed #documentPreviews {
-      display: none;
+    
+    /* Navigation Bar */
+    .chat-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--light-bg);
+      padding: var(--spacing-md) var(--spacing-lg);
+      box-shadow: var(--box-shadow);
+      margin-bottom: var(--spacing-md);
+      border-radius: var(--border-radius-md);
+      transition: var(--transition);
+      position: relative;
+      z-index: 10;
     }
 
-    .empty-preview-message {
-      text-align: center;
-      color: var(--text-color-muted);
-      font-size: 0.9rem;
-      padding: 15px 10px;
-      border: 1px dashed var(--border-color);
-      border-radius: var(--border-radius);
-      margin: 10px 0;
-      background-color: rgba(0,0,0,0.03);
+    @media (max-width: 768px) {
+      .chat-section {
+        padding: var(--spacing-md) var(--spacing-md);
+      }
+      
+      .chat-nav {
+        padding: var(--spacing-sm) var(--spacing-md);
+        margin-bottom: var(--spacing-sm);
+      }
+      
+      .chat-box {
+        padding: var(--spacing-md);
+      }
     }
 
-    body.dark-mode .empty-preview-message {
-      background-color: rgba(255,255,255,0.05);
+    @media (max-width: 576px) {
+      .chat-section {
+        padding: var(--spacing-sm);
+      }
+      
+      .chat-nav {
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+      }
     }
 
     /* Style for mobile menu button */
@@ -1300,52 +1329,131 @@
       align-items: center;
       gap: var(--spacing-md);
     }
-
+    
     body.dark-mode .mobile-menu-btn {
       color: var(--dark-text);
     }
-
+    
     .mobile-menu-btn:hover {
       background-color: rgba(0, 123, 255, 0.1);
     }
-
+    
     .mobile-menu-btn.new-chat-btn {
       background: var(--primary-color);
       color: white;
       font-weight: 500;
       margin-bottom: var(--spacing-md);
     }
-
+    
     .mobile-menu-btn.new-chat-btn:hover {
       background: var(--primary-hover);
     }
-
-    .mobile-menu-header {
-      padding-bottom: var(--spacing-lg);
-      border-bottom: 1px solid var(--light-border);
-      margin-bottom: var(--spacing-lg);
+    
+    /* Mobile menu section headers */
+    .mobile-section-header {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #6c757d;
+      padding: var(--spacing-sm) var(--spacing-lg);
+      margin-top: var(--spacing-md);
     }
-
-    body.dark-mode .mobile-menu-header {
-      border-color: var(--dark-border);
+    
+    body.dark-mode .mobile-section-header {
+      color: #adb5bd;
     }
-
+    
+    /* Chat history items in mobile menu */
+    .mobile-chat-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-lg);
+      border-radius: var(--border-radius-md);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.9rem;
+    }
+    
+    .mobile-chat-item:hover {
+      background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    .mobile-chat-item.active {
+      background-color: rgba(0, 123, 255, 0.2);
+    }
+    
+    body.dark-mode .mobile-chat-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    body.dark-mode .mobile-chat-item.active {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Add new responsive menu behavior */
     @media (max-width: 992px) {
-      .mobile-menu {
-        padding: var(--spacing-lg) var(--spacing-md);
+      .menu-toggle {
+        display: block;
       }
       
-      .mobile-menu-content {
-        padding-top: var(--spacing-md);
+      .nav-left {
+        gap: var(--spacing-sm);
       }
       
-      .mobile-menu-btn i {
-        width: 20px;
-        text-align: center;
+      .dashboard {
+        height: 100vh;
+        overflow: hidden;
       }
       
-      .mobile-menu-btn span {
-        font-weight: 500;
+      .sidebar {
+        display: none;
+      }
+      
+      .mobile-menu-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-md);
+      }
+      
+      .mobile-menu-header h1 {
+        font-size: 1.5rem;
+        margin: 0;
+        background: linear-gradient(90deg, var(--primary-color), #6b47fb);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+    }
+
+    /* Model dropdown styling */
+    .model-dropdown {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    @media (max-width: 480px) {
+      .chat-section {
+        padding: 10px;
+      }
+      
+      .chat-nav {
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      
+      .menu-toggle {
+        padding: 5px;
+        font-size: 1.1rem;
+      }
+      
+      .nav-brand {
+        font-size: 1rem;
+      }
+      
+      .model-dropdown i {
+        font-size: 0.7rem !important;
       }
     }
   </style>
@@ -1382,10 +1490,13 @@
       <!-- Navigation Bar -->
       <div class="chat-nav">
         <div class="nav-left">
-          <button class="menu-toggle" id="mobileMenuToggle">
+          <button class="menu-toggle" id="mobileMenuToggle" aria-label="Open menu">
             <i class="fas fa-bars"></i>
           </button>
-          <span class="nav-brand">LegalMind.Space</span>
+          <div class="model-dropdown">
+            <span class="nav-brand">LegalMind</span>
+            <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i>
+          </div>
         </div>
         
         <div class="nav-right">
@@ -1471,14 +1582,27 @@
       <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
       <div class="mobile-menu" id="mobileMenu">
         <div class="mobile-menu-header">
-          <h1><i class="fas fa-scale-balanced"></i> LegalMind</h1>
+          <img src="https://ui-avatars.com/api/?name=Legal&background=0D8ABC&color=fff" width="30" height="30" alt="Logo" style="border-radius: 50%;">
+          <h1>LegalMind</h1>
         </div>
         <div class="mobile-menu-content">
           <button class="mobile-menu-btn new-chat-btn" onclick="addNewChat(); closeMobileMenu();">
             <i class="fas fa-plus"></i>
             <span>New chat</span>
           </button>
-          <button class="mobile-menu-btn" onclick="toggleDocumentPreview()">
+          
+          <div class="mobile-section-header">Today</div>
+          <div id="mobileTodayChats">
+            <!-- Today's chats will be populated here -->
+          </div>
+          
+          <div class="mobile-section-header">Previous days</div>
+          <div id="mobilePreviousChats">
+            <!-- Previous chats will be populated here -->
+          </div>
+          
+          <div class="mobile-section-header">Features</div>
+          <button class="mobile-menu-btn" onclick="toggleDocumentPreview(); closeMobileMenu();">
             <i class="fas fa-file-alt"></i>
             <span>Document Preview</span>
           </button>
@@ -1538,6 +1662,7 @@
       document.getElementById('mobileMenuToggle').addEventListener('click', function() {
         document.getElementById('mobileMenu').classList.add('active');
         document.getElementById('mobileMenuOverlay').classList.add('active');
+        updateMobileChats();
       });
       
       document.getElementById('mobileMenuOverlay').addEventListener('click', closeMobileMenu);
@@ -1670,6 +1795,9 @@
       if (sidebar.classList.contains('collapsed')) {
         sidebar.classList.remove('collapsed');
       }
+      
+      // Update mobile menu after adding new chat
+      setTimeout(updateMobileChats, 100);
     }
 
     function loadChat(chatId, chatName) {
@@ -1702,6 +1830,15 @@
           welcomeMessage.classList.add('hidden');
         }
       }
+      
+      // Update active state in mobile menu
+      document.querySelectorAll('.mobile-chat-item').forEach(item => {
+        if (item.getAttribute('data-chat-id') === chatId) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
     }
 
     function deleteChat(event, button) {
@@ -1730,6 +1867,9 @@
         
         document.getElementById("currentChatName").textContent = "None";
       }
+      
+      // Update mobile menu after deleting chat
+      setTimeout(updateMobileChats, 100);
     }
 
     function appendMessage(sender, text) {
@@ -2119,27 +2259,138 @@
     }
 
     function toggleDocumentPreview() {
+      // For simplicity in mobile version, just toggle sidebar visibility
       const sidebar = document.querySelector('.sidebar');
-      const documentsPreview = document.querySelector('.documents-preview');
       
-      if (sidebar.classList.contains('collapsed')) {
-        sidebar.classList.remove('collapsed');
-        if (documentsPreview) {
-          documentsPreview.style.display = 'flex';
-          const documentPreviews = document.getElementById('documentPreviews');
-          if (documentPreviews) {
-            documentPreviews.style.display = 'block';
+      if (window.innerWidth <= 992) {
+        // On mobile, show the sidebar which contains document preview
+        if (sidebar.style.display === 'none' || sidebar.style.display === '') {
+          sidebar.style.display = 'flex';
+          sidebar.classList.remove('collapsed');
+          
+          // Make sure documents preview is visible
+          const documentsPreview = document.querySelector('.documents-preview');
+          if (documentsPreview) {
+            documentsPreview.style.display = 'flex';
+            const documentPreviews = document.getElementById('documentPreviews');
+            if (documentPreviews) {
+              documentPreviews.style.display = 'block';
+            }
           }
+        } else {
+          sidebar.style.display = 'none';
         }
       } else {
-        sidebar.classList.add('collapsed');
-        if (documentsPreview) {
-          documentsPreview.style.display = 'none';
+        // On desktop, toggle collapsed state
+        sidebar.classList.toggle('collapsed');
+        
+        if (sidebar.classList.contains('collapsed')) {
+          const documentsPreview = document.querySelector('.documents-preview');
+          if (documentsPreview) {
+            documentsPreview.style.display = 'none';
+          }
+        } else {
+          const documentsPreview = document.querySelector('.documents-preview');
+          if (documentsPreview) {
+            documentsPreview.style.display = 'flex';
+            const documentPreviews = document.getElementById('documentPreviews');
+            if (documentPreviews) {
+              documentPreviews.style.display = 'block';
+            }
+          }
         }
       }
       
       closeMobileMenu();
     }
+
+    // Function to update mobile chats list
+    function updateMobileChats() {
+      const todayContainer = document.getElementById('mobileTodayChats');
+      const previousContainer = document.getElementById('mobilePreviousChats');
+      
+      // Clear containers
+      todayContainer.innerHTML = '';
+      previousContainer.innerHTML = '';
+      
+      // Get all chats from the sidebar chat list
+      const chatList = document.getElementById('chatList');
+      const chatItems = chatList.querySelectorAll('li');
+      
+      if (chatItems.length === 0) {
+        // Add empty state message
+        todayContainer.innerHTML = '<div class="mobile-chat-item">No recent chats</div>';
+        return;
+      }
+      
+      // For demo, we'll add all chats to "Today" section
+      // In a real app, you would separate by date
+      chatItems.forEach((item, index) => {
+        const chatId = item.getAttribute('data-chat-id');
+        const chatName = item.querySelector('span').textContent;
+        const isActive = item.classList.contains('active');
+        
+        const mobileItem = document.createElement('div');
+        mobileItem.className = 'mobile-chat-item' + (isActive ? ' active' : '');
+        mobileItem.setAttribute('data-chat-id', chatId);
+        mobileItem.innerHTML = `<i class="fas fa-message"></i><span>${chatName}</span>`;
+        
+        mobileItem.addEventListener('click', function() {
+          // Remove active class from all mobile chat items
+          document.querySelectorAll('.mobile-chat-item').forEach(item => {
+            item.classList.remove('active');
+          });
+          
+          // Add active class to clicked item
+          this.classList.add('active');
+          
+          // Update main chat list
+          const chatItem = document.querySelector(`#chatList li[data-chat-id="${chatId}"]`);
+          if (chatItem) {
+            document.querySelectorAll('#chatList li').forEach(item => {
+              item.classList.remove('active');
+            });
+            chatItem.classList.add('active');
+          }
+          
+          // Load the chat
+          loadChat(chatId, chatName);
+          
+          // Close mobile menu
+          closeMobileMenu();
+        });
+        
+        // Add to appropriate container based on index (just for demo)
+        if (index < 2) {
+          todayContainer.appendChild(mobileItem);
+        } else {
+          previousContainer.appendChild(mobileItem);
+        }
+      });
+      
+      // If no previous chats, add empty state
+      if (previousContainer.children.length === 0) {
+        previousContainer.innerHTML = '<div class="mobile-chat-item" style="opacity:0.6">No previous chats</div>';
+      }
+    }
+
+    // Add event listener to close sidebar
+    document.addEventListener('DOMContentLoaded', function() {
+      const sidebarHeader = document.querySelector('.sidebar .chat-header');
+      
+      if (sidebarHeader) {
+        sidebarHeader.addEventListener('click', function(e) {
+          // Check if clicked on the X icon (after pseudo-element)
+          const rect = sidebarHeader.getBoundingClientRect();
+          const isClickAfter = e.clientX > rect.x + rect.width - 30;
+          
+          if (isClickAfter && window.innerWidth <= 992) {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.style.display = 'none';
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>
