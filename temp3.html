@@ -1771,31 +1771,36 @@
       }
     }
 
-    /* Enhanced mobile chat input styling */
+    /* Mobile-specific adjustments for chat input */
     @media (max-width: 992px) {
       .chat-section {
         position: relative;
         display: flex;
         flex-direction: column;
-        height: 100vh !important;
-        max-height: 100vh !important;
+        height: fit-content !important;
+        min-height: 100vh;
         padding-bottom: 80px !important; /* Space for input */
       }
       
       .chat-box {
         flex: 1;
-        max-height: calc(100vh - 140px) !important;
+        height: calc(100vh - 180px) !important;
         margin-bottom: 5px;
       }
       
       .chat-input {
-        position: absolute;
+        position: fixed;
         bottom: 10px;
         left: 0;
         right: 0;
         padding: 0 15px;
         margin: 0;
         z-index: 20;
+        background: var(--light-surface);
+      }
+      
+      body.dark-mode .chat-input {
+        background: var(--dark-surface);
       }
       
       .input-container {
@@ -1808,6 +1813,7 @@
         align-items: center;
         border: 1px solid var(--light-border);
         transition: all 0.3s ease;
+        position: relative;
       }
       
       body.dark-mode .input-container {
@@ -1816,53 +1822,60 @@
         box-shadow: 0 2px 15px rgba(0,0,0,0.2);
       }
       
+      .attach-btn {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        margin: 0;
+      }
+      
       .chat-input input {
         height: 50px;
         font-size: 16px;
         padding: 12px 50px;
         border: none;
         background: transparent;
+        width: 100%;
+      }
+    }
+
+    /* Additional mobile refinements */
+    @media (max-width: 576px) {
+      .chat-section {
+        height: fit-content !important;
+        min-height: 100vh;
       }
       
-      .chat-input input:focus {
-        box-shadow: none;
-        outline: none;
-        border: none;
+      .chat-box {
+        height: calc(100vh - 160px) !important;
       }
       
       .attach-btn {
-        position: absolute;
-        left: 25px;
-        font-size: 18px;
-        transform: scale(1);
-        transition: transform 0.2s ease;
+        width: 35px;
+        height: 35px;
+      }
+    }
+
+    /* Small mobile screens */
+    @media (max-width: 480px) {
+      .chat-section {
+        padding: var(--spacing-sm);
       }
       
-      .attach-btn:active {
-        transform: scale(0.9);
+      .chat-box {
+        height: calc(100vh - 150px) !important;
       }
       
-      #sendBtn {
-        position: absolute;
-        right: 15px;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background-color: var(--primary-color);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-        transform: scale(1) translateY(-50%);
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      }
-      
-      #sendBtn:active {
-        transform: scale(0.9) translateY(-50%);
-      }
-      
-      #sendBtn i {
-        color: white;
+      .attach-btn {
+        width: 32px;
+        height: 32px;
       }
     }
 
@@ -2404,10 +2417,10 @@
 
     function loadChat(chatId) {
         // Set current chat
-        currentChatId = chatId;
+      currentChatId = chatId;
         
         // Clear chat box
-        const chatBox = document.getElementById("chatBox");
+      const chatBox = document.getElementById("chatBox");
         chatBox.innerHTML = '';
         
         // Always add welcome message
@@ -2435,10 +2448,10 @@
             chats[chatId].messages.forEach(msg => {
                 if (msg.type === "text") {
                     // Use a special version that doesn't auto-scroll during loading
-                    const msgDiv = document.createElement("div");
+          const msgDiv = document.createElement("div");
                     msgDiv.textContent = msg.content;
                     msgDiv.classList.add("message", msg.sender);
-                    chatBox.appendChild(msgDiv);
+          chatBox.appendChild(msgDiv);
                 } else if (msg.type === "html") {
                     // Use a special version that doesn't auto-scroll during loading
                     const msgDiv = document.createElement("div");
@@ -3074,14 +3087,14 @@
       fileNameContainer.appendChild(fileName);
       
       // Create delete button
-      const closeBtn = document.createElement("button");
+        const closeBtn = document.createElement("button");
       closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-      closeBtn.classList.add("delete-file");
+        closeBtn.classList.add("delete-file");
       closeBtn.setAttribute('aria-label', 'Remove file');
       
       closeBtn.addEventListener("click", function(e) {
         e.stopPropagation();
-        filePreview.removeChild(fileItem);
+          filePreview.removeChild(fileItem);
         
         // If no more files, show welcome message
         if (filePreview.children.length === 0) {
@@ -3125,8 +3138,8 @@
           
           fileItem.appendChild(previewContainer);
         };
-        reader.readAsDataURL(file);
-      }
+      reader.readAsDataURL(file);
+    }
       
       filePreview.appendChild(fileItem);
       
