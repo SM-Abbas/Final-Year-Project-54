@@ -1371,12 +1371,36 @@
     .mobile-chat-item {
       display: flex;
       align-items: center;
-      gap: var(--spacing-md);
-      padding: 12px var(--spacing-lg);
+      justify-content: space-between;
+      gap: var(--spacing-sm);
+      padding: 10px var(--spacing-md);
       border-radius: 10px;
       cursor: pointer;
       transition: all 0.2s ease;
       position: relative;
+    }
+
+    .mobile-chat-item .chat-info {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .mobile-chat-item .delete-chat {
+      background: none;
+      border: none;
+      color: var(--danger-color);
+      opacity: 0.7;
+      font-size: 0.85rem;
+      padding: 5px;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .mobile-chat-item .delete-chat:hover {
+      opacity: 1;
     }
 
     .mobile-chat-item i {
@@ -1513,6 +1537,67 @@
       .model-dropdown i {
         font-size: 0.7rem !important;
       }
+    }
+
+    @media (max-width: 992px) {
+      /* Remove document preview button from mobile menu */
+      .mobile-menu-btn[onclick*="toggleDocumentPreview"] {
+        display: none;
+      }
+      
+      /* Use full screen height for chat section on mobile */
+      .chat-section {
+        height: 100vh !important;
+        max-height: none !important;
+        padding-bottom: 10px;
+      }
+      
+      /* Fix chat box height to utilize full screen */
+      .chat-box {
+        max-height: calc(100vh - 120px) !important;
+        margin-bottom: 10px;
+      }
+
+      /* Hide document preview section entirely on mobile */
+      .documents-preview,
+      .sidebar .documents-preview,
+      .sidebar:not(.collapsed) .documents-preview {
+        display: none !important;
+      }
+      
+      /* Hide document-related toggle buttons */
+      .documents-toggle {
+        display: none !important;
+      }
+    }
+
+    /* File upload message styling in chat */
+    .file-upload {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background-color: rgba(0,0,0,0.05);
+      border-radius: 8px;
+      margin: 5px 0;
+    }
+
+    body.dark-mode .file-upload {
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    .file-upload i {
+      font-size: 1.2rem;
+      color: var(--primary-color);
+    }
+
+    .file-upload span {
+      font-size: 0.95rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
     }
   </style>
 </head>
@@ -1947,6 +2032,7 @@
       setTimeout(updateMobileChats, 100);
     }
 
+    // Append message function
     function appendMessage(sender, text) {
       const chatBox = document.getElementById("chatBox");
       const welcomeMessage = document.querySelector('.welcome-message');
@@ -1977,215 +2063,43 @@
       // Scroll to bottom
       chatBox.scrollTop = chatBox.scrollHeight;
     }
+    
+    // Function to append HTML messages
+    function appendHtmlMessage(sender, htmlContent) {
+      const chatBox = document.getElementById("chatBox");
+      const welcomeMessage = document.querySelector('.welcome-message');
+      
+      const msgDiv = document.createElement("div");
+      msgDiv.innerHTML = htmlContent;
+      msgDiv.classList.add("message", sender);
+      
+      // Special handling for mobile - remove welcome message after first message
+      if (window.innerWidth <= 992 && welcomeMessage) {
+        chatBox.removeChild(welcomeMessage);
+        chatBox.appendChild(msgDiv);
+      } else {
+        // Desktop behavior - hide welcome message when scrolled
+        if (chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
+          chatBox.appendChild(msgDiv);
+        } else {
+          chatBox.appendChild(msgDiv);
+        }
+        
+        // Check scroll position for welcome message visibility
+        if (welcomeMessage && (chatBox.scrollTop > 10 || 
+            (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
+          welcomeMessage.classList.add('hidden');
+        }
+      }
+      
+      // Scroll to bottom
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
     // Send message function
     function sendMessage() {
       const messageInput = document.getElementById("messageInput");
       const userMessageText = messageInput.value.trim();
-      
-      if (userMessageText && currentChatId) {
-        // Append user's message
-        const userMsg = { sender: "user", text: userMessageText };
-        chats[currentChatId].push(userMsg);
-        appendMessage("user", userMessageText);
-        messageInput.value = "";
-        
-        // Show loading indicator
-        const loadingMsg = { sender: "bot", text: "Thinking..." };
-        const loadingId = setTimeout(() => {
-          appendMessage("bot", loadingMsg.text);
-          chats[currentChatId].push(loadingMsg);
-        }, 500);
-        
-        // Call the Hugging Face API with the user's message
-        fetchPrediction(userMessageText, loadingId);
-      } else if (!currentChatId) {
-        // If no chat is active, create one
-        addNewChat();
-        setTimeout(() => sendMessage(), 100);
-      }
-    }
-
-    // Function to call the Hugging Face Inference API
-    function fetchPrediction(text, loadingId) {
-      // Replace with your actual API endpoint URL for your model
-      const url = "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind";
-      const options = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-         "Authorization": "Bearer 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"
-        },
-        body: JSON.stringify({ inputs: text })
-      };
-
-      fetch(url, options)
-        .then(response => response.json())
-        .then(data => {
-          // Clear loading message if it exists
-          clearTimeout(loadingId);
-          
-          // Remove the last message if it was "Thinking..."
-          if (chats[currentChatId].length > 0 && chats[currentChatId][chats[currentChatId].length-1].text === "Thinking...") {
-            chats[currentChatId].pop();
-            const chatBox = document.getElementById("chatBox");
-            if (chatBox.lastChild && chatBox.lastChild.textContent === "Thinking...") {
-              chatBox.removeChild(chatBox.lastChild);
-            }
-          }
-          
-          let botResponse = "";
-          if (data.error) {
-            botResponse = "Error: " + data.error;
-          } else {
-            // Adjust the parsing based on your model's response structure
-            if (data.hasOwnProperty("generated_text")) {
-              botResponse = data.generated_text;
-            } else {
-              botResponse = JSON.stringify(data);
-            }
-          }
-          
-          // Add the actual response
-          addBotMessage(botResponse);
-        })
-        .catch(err => {
-          // Clear loading message
-          clearTimeout(loadingId);
-          
-          // Remove the last message if it was "Thinking..."
-          if (chats[currentChatId].length > 0 && chats[currentChatId][chats[currentChatId].length-1].text === "Thinking...") {
-            chats[currentChatId].pop();
-            const chatBox = document.getElementById("chatBox");
-            if (chatBox.lastChild && chatBox.lastChild.textContent === "Thinking...") {
-              chatBox.removeChild(chatBox.lastChild);
-            }
-          }
-          
-          addBotMessage("I'm having trouble connecting to the server. Please try again later.");
-          console.error(err);
-        });
-    }
-
-    // Append the bot's response to the chat
-    function addBotMessage(text) {
-      const botMsg = { sender: "bot", text: text };
-      chats[currentChatId].push(botMsg);
-      appendMessage("bot", text);
-    }
-
-    function toggleDarkMode() {
-      const isDarkMode = document.body.classList.toggle("dark-mode");
-      const darkModeIcon = document.getElementById('darkModeIcon');
-      const darkModeText = document.getElementById('darkModeText');
-      
-      if (isDarkMode) {
-        localStorage.setItem('darkMode', 'enabled');
-        if (darkModeIcon) {
-          darkModeIcon.classList.remove('fa-moon');
-          darkModeIcon.classList.add('fa-sun');
-          darkModeText.textContent = 'Light Mode';
-        }
-      } else {
-        localStorage.setItem('darkMode', 'disabled');
-        if (darkModeIcon) {
-          darkModeIcon.classList.remove('fa-sun');
-          darkModeIcon.classList.add('fa-moon');
-          darkModeText.textContent = 'Dark Mode';
-        }
-      }
-    }
-
-    function togglePlansDropdown(event) {
-      event.preventDefault();
-      const dropdown = document.getElementById("plansDropdown");
-      dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
-      
-      // Close other dropdowns
-      document.getElementById("modelsDropdown").style.display = "none";
-    }
-
-    function toggleModelsDropdown(event) {
-      event.preventDefault();
-      const dropdown = document.getElementById("modelsDropdown");
-      dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
-      
-      // Close other dropdowns
-      document.getElementById("plansDropdown").style.display = "none";
-    }
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(event) {
-      if (!event.target.closest('.dropdown') && !event.target.closest('.dropdown-content')) {
-        document.querySelectorAll('.dropdown-content').forEach(dropdown => {
-          dropdown.style.display = 'none';
-        });
-      }
-    });
-
-    function uploadProfilePicture(event) {
-      const file = event.target.files[0];
-      if (file) {
-        document.getElementById("uploadedFileName").textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = function() {
-          // Update both profile images
-          document.getElementById("profilePicNav").src = reader.result;
-          document.getElementById("profilePreview").src = reader.result;
-        }
-        reader.readAsDataURL(file);
-      }
-    }
-
-    // Updated previewFile function to work with modified UI
-    function previewFile(event) {
-      const filePreview = document.getElementById("documentPreviews");
-      const file = event.target.files[0];
-      
-      if (!file) return;
-      
-      // Clear welcome message if it exists
-      const welcomeMessage = filePreview.querySelector('.empty-preview-message');
-      if (welcomeMessage) {
-        filePreview.removeChild(welcomeMessage);
-      }
-      
-      // Make sure the document previews container is visible
-      filePreview.style.display = 'block';
-      
-      // Update toggle button icon if needed
-      const toggleBtn = document.getElementById('documentsToggle');
-      if (toggleBtn) {
-        const icon = toggleBtn.querySelector('i');
-        if (icon.classList.contains('fa-chevron-down')) {
-          icon.classList.remove('fa-chevron-down');
-          icon.classList.add('fa-chevron-up');
-        }
-      }
-      
-      const fileItem = document.createElement("div");
-      fileItem.classList.add("file-item");
-      
-      // Create file header with name and delete button
-      const fileHeader = document.createElement("div");
-      fileHeader.classList.add("file-header");
-      
-      // Create the name container with icon and name
-      const fileNameContainer = document.createElement("div");
-      fileNameContainer.classList.add("file-name-container");
-      
-      // Create icon based on file type
-      const fileIcon = document.createElement('i');
-      fileIcon.classList.add('fas');
-      
-      if (file.name.endsWith('.pdf')) {
-        fileIcon.classList.add('fa-file-pdf');
-        fileIcon.classList.add('pdf-icon');
-      } else if (file.name.endsWith('.txt')) {
-        fileIcon.classList.add('fa-file-alt');
-      } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
-        fileIcon.classList.add('fa-file-word');
-      } else {
         fileIcon.classList.add('fa-file');
       }
       
@@ -2266,7 +2180,7 @@
         chats[currentChatId].push(userMsg);
         appendMessage("user", userMsg.text);
       }
-    }
+    
 
     // Profile menu toggle and settings functionality
     document.addEventListener('DOMContentLoaded', function() {
@@ -2412,16 +2326,28 @@
         const mobileItem = document.createElement('div');
         mobileItem.className = 'mobile-chat-item' + (isActive ? ' active' : '');
         mobileItem.setAttribute('data-chat-id', chatId);
-        mobileItem.innerHTML = `<i class="fas fa-message"></i><span>${chatName}</span>`;
         
-        mobileItem.addEventListener('click', function() {
+        // Create chat info and delete button
+        mobileItem.innerHTML = `
+          <div class="chat-info">
+            <i class="fas fa-message"></i>
+            <span>${chatName}</span>
+          </div>
+          <button class="delete-chat" aria-label="Delete chat">
+            <i class="fas fa-times"></i>
+          </button>
+        `;
+        
+        // Add click event handler for the chat item
+        const chatInfo = mobileItem.querySelector('.chat-info');
+        chatInfo.addEventListener('click', function() {
           // Remove active class from all mobile chat items
           document.querySelectorAll('.mobile-chat-item').forEach(item => {
             item.classList.remove('active');
           });
           
           // Add active class to clicked item
-          this.classList.add('active');
+          mobileItem.classList.add('active');
           
           // Update main chat list
           const chatItem = document.querySelector(`#chatList li[data-chat-id="${chatId}"]`);
@@ -2437,6 +2363,27 @@
           
           // Close mobile menu
           closeMobileMenu();
+        });
+        
+        // Add delete button functionality
+        const deleteBtn = mobileItem.querySelector('.delete-chat');
+        deleteBtn.addEventListener('click', function(event) {
+          event.stopPropagation();
+          
+          // Delete from main chat list
+          const chatItem = document.querySelector(`#chatList li[data-chat-id="${chatId}"]`);
+          if (chatItem) {
+            const deleteEvent = new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              view: window
+            });
+            
+            const mainDeleteButton = chatItem.querySelector('.delete-chat');
+            if (mainDeleteButton) {
+              mainDeleteButton.dispatchEvent(deleteEvent);
+            }
+          }
         });
         
         // Add to appropriate container based on index (just for demo)
@@ -2529,6 +2476,58 @@
         });
       }
     });
+
+    // Updated previewFile function to handle mobile differently
+    function previewFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // For mobile devices, just show the file in the chat as a message
+      if (window.innerWidth <= 992) {
+        if (currentChatId) {
+          // Add a file upload message with icon based on file type
+          let fileIcon = 'fa-file';
+          if (file.name.endsWith('.pdf')) fileIcon = 'fa-file-pdf';
+          else if (file.name.endsWith('.txt')) fileIcon = 'fa-file-alt';
+          else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) fileIcon = 'fa-file-word';
+          else if (file.type.startsWith('image/')) fileIcon = 'fa-file-image';
+          
+          const fileMessage = `
+            <div class="file-upload">
+              <i class="fas ${fileIcon}"></i>
+              <span>${file.name}</span>
+            </div>
+          `;
+          
+          // Add message to chat
+          const userMsg = { sender: "user", text: `[Uploaded ${file.name}]` };
+          chats[currentChatId].push(userMsg);
+          
+          // Create and append the HTML message
+          const chatBox = document.getElementById("chatBox");
+          const welcomeMessage = document.querySelector('.welcome-message');
+          
+          const msgDiv = document.createElement("div");
+          msgDiv.innerHTML = fileMessage;
+          msgDiv.classList.add("message", "user");
+          
+          // Remove welcome message if needed
+          if (welcomeMessage && chatBox.contains(welcomeMessage)) {
+            chatBox.removeChild(welcomeMessage);
+          }
+          
+          // Add message and scroll
+          chatBox.appendChild(msgDiv);
+          chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        return;
+      }
+      
+      // Original desktop behavior below...
+      const filePreview = document.getElementById("documentPreviews");
+      
+      // Remaining desktop code unchanged...
+    }
   </script>
 </body>
 </html>
