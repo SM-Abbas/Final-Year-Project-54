@@ -2749,7 +2749,7 @@
       }
     }
 
-    // Improved scroll handling for chat box
+    // Improved scroll handling for chat box - simplified and more reliable
     document.addEventListener('DOMContentLoaded', function() {
       const chatBox = document.getElementById('chatBox');
       const scrollBottomBtn = document.getElementById('scrollBottomBtn');
@@ -2758,14 +2758,11 @@
       
       // Variables to track scroll state
       let isScrolledToBottom = true;
-      let isScrolling = false;
-      let scrollTimeout;
-      let pendingMessages = [];
-      let isProcessingMessages = false;
+      let userScrolledUp = false;
       
       // Function to check if scrolled to bottom (with a small threshold)
       function checkIfScrolledToBottom() {
-        const threshold = 30; // px from bottom to still consider "at bottom"
+        const threshold = 40; // px from bottom to still consider "at bottom"
         return chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop <= threshold;
       }
       
@@ -2778,29 +2775,29 @@
         }
       }
       
+      // Function to force scroll to bottom
+      function forceScrollToBottom() {
+        chatBox.scrollTop = chatBox.scrollHeight;
+        isScrolledToBottom = true;
+        updateScrollButtonVisibility();
+      }
+      
       // Handle scroll events
       chatBox.addEventListener('scroll', function() {
         isScrolledToBottom = checkIfScrolledToBottom();
+        
+        // Track if user has intentionally scrolled up
+        if (!isScrolledToBottom) {
+          userScrolledUp = true;
+        }
+        
         updateScrollButtonVisibility();
-        
-        // Reset scroll timeout
-        clearTimeout(scrollTimeout);
-        isScrolling = true;
-        
-        // Set a timeout to detect when scrolling stops
-        scrollTimeout = setTimeout(function() {
-          isScrolling = false;
-          
-          // Process any pending messages once scrolling stops
-          if (pendingMessages.length > 0) {
-            processPendingMessages();
-          }
-        }, 100);
       });
       
       // Click handler for scroll bottom button
       scrollBottomBtn.addEventListener('click', function() {
         smoothScrollToBottom();
+        userScrolledUp = false;
       });
       
       // Function to smooth scroll to bottom
@@ -2833,37 +2830,25 @@
         requestAnimationFrame(scrollAnimation);
       }
       
-      // Function to process pending messages with better timing
-      function processPendingMessages() {
-        if (isProcessingMessages || pendingMessages.length === 0) return;
-        
-        isProcessingMessages = true;
-        
-        // Use requestAnimationFrame to ensure DOM has updated
-        requestAnimationFrame(() => {
-          const msg = pendingMessages.shift();
-          const { msgDiv } = msg;
-          
-          chatBox.appendChild(msgDiv);
-          
-          // Wait for the message to render before scrolling
-          requestAnimationFrame(() => {
-            if (isScrolledToBottom || msg.forceScroll) {
-              chatBox.scrollTop = chatBox.scrollHeight;
-              isScrolledToBottom = true;
-            }
-            
-            // Process next message if any
-            isProcessingMessages = false;
-            if (pendingMessages.length > 0) {
-              processPendingMessages();
-            }
-          });
-        });
-      }
+      // Create a MutationObserver to watch for changes in the chat box
+      const chatObserver = new MutationObserver(function(mutations) {
+        // If we're at the bottom already or user hasn't scrolled up, keep it at the bottom
+        if (isScrolledToBottom || !userScrolledUp) {
+          // Use setTimeout with 0ms to ensure this runs after DOM is updated
+          setTimeout(forceScrollToBottom, 0);
+        }
+      });
       
-      // Override the appendMessage function for better behavior
-      window.appendMessage = function(sender, text, forceScroll = false) {
+      // Start observing the chat box for changes
+      chatObserver.observe(chatBox, { 
+        childList: true,  // Watch for added/removed nodes
+        subtree: true,    // Watch children too
+        attributes: true  // Watch for attribute changes
+      });
+      
+      // Simplify the appendMessage function
+      window.appendMessage = function(sender, text) {
+        const chatBox = document.getElementById("chatBox");
         const welcomeMessage = document.querySelector('.welcome-message');
         
         const msgDiv = document.createElement("div");
@@ -2873,33 +2858,31 @@
         // Special handling for mobile - remove welcome message after first message
         if (window.innerWidth <= 992 && welcomeMessage && chatBox.contains(welcomeMessage)) {
           chatBox.removeChild(welcomeMessage);
-          
-          // Append and force scroll for the first message
-          pendingMessages.push({ msgDiv, forceScroll: true });
-          if (!isProcessingMessages && !isScrolling) {
-            processPendingMessages();
-          }
-        } else {
-          // Desktop behavior - handle welcome message
-          if (welcomeMessage && chatBox.contains(welcomeMessage) && 
-              chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
-            // First message after welcome
-            if ((chatBox.scrollTop > 10 || 
-                (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
-              welcomeMessage.classList.add('hidden');
-            }
-          }
-          
-          // Add message to processing queue
-          pendingMessages.push({ msgDiv, forceScroll: forceScroll || isScrolledToBottom });
-          if (!isProcessingMessages && !isScrolling) {
-            processPendingMessages();
+        }
+        
+        // Handle welcome message on desktop
+        if (welcomeMessage && chatBox.contains(welcomeMessage) && 
+            chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
+          if ((chatBox.scrollTop > 10 || 
+              (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
+            welcomeMessage.classList.add('hidden');
           }
         }
+        
+        // Add the message directly
+        chatBox.appendChild(msgDiv);
+        
+        // Ensure scroll to bottom (MutationObserver will handle this too)
+        setTimeout(function() {
+          if (!userScrolledUp) {
+            forceScrollToBottom();
+          }
+        }, 10);
       };
       
-      // Similarly override appendHtmlMessage for consistency
-      window.appendHtmlMessage = function(sender, htmlContent, forceScroll = false) {
+      // Similarly simplify appendHtmlMessage
+      window.appendHtmlMessage = function(sender, htmlContent) {
+        const chatBox = document.getElementById("chatBox");
         const welcomeMessage = document.querySelector('.welcome-message');
         
         const msgDiv = document.createElement("div");
@@ -2909,33 +2892,47 @@
         // Special handling for mobile - remove welcome message after first message
         if (window.innerWidth <= 992 && welcomeMessage && chatBox.contains(welcomeMessage)) {
           chatBox.removeChild(welcomeMessage);
-          
-          // Append and force scroll for the first message
-          pendingMessages.push({ msgDiv, forceScroll: true });
-          if (!isProcessingMessages && !isScrolling) {
-            processPendingMessages();
-          }
-        } else {
-          // Desktop behavior - handle welcome message
-          if (welcomeMessage && chatBox.contains(welcomeMessage) && 
-              chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
-            // First message after welcome
-            if ((chatBox.scrollTop > 10 || 
-                (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
-              welcomeMessage.classList.add('hidden');
-            }
-          }
-          
-          // Add message to processing queue
-          pendingMessages.push({ msgDiv, forceScroll: forceScroll || isScrolledToBottom });
-          if (!isProcessingMessages && !isScrolling) {
-            processPendingMessages();
+        }
+        
+        // Handle welcome message on desktop
+        if (welcomeMessage && chatBox.contains(welcomeMessage) && 
+            chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
+          if ((chatBox.scrollTop > 10 || 
+              (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
+            welcomeMessage.classList.add('hidden');
           }
         }
+        
+        // Add the message directly
+        chatBox.appendChild(msgDiv);
+        
+        // Ensure scroll to bottom (MutationObserver will handle this too)
+        setTimeout(function() {
+          if (!userScrolledUp) {
+            forceScrollToBottom();
+          }
+        }, 10);
       };
       
-      // Initial check for scroll button visibility
-      updateScrollButtonVisibility();
+      // Listen for window resize events to maintain scroll position
+      window.addEventListener('resize', function() {
+        if (!userScrolledUp) {
+          forceScrollToBottom();
+        }
+      });
+      
+      // Force scroll to bottom on initial load
+      forceScrollToBottom();
+      
+      // Reset scroll state when changing chats
+      document.addEventListener('click', function(event) {
+        if (event.target.closest('.chat-list li') || event.target.closest('.mobile-chat-item')) {
+          userScrolledUp = false;
+          
+          // Add a slight delay to ensure chat has loaded
+          setTimeout(forceScrollToBottom, 100);
+        }
+      });
     });
   </script>
 </body>
