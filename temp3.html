@@ -1201,31 +1201,34 @@
       }
     }
 
-    /* Mobile menu improved */
+    /* Enhanced mobile menu styling */
     .mobile-menu {
       position: fixed;
       top: 0;
       left: 0;
-      width: 280px;
+      width: 85%;
+      max-width: 320px;
       height: 100vh;
       background-color: var(--light-surface);
       z-index: 999;
       transform: translateX(-100%);
-      transition: transform 0.3s ease;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: var(--dark-box-shadow);
       display: flex;
       flex-direction: column;
       overflow-y: auto;
+      border-right: 1px solid rgba(0,0,0,0.1);
     }
-    
+
     body.dark-mode .mobile-menu {
       background-color: var(--dark-surface);
+      border-right: 1px solid rgba(255,255,255,0.1);
     }
-    
+
     .mobile-menu.active {
       transform: translateX(0);
     }
-    
+
     .mobile-menu-overlay {
       position: fixed;
       top: 0;
@@ -1237,54 +1240,243 @@
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.3s ease;
+      backdrop-filter: blur(2px);
     }
-    
+
     .mobile-menu-overlay.active {
       opacity: 1;
       visibility: visible;
     }
-    
+
+    /* Refined mobile menu header */
     .mobile-menu-header {
       padding: var(--spacing-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
       border-bottom: 1px solid var(--light-border);
+      position: sticky;
+      top: 0;
+      background-color: var(--light-surface);
+      z-index: 2;
     }
-    
+
     body.dark-mode .mobile-menu-header {
       border-color: var(--dark-border);
+      background-color: var(--dark-surface);
     }
-    
+
+    .mobile-menu-header h1 {
+      font-size: 1.5rem;
+      margin: 0;
+      background: linear-gradient(90deg, var(--primary-color), #6b47fb);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
     .mobile-menu-content {
       padding: var(--spacing-md);
       display: flex;
       flex-direction: column;
       gap: var(--spacing-sm);
+      overflow-y: auto;
     }
 
-    .chat-section {
-      flex: 1;
-      padding: var(--spacing-lg);
+    /* Enhanced mobile menu buttons */
+    .mobile-menu-btn {
       display: flex;
-      flex-direction: column;
-      background-color: var(--light-surface);
-      transition: var(--transition);
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: 12px var(--spacing-lg);
+      border-radius: 10px;
+      background: none;
+      border: none;
+      color: var(--light-text);
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
       position: relative;
-      height: 100vh;
       overflow: hidden;
     }
-    
-    /* Navigation Bar */
-    .chat-nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background-color: var(--light-bg);
-      padding: var(--spacing-md) var(--spacing-lg);
-      box-shadow: var(--box-shadow);
+
+    .mobile-menu-btn::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 0;
+      background-color: rgba(0, 123, 255, 0.1);
+      transition: width 0.2s ease;
+      z-index: -1;
+      border-radius: 10px;
+    }
+
+    .mobile-menu-btn:active {
+      transform: scale(0.98);
+    }
+
+    .mobile-menu-btn:hover::after {
+      width: 100%;
+    }
+
+    body.dark-mode .mobile-menu-btn {
+      color: var(--dark-text);
+    }
+
+    body.dark-mode .mobile-menu-btn::after {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .mobile-menu-btn.new-chat-btn {
+      background: var(--primary-color);
+      color: white;
+      font-weight: 500;
       margin-bottom: var(--spacing-md);
-      border-radius: var(--border-radius-md);
-      transition: var(--transition);
+      box-shadow: 0 4px 6px rgba(0, 123, 255, 0.2);
+    }
+
+    .mobile-menu-btn.new-chat-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 10px rgba(0, 123, 255, 0.3);
+    }
+
+    .mobile-menu-btn.new-chat-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Improved section headers */
+    .mobile-section-header {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #6c757d;
+      padding: 14px var(--spacing-lg) 8px;
+      margin-top: var(--spacing-md);
+      position: sticky;
+      top: 71px;
+      background-color: var(--light-surface);
+      z-index: 1;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    body.dark-mode .mobile-section-header {
+      color: #adb5bd;
+      background-color: var(--dark-surface);
+    }
+
+    /* Enhanced chat items */
+    .mobile-chat-item {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-md);
+      padding: 12px var(--spacing-lg);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
       position: relative;
-      z-index: 10;
+    }
+
+    .mobile-chat-item i {
+      color: #6c757d;
+      font-size: 0.9rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    body.dark-mode .mobile-chat-item i {
+      color: #adb5bd;
+    }
+
+    .mobile-chat-item span {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mobile-chat-item::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 0;
+      background-color: rgba(0, 123, 255, 0.1);
+      transition: width 0.2s ease;
+      z-index: -1;
+      border-radius: 10px;
+    }
+
+    .mobile-chat-item:hover::after {
+      width: 100%;
+    }
+
+    .mobile-chat-item.active {
+      background-color: rgba(0, 123, 255, 0.15);
+      font-weight: 500;
+    }
+
+    .mobile-chat-item.active i {
+      color: var(--primary-color);
+    }
+
+    body.dark-mode .mobile-chat-item.active {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Better menu button animation */
+    .menu-toggle {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: var(--light-text);
+      font-size: 1.2rem;
+      cursor: pointer;
+      border-radius: 50%;
+      transition: background-color 0.2s;
+    }
+
+    .menu-toggle:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    .menu-toggle:active {
+      transform: scale(0.95);
+    }
+
+    /* Model dropdown styling */
+    .model-dropdown {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      position: relative;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 992px) {
+      .menu-toggle {
+        display: block;
+      }
+      
+      .nav-left {
+        gap: var(--spacing-sm);
+      }
+      
+      .dashboard {
+        height: 100vh;
+        overflow: hidden;
+      }
+      
+      .sidebar {
+        display: none;
+      }
     }
 
     @media (max-width: 768px) {
@@ -1313,141 +1505,7 @@
       }
     }
 
-    /* Style for mobile menu button */
-    .mobile-menu-btn {
-      width: 100%;
-      text-align: left;
-      padding: var(--spacing-md) var(--spacing-lg);
-      border-radius: var(--border-radius-md);
-      background: none;
-      border: none;
-      color: var(--light-text);
-      font-size: 0.95rem;
-      cursor: pointer;
-      transition: var(--transition);
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-md);
-    }
-    
-    body.dark-mode .mobile-menu-btn {
-      color: var(--dark-text);
-    }
-    
-    .mobile-menu-btn:hover {
-      background-color: rgba(0, 123, 255, 0.1);
-    }
-    
-    .mobile-menu-btn.new-chat-btn {
-      background: var(--primary-color);
-      color: white;
-      font-weight: 500;
-      margin-bottom: var(--spacing-md);
-    }
-    
-    .mobile-menu-btn.new-chat-btn:hover {
-      background: var(--primary-hover);
-    }
-    
-    /* Mobile menu section headers */
-    .mobile-section-header {
-      font-size: 0.85rem;
-      font-weight: 500;
-      color: #6c757d;
-      padding: var(--spacing-sm) var(--spacing-lg);
-      margin-top: var(--spacing-md);
-    }
-    
-    body.dark-mode .mobile-section-header {
-      color: #adb5bd;
-    }
-    
-    /* Chat history items in mobile menu */
-    .mobile-chat-item {
-      display: flex;
-      align-items: center;
-      gap: var(--spacing-sm);
-      padding: var(--spacing-sm) var(--spacing-lg);
-      border-radius: var(--border-radius-md);
-      cursor: pointer;
-      transition: var(--transition);
-      font-size: 0.9rem;
-    }
-    
-    .mobile-chat-item:hover {
-      background-color: rgba(0, 123, 255, 0.1);
-    }
-    
-    .mobile-chat-item.active {
-      background-color: rgba(0, 123, 255, 0.2);
-    }
-    
-    body.dark-mode .mobile-chat-item:hover {
-      background-color: rgba(255, 255, 255, 0.05);
-    }
-    
-    body.dark-mode .mobile-chat-item.active {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-    
-    /* Add new responsive menu behavior */
-    @media (max-width: 992px) {
-      .menu-toggle {
-        display: block;
-      }
-      
-      .nav-left {
-        gap: var(--spacing-sm);
-      }
-      
-      .dashboard {
-        height: 100vh;
-        overflow: hidden;
-      }
-      
-      .sidebar {
-        display: none;
-      }
-      
-      .mobile-menu-header {
-        display: flex;
-        align-items: center;
-        gap: var(--spacing-md);
-      }
-      
-      .mobile-menu-header h1 {
-        font-size: 1.5rem;
-        margin: 0;
-        background: linear-gradient(90deg, var(--primary-color), #6b47fb);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-    }
-
-    /* Model dropdown styling */
-    .model-dropdown {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      position: relative;
-    }
-
     @media (max-width: 480px) {
-      .chat-section {
-        padding: 10px;
-      }
-      
-      .chat-nav {
-        padding: 10px;
-        margin-bottom: 10px;
-      }
-      
-      .menu-toggle {
-        padding: 5px;
-        font-size: 1.1rem;
-      }
-      
       .nav-brand {
         font-size: 1rem;
       }
@@ -1633,7 +1691,7 @@
           onkeypress="if(event.key === 'Enter') sendMessage()"
         >
         <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
-          <i class="fas fa-paper-plane"></i> Send
+          <i class="fas fa-paper-plane"></i> <span>Send</span>
         </button>
       </div>
     </div>
@@ -1806,15 +1864,25 @@
       
       // Clear chat box while preserving the welcome message
       const welcomeMessage = document.querySelector('.welcome-message');
-      if (welcomeMessage) {
-        // Reset welcome message (make it visible)
-        welcomeMessage.classList.remove('hidden');
-        // Remove all other content
+      
+      // On mobile, only show welcome message if there are no messages
+      if (window.innerWidth <= 992) {
         chatBox.innerHTML = '';
-        // Add welcome message back
-        chatBox.appendChild(welcomeMessage);
+        
+        // Only show welcome message if there are no messages for this chat
+        if (welcomeMessage && (!chats[chatId] || chats[chatId].length === 0)) {
+          const clonedWelcome = welcomeMessage.cloneNode(true);
+          chatBox.appendChild(clonedWelcome);
+        }
       } else {
-        chatBox.innerHTML = '';
+        // Desktop behavior - reset welcome message
+        if (welcomeMessage) {
+          welcomeMessage.classList.remove('hidden');
+          chatBox.innerHTML = '';
+          chatBox.appendChild(welcomeMessage);
+        } else {
+          chatBox.innerHTML = '';
+        }
       }
       
       document.getElementById("currentChatName").textContent = chatName;
@@ -1825,8 +1893,15 @@
           appendMessage(msg.sender, msg.text);
         });
         
-        // If there are messages, hide welcome message
-        if (welcomeMessage && chats[chatId].length > 0) {
+        // If there are messages and on mobile, ensure welcome message is gone
+        if (window.innerWidth <= 992) {
+          const currentWelcome = document.querySelector('.welcome-message');
+          if (currentWelcome) {
+            chatBox.removeChild(currentWelcome);
+          }
+        }
+        // If on desktop and there are messages, hide welcome message
+        else if (welcomeMessage && chats[chatId].length > 0) {
           welcomeMessage.classList.add('hidden');
         }
       }
@@ -1880,17 +1955,21 @@
       msgDiv.textContent = text;
       msgDiv.classList.add("message", sender);
       
-      // If this is the first message, we need to handle the welcome message
-      if (chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
+      // Special handling for mobile - remove welcome message after first message
+      if (window.innerWidth <= 992 && welcomeMessage) {
+        chatBox.removeChild(welcomeMessage);
         chatBox.appendChild(msgDiv);
       } else {
-        chatBox.appendChild(msgDiv);
-      }
-      
-      // Check scroll position to determine if welcome message should be hidden
-      if (chatBox.scrollTop > 10 || 
-         (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0)) {
-        if (welcomeMessage) {
+        // Desktop behavior - hide welcome message when scrolled
+        if (chatBox.children.length === 1 && chatBox.children[0] === welcomeMessage) {
+          chatBox.appendChild(msgDiv);
+        } else {
+          chatBox.appendChild(msgDiv);
+        }
+        
+        // Check scroll position to determine if welcome message should be hidden
+        if (welcomeMessage && (chatBox.scrollTop > 10 || 
+            (chatBox.scrollHeight > chatBox.clientHeight && chatBox.scrollTop > 0))) {
           welcomeMessage.classList.add('hidden');
         }
       }
@@ -2388,6 +2467,65 @@
             const sidebar = document.querySelector('.sidebar');
             sidebar.style.display = 'none';
           }
+        });
+      }
+    });
+
+    // Mobile menu interaction improvements
+    document.addEventListener('DOMContentLoaded', function() {
+      const menuToggle = document.getElementById('mobileMenuToggle');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+      
+      // Improved touch handling for mobile menu
+      if (menuToggle && mobileMenu && mobileMenuOverlay) {
+        // Add touch ripple effect
+        menuToggle.addEventListener('touchstart', function() {
+          this.classList.add('touch-active');
+        });
+        
+        menuToggle.addEventListener('touchend', function() {
+          this.classList.remove('touch-active');
+          setTimeout(() => {
+            mobileMenu.classList.add('active');
+            mobileMenuOverlay.classList.add('active');
+            updateMobileChats();
+          }, 50);
+        });
+        
+        // Add swipe to close functionality
+        let startX = 0;
+        mobileMenu.addEventListener('touchstart', function(e) {
+          startX = e.touches[0].clientX;
+        }, {passive: true});
+        
+        mobileMenu.addEventListener('touchmove', function(e) {
+          if (startX > 20) { // Only if started from left edge area
+            let diffX = e.touches[0].clientX - startX;
+            if (diffX < 0) {
+              mobileMenu.style.transform = `translateX(${diffX}px)`;
+            }
+          }
+        }, {passive: true});
+        
+        mobileMenu.addEventListener('touchend', function(e) {
+          let diffX = e.changedTouches[0].clientX - startX;
+          if (diffX < -50) { // Swipe threshold
+            closeMobileMenu();
+          }
+          mobileMenu.style.transform = '';
+        }, {passive: true});
+        
+        // Add vibration feedback on menu interactions
+        function vibrateIfAvailable(duration) {
+          if ('vibrate' in navigator) {
+            navigator.vibrate(duration);
+          }
+        }
+        
+        const allButtons = mobileMenu.querySelectorAll('.mobile-menu-btn, .mobile-chat-item');
+        allButtons.forEach(btn => {
+          btn.addEventListener('touchstart', () => vibrateIfAvailable(20), {passive: true});
         });
       }
     });
