@@ -735,10 +735,19 @@
       position: relative;
     }
     
+    .input-container {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+    }
+    
     .chat-input input {
       flex: 1;
+      width: 100%;
       padding: var(--spacing-md) var(--spacing-lg);
       padding-left: 40px;
+      padding-right: 50px;
       border: 1px solid var(--light-border);
       border-radius: 30px;
       font-size: 1rem;
@@ -784,26 +793,26 @@
     }
     
     #sendBtn {
-      padding: var(--spacing-md) var(--spacing-lg);
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
       border: none;
-      border-radius: 30px;
+      color: var(--primary-color);
+      font-size: 1.2rem;
       cursor: pointer;
-      background: var(--success-color);
-      color: white;
-      transition: var(--transition);
+      padding: 8px;
+      margin: 0;
       display: flex;
       align-items: center;
-      gap: var(--spacing-xs);
-      font-weight: 500;
+      justify-content: center;
+      z-index: 2;
+      transition: all 0.2s ease;
     }
     
     #sendBtn:hover {
-      background: var(--success-hover);
-      transform: translateY(-2px);
-    }
-    
-    #sendBtn i {
-      font-size: 0.9rem;
+      transform: translateY(-50%) scale(1.1);
     }
     
     /* Chat Messages */
@@ -1599,6 +1608,38 @@
       text-overflow: ellipsis;
       max-width: 200px;
     }
+
+    @media (max-width: 768px) {
+      .chat-input {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        position: relative;
+      }
+      
+      .input-container {
+        flex: 1;
+        position: relative;
+      }
+      
+      .attach-btn {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        height: auto;
+        width: auto;
+        background: transparent;
+        border: none;
+        z-index: 2;
+      }
+      
+      #sendBtn {
+        right: 8px;
+        font-size: 1.2rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1768,16 +1809,18 @@
           <i class="fas fa-paperclip"></i>
         </span>
         <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.png,.jpg,.docx" style="display:none;" onchange="previewFile(event)">
-        <input 
-          type="text" 
-          id="messageInput" 
-          placeholder="Type your message..." 
-          aria-label="Type your message"
-          onkeypress="if(event.key === 'Enter') sendMessage()"
-        >
-        <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
-          <i class="fas fa-paper-plane"></i> <span>Send</span>
-        </button>
+        <div class="input-container">
+          <input 
+            type="text" 
+            id="messageInput" 
+            placeholder="Type your message..." 
+            aria-label="Type your message"
+            onkeypress="if(event.key === 'Enter') sendMessage()"
+          >
+          <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -2100,87 +2143,94 @@
     function sendMessage() {
       const messageInput = document.getElementById("messageInput");
       const userMessageText = messageInput.value.trim();
-        fileIcon.classList.add('fa-file');
-      }
       
-      // Create filename span
-      const fileName = document.createElement('span');
-      fileName.textContent = file.name;
-      
-      // Add icon and filename to the name container
-      fileNameContainer.appendChild(fileIcon);
-      fileNameContainer.appendChild(fileName);
-      
-      // Create delete button
-      const closeBtn = document.createElement("button");
-      closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-      closeBtn.classList.add("delete-file");
-      closeBtn.setAttribute('aria-label', 'Remove file');
-      
-      closeBtn.addEventListener("click", function(e) {
-        e.stopPropagation();
-        filePreview.removeChild(fileItem);
+      if (userMessageText && currentChatId) {
+        // Append user's message
+        const userMsg = { sender: "user", text: userMessageText };
+        chats[currentChatId].push(userMsg);
+        appendMessage("user", userMessageText);
+        messageInput.value = "";
         
-        // If no more files, show welcome message
-        if (filePreview.children.length === 0) {
-          const welcomeText = document.createElement('p');
-          welcomeText.className = 'empty-preview-message';
-          welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
-          filePreview.appendChild(welcomeText);
-        }
-      });
-      
-      // Add name container and delete button to header
-      fileHeader.appendChild(fileNameContainer);
-      fileHeader.appendChild(closeBtn);
-      
-      // Add header to file item
-      fileItem.appendChild(fileHeader);
-      
-      // Add file preview for images and PDFs
-      const fileType = file.type.split('/')[0];
-      
-      if (fileType === 'image' || file.name.endsWith('.pdf')) {
-        const reader = new FileReader();
-        reader.onload = function() {
-          const previewContainer = document.createElement('div');
-          previewContainer.className = 'file-preview-container';
+        // Show loading indicator
+        const loadingMsg = { sender: "bot", text: "Thinking..." };
+        const loadingId = setTimeout(() => {
+          appendMessage("bot", loadingMsg.text);
+          chats[currentChatId].push(loadingMsg);
+        }, 500);
+        
+        // Simulate a response after 1.5 seconds
+        setTimeout(() => {
+          // Remove the loading message
+          clearTimeout(loadingId);
           
-          if (fileType === 'image') {
-            const img = document.createElement('img');
-            img.src = reader.result;
-            img.alt = file.name;
-            previewContainer.appendChild(img);
-          } else if (file.name.endsWith('.pdf')) {
-            previewContainer.classList.add('pdf-preview');
-            const obj = document.createElement('object');
-            obj.data = reader.result;
-            obj.type = 'application/pdf';
-            obj.width = '100%';
-            obj.height = '200px';
-            previewContainer.appendChild(obj);
+          // Remove the last message if it was "Thinking..."
+          if (chats[currentChatId].length > 0 && 
+              chats[currentChatId][chats[currentChatId].length-1].text === "Thinking...") {
+            chats[currentChatId].pop();
+            const chatBox = document.getElementById("chatBox");
+            if (chatBox.lastChild && chatBox.lastChild.textContent === "Thinking...") {
+              chatBox.removeChild(chatBox.lastChild);
+            }
           }
           
-          fileItem.appendChild(previewContainer);
-        };
-        reader.readAsDataURL(file);
+          // Add bot response
+          const botResponse = "I understand your request about '" + userMessageText + "'. As a legal assistant, I can help you with documents and legal concepts. What specific information are you looking for?";
+          addBotMessage(botResponse);
+        }, 1500);
+      } else if (!currentChatId) {
+        // If no chat is active, create one and then send
+        addNewChat();
+        setTimeout(() => sendMessage(), 100);
       }
-      
-      filePreview.appendChild(fileItem);
-      
-      // Force document preview section visible
-      const previewSection = document.querySelector('.documents-preview');
-      previewSection.style.display = 'block';
-      previewSection.style.visibility = 'visible';
-      previewSection.style.opacity = '1';
-      
-      // If it's a chat context, add a message about the upload
-      if (currentChatId) {
-        const userMsg = { sender: "user", text: `[Uploaded ${file.name}]` };
-        chats[currentChatId].push(userMsg);
-        appendMessage("user", userMsg.text);
-      }
+    }
     
+    // Add bot message
+    function addBotMessage(text) {
+      const botMsg = { sender: "bot", text: text };
+      chats[currentChatId].push(botMsg);
+      appendMessage("bot", text);
+    }
+    
+    // Toggle dark mode
+    function toggleDarkMode() {
+      const isDarkMode = document.body.classList.toggle("dark-mode");
+      const darkModeIcon = document.getElementById('darkModeIcon');
+      const darkModeText = document.getElementById('darkModeText');
+      
+      if (isDarkMode) {
+        localStorage.setItem('darkMode', 'enabled');
+        if (darkModeIcon) {
+          darkModeIcon.classList.remove('fa-moon');
+          darkModeIcon.classList.add('fa-sun');
+          darkModeText.textContent = 'Light Mode';
+        }
+      } else {
+        localStorage.setItem('darkMode', 'disabled');
+        if (darkModeIcon) {
+          darkModeIcon.classList.remove('fa-sun');
+          darkModeIcon.classList.add('fa-moon');
+          darkModeText.textContent = 'Dark Mode';
+        }
+      }
+    }
+    
+    function togglePlansDropdown(event) {
+      event.preventDefault();
+      const dropdown = document.getElementById("plansDropdown");
+      dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+      
+      // Close other dropdowns
+      document.getElementById("modelsDropdown").style.display = "none";
+    }
+    
+    function toggleModelsDropdown(event) {
+      event.preventDefault();
+      const dropdown = document.getElementById("modelsDropdown");
+      dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
+      
+      // Close other dropdowns
+      document.getElementById("plansDropdown").style.display = "none";
+    }
 
     // Profile menu toggle and settings functionality
     document.addEventListener('DOMContentLoaded', function() {
@@ -2190,33 +2240,48 @@
         document.getElementById('darkModeToggle').checked = true;
       }
       
-      // Profile menu toggle
-      document.getElementById('profilePicNav').addEventListener('click', (e) => {
-        e.stopPropagation();
-        document.getElementById('profileMenu').classList.toggle('active');
-      });
+      // Profile menu toggle - fix for both mobile and desktop
+      const profilePic = document.getElementById('profilePicNav');
+      const profileMenu = document.getElementById('profileMenu');
+      
+      if (profilePic && profileMenu) {
+        profilePic.addEventListener('click', function(e) {
+          e.stopPropagation();
+          profileMenu.classList.toggle('active');
+        });
+      }
       
       // Settings button
-      document.getElementById('settingsButton').addEventListener('click', () => {
-        document.getElementById('profileMainMenu').style.display = 'none';
-        document.getElementById('settingsPanel').classList.add('active');
-      });
+      const settingsButton = document.getElementById('settingsButton');
+      const profileMainMenu = document.getElementById('profileMainMenu');
+      const settingsPanel = document.getElementById('settingsPanel');
+      
+      if (settingsButton && profileMainMenu && settingsPanel) {
+        settingsButton.addEventListener('click', function() {
+          profileMainMenu.style.display = 'none';
+          settingsPanel.classList.add('active');
+        });
+      }
       
       // Back to menu button
-      document.getElementById('backToMenu').addEventListener('click', () => {
-        document.getElementById('profileMainMenu').style.display = 'flex';
-        document.getElementById('settingsPanel').classList.remove('active');
-      });
+      const backToMenu = document.getElementById('backToMenu');
+      if (backToMenu && profileMainMenu && settingsPanel) {
+        backToMenu.addEventListener('click', function() {
+          profileMainMenu.style.display = 'flex';
+          settingsPanel.classList.remove('active');
+        });
+      }
       
       // Close profile menu when clicking outside
       document.addEventListener('click', function(event) {
-        if (!event.target.closest('.nav-profile') && !event.target.closest('.profile-menu')) {
-          const profileMenu = document.getElementById('profileMenu');
-          if (profileMenu.classList.contains('active')) {
+        if (profileMenu && profileMenu.classList.contains('active')) {
+          if (!event.target.closest('.nav-profile') && !event.target.closest('.profile-menu')) {
             profileMenu.classList.remove('active');
             // Reset to main menu view when closing
-            document.getElementById('profileMainMenu').style.display = 'flex';
-            document.getElementById('settingsPanel').classList.remove('active');
+            if (profileMainMenu && settingsPanel) {
+              profileMainMenu.style.display = 'flex';
+              settingsPanel.classList.remove('active');
+            }
           }
         }
       });
@@ -2526,7 +2591,128 @@
       // Original desktop behavior below...
       const filePreview = document.getElementById("documentPreviews");
       
-      // Remaining desktop code unchanged...
+      // Clear welcome message if it exists
+      const welcomeMessage = filePreview.querySelector('.empty-preview-message');
+      if (welcomeMessage) {
+        filePreview.removeChild(welcomeMessage);
+      }
+      
+      // Make sure the document previews container is visible
+      filePreview.style.display = 'block';
+      
+      // Update toggle button icon if needed
+      const toggleBtn = document.getElementById('documentsToggle');
+      if (toggleBtn) {
+        const icon = toggleBtn.querySelector('i');
+        if (icon.classList.contains('fa-chevron-down')) {
+          icon.classList.remove('fa-chevron-down');
+          icon.classList.add('fa-chevron-up');
+        }
+      }
+      
+      const fileItem = document.createElement("div");
+      fileItem.classList.add("file-item");
+      
+      // Create file header with name and delete button
+      const fileHeader = document.createElement("div");
+      fileHeader.classList.add("file-header");
+      
+      // Create the name container with icon and name
+      const fileNameContainer = document.createElement("div");
+      fileNameContainer.classList.add("file-name-container");
+      
+      // Create icon based on file type
+      const fileIcon = document.createElement('i');
+      fileIcon.classList.add('fas');
+      
+      if (file.name.endsWith('.pdf')) {
+        fileIcon.classList.add('fa-file-pdf');
+        fileIcon.classList.add('pdf-icon');
+      } else if (file.name.endsWith('.txt')) {
+        fileIcon.classList.add('fa-file-alt');
+      } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        fileIcon.classList.add('fa-file-word');
+      } else {
+        fileIcon.classList.add('fa-file');
+      }
+      
+      // Create filename span
+      const fileName = document.createElement('span');
+      fileName.textContent = file.name;
+      
+      // Add icon and filename to the name container
+      fileNameContainer.appendChild(fileIcon);
+      fileNameContainer.appendChild(fileName);
+      
+      // Create delete button
+      const closeBtn = document.createElement("button");
+      closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+      closeBtn.classList.add("delete-file");
+      closeBtn.setAttribute('aria-label', 'Remove file');
+      
+      closeBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        filePreview.removeChild(fileItem);
+        
+        // If no more files, show welcome message
+        if (filePreview.children.length === 0) {
+          const welcomeText = document.createElement('p');
+          welcomeText.className = 'empty-preview-message';
+          welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
+          filePreview.appendChild(welcomeText);
+        }
+      });
+      
+      // Add name container and delete button to header
+      fileHeader.appendChild(fileNameContainer);
+      fileHeader.appendChild(closeBtn);
+      
+      // Add header to file item
+      fileItem.appendChild(fileHeader);
+      
+      // Add file preview for images and PDFs
+      const fileType = file.type.split('/')[0];
+      
+      if (fileType === 'image' || file.name.endsWith('.pdf')) {
+        const reader = new FileReader();
+        reader.onload = function() {
+          const previewContainer = document.createElement('div');
+          previewContainer.className = 'file-preview-container';
+          
+          if (fileType === 'image') {
+            const img = document.createElement('img');
+            img.src = reader.result;
+            img.alt = file.name;
+            previewContainer.appendChild(img);
+          } else if (file.name.endsWith('.pdf')) {
+            previewContainer.classList.add('pdf-preview');
+            const obj = document.createElement('object');
+            obj.data = reader.result;
+            obj.type = 'application/pdf';
+            obj.width = '100%';
+            obj.height = '200px';
+            previewContainer.appendChild(obj);
+          }
+          
+          fileItem.appendChild(previewContainer);
+        };
+        reader.readAsDataURL(file);
+      }
+      
+      filePreview.appendChild(fileItem);
+      
+      // Force document preview section visible
+      const previewSection = document.querySelector('.documents-preview');
+      previewSection.style.display = 'block';
+      previewSection.style.visibility = 'visible';
+      previewSection.style.opacity = '1';
+      
+      // If it's a chat context, add a message about the upload
+      if (currentChatId) {
+        const userMsg = { sender: "user", text: `[Uploaded ${file.name}]` };
+        chats[currentChatId].push(userMsg);
+        appendMessage("user", userMsg.text);
+      }
     }
   </script>
 </body>
