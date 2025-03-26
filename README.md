@@ -1,6 +1,8 @@
 Final year project on legal documents 
 we worked with a lot of models and merged our model and some pre-trained models 
-our model's accuracy is slightly better than the other models available on the internet, although it's a difference of 0.1% in accuracy 
+our model's accuracy is slightly better than the other models available on the internet
+![radar_chart_comparison](https://github.com/user-attachments/assets/47c7dba4-1074-4ff2-814d-8d9ff2d05d14)
+
 
 We have shared the training results of our final model
 
