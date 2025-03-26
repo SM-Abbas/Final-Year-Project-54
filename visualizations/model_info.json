@@ -1,0 +1,11 @@
+{
+  "model_file": "final-merged-model3-pruned.safetensors",
+  "model_size_gb": 4.71,
+  "total_parameters": 2468762141,
+  "layer_distribution": {
+    "bert": 59276544,
+    "classifier": 22301,
+    "lm_head": 544997376,
+    "model": 1864465920
+  }
+}
