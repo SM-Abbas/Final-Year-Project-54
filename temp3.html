@@ -2122,6 +2122,35 @@
       background-color: #742a2a;
       border-left: 4px solid #f56565;
     }
+    
+    /* Test API button */
+    .test-api-btn {
+      margin-top: 15px;
+      padding: 8px 16px;
+      background-color: #4a5568;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.2s;
+    }
+    
+    .test-api-btn:hover {
+      background-color: #2d3748;
+    }
+    
+    .test-api-btn .fas {
+      margin-right: 5px;
+    }
+    
+    body.dark-mode .test-api-btn {
+      background-color: #2d3748;
+    }
+    
+    body.dark-mode .test-api-btn:hover {
+      background-color: #4a5568;
+    }
   </style>
   
   <script>
@@ -2388,7 +2417,7 @@
         name: "LegalMind",
         endpoint: "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
         // Token with WRITE access
-        authToken: "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" 
+        authToken: "Bearer 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" 
       },
       // Add more models here if needed
     };
@@ -2829,16 +2858,28 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${modelConfig[activeModel].authToken}`
+              // Use the token directly, which already includes the Bearer prefix
+              "Authorization": modelConfig[activeModel].authToken
             },
             body: JSON.stringify({
-              inputs: userMessageText
+              inputs: userMessageText,
+              options: {
+                use_cache: false,
+                wait_for_model: true
+              }
             })
           })
           .then(response => {
+            console.log("API Response Status:", response.status);
+            console.log("API Response Headers:", [...response.headers.entries()]);
+            
             if (!response.ok) {
               console.error("API Error:", response.status, response.statusText);
-              throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+              // Try to get more error details
+              return response.text().then(text => {
+                console.error("API Error Details:", text);
+                throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+              });
             }
             return response.json();
           })
@@ -3437,6 +3478,63 @@
           behavior: 'smooth'
         });
       });
+    });
+
+    // Function to test API connection
+    function testAPIConnection() {
+      console.log("Testing API connection to:", modelConfig.legalMind.endpoint);
+      
+      // Make a simple test request
+      fetch(modelConfig.legalMind.endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": modelConfig.legalMind.authToken
+        },
+        body: JSON.stringify({
+          inputs: "Hello, can you help me with a legal question?",
+          options: {
+            use_cache: false,
+            wait_for_model: true
+          }
+        })
+      })
+      .then(response => {
+        console.log("Test API Status:", response.status);
+        console.log("Test API Headers:", [...response.headers.entries()]);
+        
+        if (!response.ok) {
+          return response.text().then(text => {
+            console.error("Test API Error Details:", text);
+            showNotification("API connection test failed. Check console for details.", "error");
+            return null;
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data) {
+          console.log("Test API Success:", data);
+          showNotification("API connection successful!", "success");
+        }
+      })
+      .catch(error => {
+        console.error("Test API Error:", error);
+        showNotification("API connection error: " + error.message, "error");
+      });
+    }
+
+    // Add a button to test the connection
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add test button to the welcome message
+      const welcomeMessage = document.querySelector('.welcome-message');
+      if (welcomeMessage) {
+        const testButton = document.createElement('button');
+        testButton.className = 'test-api-btn';
+        testButton.innerHTML = '<i class="fas fa-plug"></i> Test API Connection';
+        testButton.onclick = testAPIConnection;
+        welcomeMessage.appendChild(testButton);
+      }
     });
   </script>
 </body>
