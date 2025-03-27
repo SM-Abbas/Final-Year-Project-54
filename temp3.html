@@ -2411,8 +2411,8 @@
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
-        endpoint: "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud/",
-        // Token with WRITE access - store without Bearer prefix
+        endpoint: "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
+        // Token with WRITE access
         authToken: "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" 
       },
       // Add more models here if needed
@@ -2854,8 +2854,7 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              // Use the token directly, which already includes the Bearer prefix
-              "Authorization": modelConfig[activeModel].authToken
+              "Authorization": `Bearer ${modelConfig[activeModel].authToken}`
             },
             body: JSON.stringify({
               inputs: userMessageText,
@@ -3485,7 +3484,7 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": modelConfig.legalMind.authToken
+          "Authorization": `Bearer ${modelConfig.legalMind.authToken}`
         },
         body: JSON.stringify({
           inputs: "Hello, can you help me with a legal question?",
