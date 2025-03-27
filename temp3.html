@@ -916,7 +916,36 @@
     }
 
     body.dark-mode .welcome-message p {
-      color: #adb5bd;
+      color: #ddd;
+    }
+    
+    .welcome-message .model-info {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #666;
+      background: #f2f5f9;
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 15px;
+    }
+    
+    .welcome-message .model-info .fas {
+      color: #4CAF50;
+      margin-right: 5px;
+    }
+    
+    .welcome-message .model-info .model-id {
+      color: #888;
+      font-size: 12px;
+    }
+    
+    body.dark-mode .welcome-message .model-info {
+      background: #2d3748;
+      color: #cbd5e0;
+    }
+    
+    body.dark-mode .welcome-message .model-info .model-id {
+      color: #a0aec0;
     }
     
     /* Responsive adjustments for sidebar */
@@ -1491,41 +1520,6 @@
       transform: scale(0.95);
     }
 
-    .message-input-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    width: 100%;
-    border: 1px solid #ccc;
-    border-radius: 25px;
-    padding: 5px;
-    background-color: #fff;
-}
-
-.message-input {
-    flex-grow: 1;
-    border: none;
-    outline: none;
-    padding: 10px;
-    font-size: 16px;
-    border-radius: 25px;
-}
-
-.send-button {
-    background-color: #007bff;
-    border: none;
-    color: white;
-    cursor: pointer;
-    padding: 10px 15px;
-    border-radius: 50%;
-    margin-left: 5px;
-}
-
-.send-button:hover {
-    background-color: #0056b3;
-}
-
-
     /* Model dropdown styling */
     .model-dropdown {
       display: flex;
@@ -2040,6 +2034,94 @@
         padding-bottom: 85px !important; /* Extra room for iOS virtual keyboard */
       }
     }
+    
+    /* Active model in dropdown */
+    .dropdown-content a.active-model {
+      background-color: #e8f4ff;
+      color: #007bff;
+      position: relative;
+    }
+    
+    .dropdown-content a.active-model::after {
+      content: '✓';
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    
+    body.dark-mode .dropdown-content a.active-model {
+      background-color: #1a3554;
+      color: #60a5fa;
+    }
+    
+    /* Notification system */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      background-color: #f8f9fa;
+      color: #333;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      z-index: 9999;
+      transform: translateY(-20px);
+      opacity: 0;
+      transition: transform 0.3s, opacity 0.3s;
+      max-width: 300px;
+      word-wrap: break-word;
+    }
+    
+    .notification.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    
+    .notification.info {
+      background-color: #e7f2fd;
+      border-left: 4px solid #2196F3;
+    }
+    
+    .notification.success {
+      background-color: #e8f6e9;
+      border-left: 4px solid #4CAF50;
+    }
+    
+    .notification.warning {
+      background-color: #fff8e6;
+      border-left: 4px solid #FF9800;
+    }
+    
+    .notification.error {
+      background-color: #fdeded;
+      border-left: 4px solid #F44336;
+    }
+    
+    body.dark-mode .notification {
+      background-color: #2d3748;
+      color: #e2e8f0;
+    }
+    
+    body.dark-mode .notification.info {
+      background-color: #1a365d;
+      border-left: 4px solid #4299e1;
+    }
+    
+    body.dark-mode .notification.success {
+      background-color: #1c4532;
+      border-left: 4px solid #48bb78;
+    }
+    
+    body.dark-mode .notification.warning {
+      background-color: #744210;
+      border-left: 4px solid #ed8936;
+    }
+    
+    body.dark-mode .notification.error {
+      background-color: #742a2a;
+      border-left: 4px solid #f56565;
+    }
   </style>
   
   <script>
@@ -2159,11 +2241,12 @@
             
             <div class="dropdown">
               <a href="#" onclick="toggleModelsDropdown(event)">
-                <i class="fas fa-microchip"></i> Models
+                <i class="fas fa-microchip"></i> <span id="currentModelDisplay">LegalMind</span>
               </a>
               <div class="dropdown-content" id="modelsDropdown">
-                <a href="#"><i class="fas fa-brain"></i> Distl-BERT Model</a>
-                <a href="#"><i class="fas fa-brain"></i> Llama Model</a>
+                <a href="#" data-model="legalMind" onclick="setActiveModel('legalMind'); return false;" class="active-model"><i class="fas fa-brain"></i> LegalMind (Abbasgamer1)</a>
+                <a href="#" data-model="distilBert" onclick="setActiveModel('distilBert'); return false;"><i class="fas fa-brain"></i> Distl-BERT Model</a>
+                <a href="#" data-model="llama" onclick="setActiveModel('llama'); return false;"><i class="fas fa-brain"></i> Llama Model</a>
               </div>
             </div>
             
@@ -2262,6 +2345,10 @@
       <div class="welcome-message">
         <h2>Hi, I'm LegalMind.</h2>
           <p>Ask me anything about legal documents and concepts.</p>
+          <div class="model-info">
+            <i class="fas fa-plug"></i> Connected to <span id="welcomeModelName">LegalMind</span> model 
+            <span class="model-id">(revision: 81f0038)</span>
+          </div>
         </div>
         <button class="scroll-bottom-btn" id="scrollBottomBtn" aria-label="Scroll to bottom">
           <i class="fas fa-chevron-down"></i>
@@ -2280,9 +2367,9 @@
             placeholder="Type your message..." 
             aria-label="Type your message"
             onkeypress="if(event.key === 'Enter') sendMessage()"
-          
-             <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
-           > <i class="fas fa-paper-plane"></i>
+          >
+          <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
+            <i class="fas fa-paper-plane"></i>
           </button>
         </div>
       </div>
@@ -2294,6 +2381,83 @@
     // Global storage for chat conversations
     let chats = {};
     let currentChatId = null;
+    
+    // Model configuration
+    const modelConfig = {
+      legalMind: {
+        name: "LegalMind",
+        endpoint: "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
+        authToken: "Bearer hf_KaQIAN1aEBdajwpthuxOsLHKeVMtRBdeHU"
+      },
+      // Add more models here if needed
+    };
+    
+    // Current active model
+    let activeModel = "legalMind";
+    
+    // Function to show a notification
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      
+      // Add to body
+      document.body.appendChild(notification);
+      
+      // Show with animation
+      setTimeout(() => {
+        notification.classList.add('show');
+      }, 10);
+      
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+          document.body.removeChild(notification);
+        }, 300);
+      }, 3000);
+    }
+    
+    // Function to set the active model
+    function setActiveModel(modelKey) {
+      if (modelConfig[modelKey]) {
+        const previousModel = activeModel;
+        activeModel = modelKey;
+        
+        // Update UI to indicate the active model
+        const modelDropdown = document.getElementById("modelsDropdown");
+        if (modelDropdown) {
+          const menuItems = modelDropdown.querySelectorAll('a');
+          menuItems.forEach(item => {
+            if (item.getAttribute('data-model') === modelKey) {
+              item.classList.add('active-model');
+            } else {
+              item.classList.remove('active-model');
+            }
+          });
+        }
+        
+        // Update the model name in the dropdown header
+        const currentModelDisplay = document.getElementById("currentModelDisplay");
+        if (currentModelDisplay) {
+          currentModelDisplay.textContent = modelConfig[modelKey].name;
+        }
+        
+        // Update the welcome message model name
+        const welcomeModelName = document.getElementById("welcomeModelName");
+        if (welcomeModelName) {
+          welcomeModelName.textContent = modelConfig[modelKey].name;
+        }
+        
+        // Show notification if the model actually changed
+        if (previousModel !== modelKey) {
+          showNotification(`Model changed to ${modelConfig[modelKey].name}`, 'success');
+        }
+        
+        return true;
+      }
+      return false;
+    }
 
     // Initialize dark mode from preferences
     document.addEventListener('DOMContentLoaded', function() {
@@ -2659,17 +2823,58 @@
           // Reference to the thinking message to remove it later
           const thinkingMsg = document.querySelector(".message.bot:last-child");
           
-          // Simulate a response after 1-2 seconds
-          setTimeout(() => {
+          // Connect to the Hugging Face endpoint
+          fetch(modelConfig[activeModel].endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": modelConfig[activeModel].authToken
+            },
+            body: JSON.stringify({
+              inputs: userMessageText
+            })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`API request failed with status ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(data => {
             // Remove the thinking message if it exists
             if (thinkingMsg && thinkingMsg.parentNode) {
               thinkingMsg.parentNode.removeChild(thinkingMsg);
             }
             
-            // Add bot response
-            const botResponse = "I understand your request about '" + userMessageText + "'. As a legal assistant, I can help you with documents and legal concepts. What specific information are you looking for?";
+            // Add bot response from the API
+            const botResponse = data[0].generated_text || "I understand your request, but I'm not sure how to respond. Can you please clarify?";
             appendMessage("bot", botResponse);
-          }, 1000 + Math.random() * 1000); // Random time between 1-2 seconds
+          })
+          .catch(error => {
+            console.error("Error connecting to LegalMind API:", error);
+            
+            // Remove the thinking message if it exists
+            if (thinkingMsg && thinkingMsg.parentNode) {
+              thinkingMsg.parentNode.removeChild(thinkingMsg);
+            }
+            
+            // Check if it's an authorization error
+            let errorMessage;
+            if (error.message.includes("401") || error.message.includes("unauthorized")) {
+              errorMessage = "Authentication error: Please check your API token.";
+              showNotification("API Token error. Please update your authentication token.", "error");
+            } else if (error.message.includes("429")) {
+              errorMessage = "Rate limit exceeded. Please try again later.";
+              showNotification("Too many requests. Please wait a moment.", "warning");
+            } else {
+              errorMessage = "I'm having trouble connecting to my knowledge base right now. Please try again later.";
+              showNotification("Connection error to LegalMind API", "error");
+            }
+            
+            // Fallback response in case of error
+            appendMessage("bot", errorMessage);
+          });
+          
         }, 300);
       } else if (!currentChatId) {
         // If no chat is active, create one and then send
