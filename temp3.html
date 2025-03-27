@@ -878,11 +878,7 @@
       background-color: var(--light-bg);
       border-bottom: 1px solid var(--light-border);
       margin-bottom: 0;
-      position: sticky;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 5;
+      position: relative;
       width: 100%;
       border-top-left-radius: var(--border-radius-lg);
       border-top-right-radius: var(--border-radius-lg);
@@ -2415,9 +2411,9 @@
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
-        endpoint: "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
-        // Token with WRITE access
-        authToken: "Bearer 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" 
+        endpoint: "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud/",
+        // Token with WRITE access - store without Bearer prefix
+        authToken: "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" 
       },
       // Add more models here if needed
     };
