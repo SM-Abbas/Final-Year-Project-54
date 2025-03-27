@@ -2387,7 +2387,7 @@
       legalMind: {
         name: "LegalMind",
         endpoint: "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
-        authToken: "Bearer hf_KaQIAN1aEBdajwpthuxOsLHKeVMtRBdeHU"
+        authToken: "hf_KaQIAN1aEBdajwpthuxOsLHKeVMtRBdeHU"
       },
       // Add more models here if needed
     };
@@ -2828,7 +2828,7 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": modelConfig[activeModel].authToken
+              "Authorization": `Bearer ${modelConfig[activeModel].authToken}`
             },
             body: JSON.stringify({
               inputs: userMessageText
@@ -2836,7 +2836,8 @@
           })
           .then(response => {
             if (!response.ok) {
-              throw new Error(`API request failed with status ${response.status}`);
+              console.error("API Error:", response.status, response.statusText);
+              throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
             }
             return response.json();
           })
