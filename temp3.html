@@ -2849,6 +2849,24 @@
           // Reference to the thinking message to remove it later
           const thinkingMsg = document.querySelector(".message.bot:last-child");
           
+          // Prepare conversation history for context
+          let conversationContext = "";
+          if (chats[currentChatId] && chats[currentChatId].messages) {
+            // Get last 5 messages for context
+            const recentMessages = chats[currentChatId].messages.slice(-10);
+            for (const msg of recentMessages) {
+              if (msg.sender === "user") {
+                conversationContext += "User: " + msg.content + "\n";
+              } else if (msg.sender === "bot") {
+                conversationContext += "Assistant: " + msg.content + "\n";
+              }
+            }
+          }
+          
+          // Add the current query
+          const fullPrompt = conversationContext + "User: " + userMessageText + "\nAssistant:";
+          console.log("Sending prompt with context:", fullPrompt);
+          
           // Connect to the Hugging Face endpoint
           fetch(modelConfig[activeModel].endpoint, {
             method: "POST",
@@ -2857,10 +2875,12 @@
               "Authorization": `Bearer ${modelConfig[activeModel].authToken}`
             },
             body: JSON.stringify({
-              inputs: userMessageText,
-              options: {
-                use_cache: false,
-                wait_for_model: true
+              inputs: fullPrompt,
+              parameters: {
+                max_new_tokens: 1024,
+                temperature: 0.7,
+                top_p: 0.95,
+                do_sample: true
               }
             })
           })
@@ -2885,11 +2905,33 @@
             }
             
             // Add bot response from the API
-            const botResponse = data[0].generated_text || "I understand your request, but I'm not sure how to respond. Can you please clarify?";
+            let botResponse = "I understand your request, but I'm not sure how to respond. Can you please clarify?";
+            
+            console.log("API Response Data:", data);
+            
+            // Handle different response formats
+            if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+              botResponse = data[0].generated_text;
+            } else if (data && data.generated_text) {
+              botResponse = data.generated_text;
+            } else if (typeof data === 'string') {
+              botResponse = data;
+            } else if (data && data.choices && data.choices.length > 0) {
+              // Handle OpenAI-like format
+              botResponse = data.choices[0].message?.content || data.choices[0].text;
+            } else {
+              console.warn("Unexpected API response format:", data);
+            }
+            
             appendMessage("bot", botResponse);
           })
           .catch(error => {
             console.error("Error connecting to LegalMind API:", error);
+            console.error("Full error details:", {
+              message: error.message,
+              stack: error.stack,
+              endpoint: modelConfig[activeModel].endpoint
+            });
             
             // Remove the thinking message if it exists
             if (thinkingMsg && thinkingMsg.parentNode) {
@@ -2904,6 +2946,9 @@
             } else if (error.message.includes("429")) {
               errorMessage = "Rate limit exceeded. Please try again later.";
               showNotification("Too many requests. Please wait a moment.", "warning");
+            } else if (error.message.includes("CORS") || error.message.includes("Failed to fetch")) {
+              errorMessage = "Network error: CORS or connectivity issue. Please check your network settings or try the Test API Connection button.";
+              showNotification("Network connectivity issue. Try the Test API Connection button.", "error");
             } else {
               errorMessage = "I'm having trouble connecting to my knowledge base right now. Please try again later.";
               showNotification("Connection error to LegalMind API", "error");
