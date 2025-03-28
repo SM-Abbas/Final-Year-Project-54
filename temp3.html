@@ -3790,17 +3790,14 @@
       });
     }
 
-    // Add a button to test the connection
+    // Add a button to test the connection - button removed per user request
     document.addEventListener('DOMContentLoaded', function() {
-      // Add test button to the welcome message
-      const welcomeMessage = document.querySelector('.welcome-message');
-      if (welcomeMessage) {
-        const testButton = document.createElement('button');
-        testButton.className = 'test-api-btn';
-        testButton.innerHTML = '<i class="fas fa-plug"></i> Test API Connection';
-        testButton.onclick = testAPIConnection;
-        welcomeMessage.appendChild(testButton);
-      }
+      // No buttons added to UI
+    });
+
+    // Add buttons to test the connection and wake up the endpoint - buttons removed per user request
+    document.addEventListener('DOMContentLoaded', function() {
+      // No buttons added to UI
     });
 
     // Function to process document content
@@ -4042,19 +4039,6 @@
         showNotification("Error sending wake up request: " + error.message, "error");
       });
     }
-
-    // Add buttons to test the connection and wake up the endpoint
-    document.addEventListener('DOMContentLoaded', function() {
-      // Add test button to the welcome message
-      const welcomeMessage = document.querySelector('.welcome-message');
-      if (welcomeMessage) {
-        const testButton = document.createElement('button');
-        testButton.className = 'test-api-btn';
-        testButton.innerHTML = '<i class="fas fa-plug"></i> Test API Connection';
-        testButton.onclick = testAPIConnection;
-        welcomeMessage.appendChild(testButton);
-      }
-    });
 
     // Function to check if the message is asking about chatbot identity
     function isIdentityQuestion(text) {
