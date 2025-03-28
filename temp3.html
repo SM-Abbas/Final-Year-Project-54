@@ -2438,7 +2438,8 @@
         endpoints: [
           "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
           "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
-          "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind"
+          "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind",
+          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324" // Hidden fallback
         ],
         // Multiple API tokens to try as alternatives
         authTokens: [
@@ -2448,7 +2449,9 @@
         ],
         // Track which endpoint and token is currently being used
         currentEndpointIndex: 0,
-        currentTokenIndex: 0
+        currentTokenIndex: 0,
+        // Flag to indicate we're using the fallback model
+        usingFallbackModel: false
       },
       // Add more models here if needed
     };
@@ -2866,6 +2869,27 @@
         }
     };
 
+    // Function to check if the message is asking about chatbot identity
+    function isIdentityQuestion(text) {
+      const lowerText = text.toLowerCase().trim();
+      
+      // Check for common identity questions
+      const identityPatterns = [
+        /^who are you/,
+        /^what are you/,
+        /tell me about yourself/,
+        /^who is legal ?mind/,
+        /^what is legal ?mind/,
+        /introduce yourself/,
+        /your name/,
+        /^who created you/,
+        /^what do you do/,
+        /^what can you do/
+      ];
+      
+      return identityPatterns.some(pattern => pattern.test(lowerText));
+    }
+
     // Improved send message function
     function sendMessage() {
       const messageInput = document.getElementById("messageInput");
@@ -2877,6 +2901,17 @@
         
         // Append user's message
         appendMessage("user", userMessageText);
+        
+        // Check if this is an identity question
+        if (isIdentityQuestion(userMessageText)) {
+          // Provide standard identity response
+          const identityResponse = "I'm LegalMind, an AI legal document assistant.";
+          setTimeout(() => {
+            console.log("Responding with standard identity response:", identityResponse);
+            appendMessage("bot", identityResponse);
+          }, 300);
+          return;
+        }
         
         // Show loading indicator with a slight delay
         const typingIndicator = setTimeout(() => {
@@ -2900,7 +2935,23 @@
           }
           
           // Add the current query
-          const fullPrompt = "You are LegalMind, a helpful assistant. Please respond to this query:\nUser: " + userMessageText + "\nAssistant:";
+          let fullPrompt = "You are LegalMind, a helpful assistant. Please respond to this query:\nUser: " + userMessageText + "\nAssistant:";
+          
+          // If we're using the DeepSeek model, use its recommended format
+          const currentEndpointInfo = getCurrentEndpointInfo(activeModel);
+          if (modelConfig[activeModel].usingFallbackModel) {
+            // DeepSeek format with current date
+            const today = new Date();
+            const formattedDate = today.toLocaleDateString('en-US', { 
+              month: 'long', 
+              day: 'numeric',
+              weekday: 'long' 
+            });
+            
+            fullPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\nUser: ${userMessageText}\nAssistant:`;
+            console.log("Using DeepSeek fallback model with specialized prompt format");
+          }
+          
           console.log("Sending prompt:", fullPrompt);
           
           // Get document context if applicable
@@ -2922,6 +2973,25 @@
           // Connect to the Hugging Face endpoint
           console.log("Making API request to:", modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex]);
           
+          // Prepare API request parameters
+          let requestParams = {
+            max_new_tokens: 1024,
+            temperature: 0.7,
+            top_p: 0.95,
+            do_sample: true,
+            return_full_text: false
+          };
+          
+          // Use DeepSeek's recommended parameters if using the fallback model
+          if (modelConfig[activeModel].usingFallbackModel) {
+            requestParams = {
+              max_new_tokens: 1024,
+              temperature: 0.3,  // DeepSeek recommends 0.3
+              top_p: 0.8,
+              do_sample: true
+            };
+          }
+          
           fetch(modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex], {
             method: "POST",
             headers: {
@@ -2930,13 +3000,7 @@
             },
             body: JSON.stringify({
               inputs: finalPrompt,
-              parameters: {
-                max_new_tokens: 1024,
-                temperature: 0.7,
-                top_p: 0.95,
-                do_sample: true,
-                return_full_text: false
-              }
+              parameters: requestParams
             })
           })
           .then(response => {
@@ -2985,6 +3049,20 @@
             } else {
               console.warn("Unexpected API response format:", data);
               botResponse = "I apologize, but I received an unexpected response format. Please try again with your question.";
+            }
+            
+            // If we are using the DeepSeek fallback model, check response for any non-English part and format
+            if (modelConfig[activeModel].usingFallbackModel && botResponse) {
+              // Remove any "Assistant:" prefix that might be in the response
+              botResponse = botResponse.replace(/^Assistant:\s*/i, '');
+              
+              // If response starts with Chinese characters, try to find the first English part
+              if (/^[\u4e00-\u9fa5]/.test(botResponse)) {
+                const englishPart = botResponse.match(/[a-zA-Z]/);
+                if (englishPart && englishPart.index > 0) {
+                  botResponse = botResponse.substring(englishPart.index);
+                }
+              }
             }
             
             // Safety check for empty responses
@@ -3679,7 +3757,14 @@
           
           // Also append result to chat if a chat is active
           if (currentChatId) {
-            appendMessage("bot", `API Test Result: Connection successful! Using endpoint ${model.currentEndpointIndex} and token ${model.currentTokenIndex}.`);
+            let successMessage = `API Test Result: Connection successful! Using endpoint ${model.currentEndpointIndex} and token ${model.currentTokenIndex}.`;
+            
+            // If we're using the DeepSeek fallback model, indicate this in the message
+            if (model.currentEndpointIndex === model.endpoints.length - 1) {
+              successMessage = "API Test Result: Connection successful using fallback model. The original model endpoints are not available, but this alternative will work.";
+            }
+            
+            appendMessage("bot", successMessage);
           }
         }
       })
@@ -3868,7 +3953,16 @@
       else if (model.currentEndpointIndex < model.endpoints.length - 1) {
         model.currentEndpointIndex++;
         model.currentTokenIndex = 0;
-        console.log(`Switching to alternative endpoint ${model.currentEndpointIndex} with token ${model.currentTokenIndex}`);
+        
+        // Check if we're now using the DeepSeek fallback model (last endpoint)
+        if (model.currentEndpointIndex === model.endpoints.length - 1) {
+          console.log("Switching to hidden fallback model DeepSeek-V3-0324");
+          model.usingFallbackModel = true;
+          showNotification("Trying alternative model (fallback)...", "info");
+        } else {
+          console.log(`Switching to alternative endpoint ${model.currentEndpointIndex} with token ${model.currentTokenIndex}`);
+        }
+        
         return true;
       }
       
@@ -3876,6 +3970,7 @@
       console.log("All endpoints and tokens attempted without success");
       model.currentEndpointIndex = 0;
       model.currentTokenIndex = 0;
+      model.usingFallbackModel = false;
       return false;
     }
     
@@ -3960,16 +4055,29 @@
         testButton.innerHTML = '<i class="fas fa-plug"></i> Test API Connection';
         testButton.onclick = testAPIConnection;
         welcomeMessage.appendChild(testButton);
-        
-        // Add wake up button
-        const wakeUpButton = document.createElement('button');
-        wakeUpButton.className = 'wake-up-btn';
-        wakeUpButton.style.marginLeft = '10px';
-        wakeUpButton.innerHTML = '<i class="fas fa-power-off"></i> Wake Up Endpoint';
-        wakeUpButton.onclick = wakeUpEndpoint;
-        welcomeMessage.appendChild(wakeUpButton);
       }
     });
+
+    // Function to check if the message is asking about chatbot identity
+    function isIdentityQuestion(text) {
+      const lowerText = text.toLowerCase().trim();
+      
+      // Check for common identity questions
+      const identityPatterns = [
+        /^who are you/,
+        /^what are you/,
+        /tell me about yourself/,
+        /^who is legal ?mind/,
+        /^what is legal ?mind/,
+        /introduce yourself/,
+        /your name/,
+        /^who created you/,
+        /^what do you do/,
+        /^what can you do/
+      ];
+      
+      return identityPatterns.some(pattern => pattern.test(lowerText));
+    }
   </script>
 </body>
 </html>
