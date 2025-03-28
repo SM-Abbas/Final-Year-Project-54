@@ -2411,8 +2411,8 @@
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
-        endpoint: "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
-        // Token with WRITE access
+        endpoint: "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
+        // Token with WRITE access - replace with a valid token
         authToken: "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" 
       },
       // Add more models here if needed
@@ -3479,6 +3479,18 @@
     function testAPIConnection() {
       console.log("Testing API connection to:", modelConfig.legalMind.endpoint);
       
+      // Show testing notification
+      showNotification("Testing API connection...", "info");
+      
+      // Check if token appears valid
+      if (!modelConfig.legalMind.authToken || 
+          !modelConfig.legalMind.authToken.startsWith('hf_') || 
+          modelConfig.legalMind.authToken.length < 10) {
+        console.error("API Token appears invalid:", modelConfig.legalMind.authToken);
+        showNotification("API token appears invalid. Check console for details.", "error");
+        return;
+      }
+      
       // Make a simple test request
       fetch(modelConfig.legalMind.endpoint, {
         method: "POST",
@@ -3501,7 +3513,7 @@
         if (!response.ok) {
           return response.text().then(text => {
             console.error("Test API Error Details:", text);
-            showNotification("API connection test failed. Check console for details.", "error");
+            showNotification(`API connection failed (${response.status}): ${response.statusText}`, "error");
             return null;
           });
         }
@@ -3534,4 +3546,3 @@
   </script>
 </body>
 </html>
-
