@@ -2960,12 +2960,23 @@
           
           // If there are relevant documents, add context
           if (documentContext) {
-            finalPrompt = 
-              "You are LegalMind, a legal assistant that can analyze documents.\n\n" +
-              "User has uploaded the following document(s):" + 
-              documentContext + 
-              "\n\nUser: " + userMessageText + "\n" +
-              "Assistant:";
+            if (modelConfig[activeModel].usingFallbackModel) {
+              finalPrompt = 
+                `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
+                "Document(s) uploaded by user:" + 
+                documentContext + 
+                "\n\nUser: " + userMessageText + "\n" +
+                "For any document analysis, ALWAYS include a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness. Focus on making suggestions that are concise and directly applicable.\n" +
+                "Assistant:";
+            } else {
+              finalPrompt = 
+                "You are LegalMind, a legal assistant that can analyze documents.\n\n" +
+                "User has uploaded the following document(s):" + 
+                documentContext + 
+                "\n\nUser: " + userMessageText + "\n" +
+                "For any document analysis, ALWAYS include a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness. Focus on making suggestions that are concise and directly applicable.\n" +
+                "Assistant:";
+            }
             
             console.log("Sending prompt with document context (length: " + finalPrompt.length + " chars)");
           }
@@ -3898,43 +3909,30 @@
         return context; // No documents uploaded
       }
       
+      // Always include document context by default
+      // Check if we need to include all documents or specific ones
       const messageLower = messageText.toLowerCase();
-      
-      // Check for document-related keywords in the message
-      const documentKeywords = [
-        "document", "file", "pdf", "summarize", "resume", "analyze", 
-        "read", "extract", "content", "text", "information"
-      ];
-      
-      const containsDocumentKeywords = documentKeywords.some(keyword => 
-        messageLower.includes(keyword)
+      const mentionedDocuments = documentList.filter(filename => 
+        messageLower.includes(filename.toLowerCase())
       );
       
-      // If message mentions specific document or has document keywords
-      if (containsDocumentKeywords) {
-        // Check if we need to include all documents or specific ones
-        const mentionedDocuments = documentList.filter(filename => 
-          messageLower.includes(filename.toLowerCase())
-        );
+      const documentsToInclude = mentionedDocuments.length > 0 ? 
+        mentionedDocuments : documentList;
+      
+      // Add relevant document content with clear delimiters
+      documentsToInclude.forEach(filename => {
+        let docContent = uploadedDocuments[filename];
         
-        const documentsToInclude = mentionedDocuments.length > 0 ? 
-          mentionedDocuments : documentList;
+        // Truncate very large documents (limit to ~10,000 chars)
+        if (docContent.length > 10000) {
+          docContent = docContent.substring(0, 10000) + 
+            "\n\n[Document content truncated due to length. This is only a portion of the full document.]";
+        }
         
-        // Add relevant document content with clear delimiters
-        documentsToInclude.forEach(filename => {
-          let docContent = uploadedDocuments[filename];
-          
-          // Truncate very large documents (limit to ~10,000 chars)
-          if (docContent.length > 10000) {
-            docContent = docContent.substring(0, 10000) + 
-              "\n\n[Document content truncated due to length. This is only a portion of the full document.]";
-          }
-          
-          context += `\n\n--- DOCUMENT: ${filename} ---\n`;
-          context += docContent;
-          context += "\n--- END OF DOCUMENT ---\n\n";
-        });
-      }
+        context += `\n\n--- DOCUMENT: ${filename} ---\n`;
+        context += docContent;
+        context += "\n--- END OF DOCUMENT ---\n\n";
+      });
       
       return context;
     }
