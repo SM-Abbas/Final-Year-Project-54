@@ -2122,24 +2122,35 @@
     }
     
     /* Test API button */
-    .test-api-btn {
-      margin-top: 15px;
-      padding: 8px 16px;
-      background-color: #4a5568;
+    .test-api-btn, .wake-up-btn {
+      background-color: var(--primary-color);
       color: white;
       border: none;
-      border-radius: 4px;
+      padding: 8px 12px;
+      border-radius: var(--border-radius-sm);
+      margin-top: 15px;
       cursor: pointer;
       font-size: 14px;
       transition: background-color 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
     
-    .test-api-btn:hover {
-      background-color: #2d3748;
+    .test-api-btn:hover, .wake-up-btn:hover {
+      background-color: var(--primary-hover);
     }
     
-    .test-api-btn .fas {
-      margin-right: 5px;
+    .test-api-btn i, .wake-up-btn i {
+      margin-right: 6px;
+    }
+    
+    .wake-up-btn {
+      background-color: #28a745;
+    }
+    
+    .wake-up-btn:hover {
+      background-color: #218838;
     }
     
     body.dark-mode .test-api-btn {
@@ -2148,6 +2159,14 @@
     
     body.dark-mode .test-api-btn:hover {
       background-color: #4a5568;
+    }
+    
+    body.dark-mode .wake-up-btn {
+      background-color: #1e7e34;
+    }
+    
+    body.dark-mode .wake-up-btn:hover {
+      background-color: #155724;
     }
   </style>
   
@@ -2415,9 +2434,21 @@
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
-        endpoint: "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
-        // Token with WRITE access - replace with a valid token
-        authToken: "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" 
+        // Original endpoint is scaled to zero due to inactivity
+        endpoints: [
+          "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
+          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+          "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind"
+        ],
+        // Multiple API tokens to try as alternatives
+        authTokens: [
+          "hf_ZyAqVZuteFYjaVyoIODEKpyCWTmLfX1BBr",  // legalmindapi - WRITE
+          "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",  // legalmind - READ
+          "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"   // Current token
+        ],
+        // Track which endpoint and token is currently being used
+        currentEndpointIndex: 0,
+        currentTokenIndex: 0
       },
       // Add more models here if needed
     };
@@ -2869,8 +2900,8 @@
           }
           
           // Add the current query
-          const fullPrompt = conversationContext + "User: " + userMessageText + "\nAssistant:";
-          console.log("Sending prompt with context:", fullPrompt);
+          const fullPrompt = "You are LegalMind, a helpful assistant. Please respond to this query:\nUser: " + userMessageText + "\nAssistant:";
+          console.log("Sending prompt:", fullPrompt);
           
           // Get document context if applicable
           const documentContext = getDocumentContext(userMessageText);
@@ -2882,20 +2913,20 @@
               "You are LegalMind, a legal assistant that can analyze documents.\n\n" +
               "User has uploaded the following document(s):" + 
               documentContext + 
-              "\n\nConversation history:\n" + conversationContext + 
-              "User: " + userMessageText + "\n" +
-              "When responding, refer to specific sections of the document if relevant.\n" +
+              "\n\nUser: " + userMessageText + "\n" +
               "Assistant:";
             
             console.log("Sending prompt with document context (length: " + finalPrompt.length + " chars)");
           }
           
           // Connect to the Hugging Face endpoint
-          fetch(modelConfig[activeModel].endpoint, {
+          console.log("Making API request to:", modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex]);
+          
+          fetch(modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex], {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${modelConfig[activeModel].authToken}`
+              "Authorization": `Bearer ${modelConfig[activeModel].authTokens[modelConfig[activeModel].currentTokenIndex]}`
             },
             body: JSON.stringify({
               inputs: finalPrompt,
@@ -2903,13 +2934,17 @@
                 max_new_tokens: 1024,
                 temperature: 0.7,
                 top_p: 0.95,
-                do_sample: true
+                do_sample: true,
+                return_full_text: false
               }
             })
           })
           .then(response => {
             console.log("API Response Status:", response.status);
             console.log("API Response Headers:", [...response.headers.entries()]);
+            
+            // Add a verification message to the console
+            console.log("API REQUEST SENT SUCCESSFULLY - Waiting for response from: " + modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex]);
             
             if (!response.ok) {
               console.error("API Error:", response.status, response.statusText);
@@ -2927,23 +2962,34 @@
               thinkingMsg.parentNode.removeChild(thinkingMsg);
             }
             
+            // Log complete response data for debugging
+            console.log("Complete API Response:", JSON.stringify(data));
+            
             // Add bot response from the API
-            let botResponse = "I understand your request, but I'm not sure how to respond. Can you please clarify?";
+            let botResponse = ""; // Empty default
             
-            console.log("API Response Data:", data);
-            
-            // Handle different response formats
+            // Specific handling for Mistral model
             if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-              botResponse = data[0].generated_text;
+              botResponse = data[0].generated_text.trim();
+              console.log("Using array[0].generated_text format");
             } else if (data && data.generated_text) {
-              botResponse = data.generated_text;
+              botResponse = data.generated_text.trim();
+              console.log("Using data.generated_text format");
             } else if (typeof data === 'string') {
-              botResponse = data;
+              botResponse = data.trim();
+              console.log("Using string format");
             } else if (data && data.choices && data.choices.length > 0) {
               // Handle OpenAI-like format
-              botResponse = data.choices[0].message?.content || data.choices[0].text;
+              botResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
+              console.log("Using OpenAI-like format");
             } else {
               console.warn("Unexpected API response format:", data);
+              botResponse = "I apologize, but I received an unexpected response format. Please try again with your question.";
+            }
+            
+            // Safety check for empty responses
+            if (!botResponse) {
+              botResponse = "I apologize, but I received an empty response. Please try asking your question again.";
             }
             
             appendMessage("bot", botResponse);
@@ -2953,8 +2999,21 @@
             console.error("Full error details:", {
               message: error.message,
               stack: error.stack,
-              endpoint: modelConfig[activeModel].endpoint
+              endpoint: modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex]
             });
+            
+            // Try alternative endpoint or token
+            if (tryNextEndpointOrToken(activeModel)) {
+              const endpointInfo = getCurrentEndpointInfo(activeModel);
+              console.log(`Retrying with endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) and token ${endpointInfo.tokenIndex}`);
+              
+              // Show retry notification
+              showNotification("Trying alternative API endpoint...", "info");
+              
+              // Retry with new endpoint/token (message indicator stays)
+              setTimeout(() => sendMessage(), 1000);
+              return;
+            }
             
             // Remove the thinking message if it exists
             if (thinkingMsg && thinkingMsg.parentNode) {
@@ -3548,32 +3607,38 @@
 
     // Function to test API connection
     function testAPIConnection() {
-      console.log("Testing API connection to:", modelConfig.legalMind.endpoint);
+      const model = modelConfig.legalMind;
+      const endpoint = model.endpoints[model.currentEndpointIndex];
+      const token = model.authTokens[model.currentTokenIndex];
+      
+      console.log("Testing API connection to:", endpoint);
+      console.log("Using token index:", model.currentTokenIndex);
       
       // Show testing notification
-      showNotification("Testing API connection...", "info");
+      showNotification(`Testing API connection to endpoint ${model.currentEndpointIndex}...`, "info");
       
       // Check if token appears valid
-      if (!modelConfig.legalMind.authToken || 
-          !modelConfig.legalMind.authToken.startsWith('hf_') || 
-          modelConfig.legalMind.authToken.length < 10) {
-        console.error("API Token appears invalid:", modelConfig.legalMind.authToken);
+      if (!token || !token.startsWith('hf_') || token.length < 10) {
+        console.error("API Token appears invalid:", token);
         showNotification("API token appears invalid. Check console for details.", "error");
         return;
       }
       
       // Make a simple test request
-      fetch(modelConfig.legalMind.endpoint, {
+      fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${modelConfig.legalMind.authToken}`
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          inputs: "Hello, can you help me with a legal question?",
-          options: {
-            use_cache: false,
-            wait_for_model: true
+          inputs: "Hello, can you give me a very brief response to test the connection?",
+          parameters: {
+            max_new_tokens: 50,
+            temperature: 0.7,
+            top_p: 0.95,
+            do_sample: true,
+            return_full_text: false
           }
         })
       })
@@ -3585,6 +3650,12 @@
           return response.text().then(text => {
             console.error("Test API Error Details:", text);
             showNotification(`API connection failed (${response.status}): ${response.statusText}`, "error");
+            
+            // Try next endpoint or token
+            if (tryNextEndpointOrToken("legalMind")) {
+              setTimeout(testAPIConnection, 1000);
+            }
+            
             return null;
           });
         }
@@ -3593,12 +3664,33 @@
       .then(data => {
         if (data) {
           console.log("Test API Success:", data);
-          showNotification("API connection successful!", "success");
+          
+          // Display the actual response in the notification
+          let responseText = "";
+          if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+            responseText = data[0].generated_text.substring(0, 50); // First 50 chars
+          } else if (data && data.generated_text) {
+            responseText = data.generated_text.substring(0, 50);
+          } else {
+            responseText = JSON.stringify(data).substring(0, 50);
+          }
+          
+          showNotification(`API connection successful! Response: "${responseText}..."`, "success");
+          
+          // Also append result to chat if a chat is active
+          if (currentChatId) {
+            appendMessage("bot", `API Test Result: Connection successful! Using endpoint ${model.currentEndpointIndex} and token ${model.currentTokenIndex}.`);
+          }
         }
       })
       .catch(error => {
         console.error("Test API Error:", error);
         showNotification("API connection error: " + error.message, "error");
+        
+        // Try next endpoint or token
+        if (tryNextEndpointOrToken("legalMind")) {
+          setTimeout(testAPIConnection, 1000);
+        }
       });
     }
 
@@ -3761,6 +3853,123 @@
       
       return context;
     }
+
+    // Function to try the next endpoint or token
+    function tryNextEndpointOrToken(activeModelKey) {
+      const model = modelConfig[activeModelKey];
+      
+      // Try the next token with the same endpoint
+      if (model.currentTokenIndex < model.authTokens.length - 1) {
+        model.currentTokenIndex++;
+        console.log(`Switching to alternative token ${model.currentTokenIndex} for endpoint ${model.currentEndpointIndex}`);
+        return true;
+      } 
+      // If we've tried all tokens, try the next endpoint with the first token
+      else if (model.currentEndpointIndex < model.endpoints.length - 1) {
+        model.currentEndpointIndex++;
+        model.currentTokenIndex = 0;
+        console.log(`Switching to alternative endpoint ${model.currentEndpointIndex} with token ${model.currentTokenIndex}`);
+        return true;
+      }
+      
+      // If we've tried all endpoints and tokens, reset to the first combination for next time
+      console.log("All endpoints and tokens attempted without success");
+      model.currentEndpointIndex = 0;
+      model.currentTokenIndex = 0;
+      return false;
+    }
+    
+    // Function to get current endpoint and token info
+    function getCurrentEndpointInfo(activeModelKey) {
+      const model = modelConfig[activeModelKey];
+      return {
+        endpoint: model.endpoints[model.currentEndpointIndex],
+        token: model.authTokens[model.currentTokenIndex],
+        endpointIndex: model.currentEndpointIndex,
+        tokenIndex: model.currentTokenIndex
+      };
+    }
+
+    // Function to wake up a scaled-to-zero endpoint
+    function wakeUpEndpoint() {
+      const model = modelConfig.legalMind;
+      // Force using the first endpoint (AWS endpoint) which is scaled to zero
+      model.currentEndpointIndex = 0;
+      model.currentTokenIndex = 0;
+      
+      const endpoint = model.endpoints[0];
+      const token = model.authTokens[0];
+      
+      console.log("Attempting to wake up endpoint:", endpoint);
+      showNotification("Attempting to wake up endpoint...", "info");
+      
+      // Make a simple test request to wake it up
+      fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          inputs: "Wake up",
+          parameters: {
+            max_new_tokens: 10,
+            temperature: 0.7,
+            do_sample: true
+          }
+        })
+      })
+      .then(response => {
+        console.log("Wake up status:", response.status);
+        
+        if (!response.ok) {
+          return response.text().then(text => {
+            console.error("Wake up details:", text);
+            
+            if (text.includes("scaled to zero") || response.status === 503) {
+              showNotification("Endpoint is scaled to zero. It may take a few minutes to wake up.", "warning");
+              if (currentChatId) {
+                appendMessage("bot", "The endpoint is currently inactive (scaled to zero). I've sent a wake-up request. It may take 1-2 minutes to start. Please try again shortly.");
+              }
+            } else {
+              showNotification(`Wake up request failed: ${response.status}`, "error");
+            }
+            return null;
+          });
+        }
+        
+        showNotification("Endpoint is waking up! Try your request again in a moment.", "success");
+        if (currentChatId) {
+          appendMessage("bot", "The endpoint is waking up! Please try your request again in about 30 seconds.");
+        }
+        return response.json();
+      })
+      .catch(error => {
+        console.error("Wake up error:", error);
+        showNotification("Error sending wake up request: " + error.message, "error");
+      });
+    }
+
+    // Add buttons to test the connection and wake up the endpoint
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add test button to the welcome message
+      const welcomeMessage = document.querySelector('.welcome-message');
+      if (welcomeMessage) {
+        const testButton = document.createElement('button');
+        testButton.className = 'test-api-btn';
+        testButton.innerHTML = '<i class="fas fa-plug"></i> Test API Connection';
+        testButton.onclick = testAPIConnection;
+        welcomeMessage.appendChild(testButton);
+        
+        // Add wake up button
+        const wakeUpButton = document.createElement('button');
+        wakeUpButton.className = 'wake-up-btn';
+        wakeUpButton.style.marginLeft = '10px';
+        wakeUpButton.innerHTML = '<i class="fas fa-power-off"></i> Wake Up Endpoint';
+        wakeUpButton.onclick = wakeUpEndpoint;
+        welcomeMessage.appendChild(wakeUpButton);
+      }
+    });
   </script>
 </body>
 </html>
