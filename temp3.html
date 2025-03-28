@@ -7,6 +7,8 @@
   <title>LegalMind Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Add PDF.js library for PDF processing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
   <style>
     /* CSS Variables for theming */
     :root {
@@ -2370,6 +2372,7 @@
       <div class="welcome-message">
         <h2>Hi, I'm LegalMind.</h2>
           <p>Ask me anything about legal documents and concepts.</p>
+          <p><i class="fas fa-file-upload"></i> Upload documents using the paperclip icon and I can analyze them for you.</p>
           <div class="model-info">
             <i class="fas fa-plug"></i> Connected to <span id="welcomeModelName">LegalMind</span> model 
             <span class="model-id">(revision: 81f0038)</span>
@@ -2403,15 +2406,16 @@
 
   <script src="auth.js" type="module"></script>
   <script>
-    // Global storage for chat conversations
+    // Global storage for chat conversations and documents
     let chats = {};
     let currentChatId = null;
+    let uploadedDocuments = {}; // Store document content by filename
     
     // Model configuration
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
-        endpoint: "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
+        endpoint: "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
         // Token with WRITE access - replace with a valid token
         authToken: "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" 
       },
@@ -2654,6 +2658,7 @@
         welcomeMessage.innerHTML = `
             <h2>Hi, I'm LegalMind.</h2>
             <p>Ask me anything about legal documents and concepts.</p>
+            <p><i class="fas fa-file-upload"></i> Upload documents using the paperclip icon and I can analyze them for you.</p>
         `;
         chatBox.appendChild(welcomeMessage);
         
@@ -2867,6 +2872,24 @@
           const fullPrompt = conversationContext + "User: " + userMessageText + "\nAssistant:";
           console.log("Sending prompt with context:", fullPrompt);
           
+          // Get document context if applicable
+          const documentContext = getDocumentContext(userMessageText);
+          let finalPrompt = fullPrompt;
+          
+          // If there are relevant documents, add context
+          if (documentContext) {
+            finalPrompt = 
+              "You are LegalMind, a legal assistant that can analyze documents.\n\n" +
+              "User has uploaded the following document(s):" + 
+              documentContext + 
+              "\n\nConversation history:\n" + conversationContext + 
+              "User: " + userMessageText + "\n" +
+              "When responding, refer to specific sections of the document if relevant.\n" +
+              "Assistant:";
+            
+            console.log("Sending prompt with document context (length: " + finalPrompt.length + " chars)");
+          }
+          
           // Connect to the Hugging Face endpoint
           fetch(modelConfig[activeModel].endpoint, {
             method: "POST",
@@ -2875,7 +2898,7 @@
               "Authorization": `Bearer ${modelConfig[activeModel].authToken}`
             },
             body: JSON.stringify({
-              inputs: fullPrompt,
+              inputs: finalPrompt,
               parameters: {
                 max_new_tokens: 1024,
                 temperature: 0.7,
@@ -3330,6 +3353,9 @@
       const file = event.target.files[0];
       if (!file) return;
       
+      // Process document content for the chat
+      processDocumentContent(file);
+      
       // For mobile devices, just show the file in the chat as a message
       if (window.innerWidth <= 992) {
         if (currentChatId) {
@@ -3588,6 +3614,153 @@
         welcomeMessage.appendChild(testButton);
       }
     });
+
+    // Function to process document content
+    function processDocumentContent(file) {
+      console.log("Processing document:", file.name);
+      showNotification("Processing document: " + file.name, "info");
+      
+      if (file.name.endsWith('.pdf')) {
+        extractTextFromPDF(file)
+          .then(text => {
+            console.log("Extracted PDF text length:", text.length);
+            uploadedDocuments[file.name] = text;
+            showNotification("PDF processed successfully", "success");
+          })
+          .catch(error => {
+            console.error("Error extracting PDF text:", error);
+            showNotification("Error processing PDF", "error");
+          });
+      } else if (file.name.endsWith('.txt')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const text = e.target.result;
+          uploadedDocuments[file.name] = text;
+          console.log("Processed text file:", file.name);
+          showNotification("Text file processed successfully", "success");
+        };
+        reader.onerror = function() {
+          console.error("Error reading text file");
+          showNotification("Error processing text file", "error");
+        };
+        reader.readAsText(file);
+      } else if (file.type.startsWith('image/')) {
+        // For images, just store a placeholder
+        uploadedDocuments[file.name] = "[Image: " + file.name + "]";
+        showNotification("Image added to conversation", "success");
+      } else {
+        // For other files, store a note that they can't be processed
+        uploadedDocuments[file.name] = "[File type not supported for content extraction: " + file.name + "]";
+        showNotification("File type not supported for content processing", "warning");
+      }
+    }
+    
+    // Function to extract text from PDF
+    async function extractTextFromPDF(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = async function(e) {
+          const typedArray = new Uint8Array(e.target.result);
+          
+          try {
+            // Load the PDF document
+            const loadingTask = pdfjsLib.getDocument(typedArray);
+            const pdf = await loadingTask.promise;
+            
+            let fullText = "";
+            
+            // Loop through each page to extract text
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              
+              // Extract the text items
+              const pageText = textContent.items.map(item => item.str).join(' ');
+              fullText += pageText + "\n\n"; // Add page breaks
+            }
+            
+            resolve(fullText);
+          } catch (error) {
+            console.error("PDF.js error:", error);
+            reject(error);
+          }
+        };
+        
+        reader.onerror = function() {
+          reject(new Error("Error reading the file"));
+        };
+        
+        reader.readAsArrayBuffer(file);
+      });
+    }
+    
+    // Function to get document summary for the prompt
+    function getDocumentSummary() {
+      let summary = "";
+      
+      // Add a list of available documents
+      const documentList = Object.keys(uploadedDocuments);
+      if (documentList.length > 0) {
+        summary += "\n\nAvailable documents:\n";
+        documentList.forEach(filename => {
+          summary += `- ${filename}\n`;
+        });
+      }
+      
+      return summary;
+    }
+
+    // Function to get document context for the prompt
+    function getDocumentContext(messageText) {
+      // Look for document references in the message
+      const documentList = Object.keys(uploadedDocuments);
+      let context = "";
+      
+      if (documentList.length === 0) {
+        return context; // No documents uploaded
+      }
+      
+      const messageLower = messageText.toLowerCase();
+      
+      // Check for document-related keywords in the message
+      const documentKeywords = [
+        "document", "file", "pdf", "summarize", "resume", "analyze", 
+        "read", "extract", "content", "text", "information"
+      ];
+      
+      const containsDocumentKeywords = documentKeywords.some(keyword => 
+        messageLower.includes(keyword)
+      );
+      
+      // If message mentions specific document or has document keywords
+      if (containsDocumentKeywords) {
+        // Check if we need to include all documents or specific ones
+        const mentionedDocuments = documentList.filter(filename => 
+          messageLower.includes(filename.toLowerCase())
+        );
+        
+        const documentsToInclude = mentionedDocuments.length > 0 ? 
+          mentionedDocuments : documentList;
+        
+        // Add relevant document content with clear delimiters
+        documentsToInclude.forEach(filename => {
+          let docContent = uploadedDocuments[filename];
+          
+          // Truncate very large documents (limit to ~10,000 chars)
+          if (docContent.length > 10000) {
+            docContent = docContent.substring(0, 10000) + 
+              "\n\n[Document content truncated due to length. This is only a portion of the full document.]";
+          }
+          
+          context += `\n\n--- DOCUMENT: ${filename} ---\n`;
+          context += docContent;
+          context += "\n--- END OF DOCUMENT ---\n\n";
+        });
+      }
+      
+      return context;
+    }
   </script>
 </body>
 </html>
