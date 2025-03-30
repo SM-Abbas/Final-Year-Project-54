@@ -2779,15 +2779,12 @@
         // Reordered endpoints to put LegalMind model first
         endpoints: [
           "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind", // Legal mind first
-          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", // Mistral second
-          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324", // DeepSeek third
-          "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud" // Keep as last position
+          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324" // DeepSeek as fallback
         ],
-        // Multiple API tokens to try as alternatives
+        // Auth tokens specific to LegalMind
         authTokens: [
           "hf_ZyAqVZuteFYjaVyoIODEKpyCWTmLfX1BBr",  // legalmindapi - WRITE
           "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",  // legalmind - READ
-          "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"   // Current token
         ],
         // Track which endpoint and token is currently being used
         currentEndpointIndex: 0,
@@ -2795,33 +2792,62 @@
         // Set this to false as we're now using LegalMind as default
         usingFallbackModel: false,
         // Response time in ms (to be measured)
-        responseTime: 12000
+        responseTime: 12000,
+        // Specific timeout for legal documents
+        legalDocTimeout: 20000
       },
-      // Add DeepSeek R1 model for math questions
+      // DeepSeek math model specifically for math questions
       mathModel: {
         name: "LegalMind", // Display name stays as LegalMind for UI consistency
         endpoints: [
-          "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-math-7b-rl", // DeepSeek Math model
-          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324" // Fallback
+          "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-math-7b-rl" // DeepSeek Math model
         ],
         authTokens: [
-          "hf_ZyAqVZuteFYjaVyoIODEKpyCWTmLfX1BBr",
-          "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"
+          "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"   // Dedicated token for math model
         ],
         currentEndpointIndex: 0,
         currentTokenIndex: 0,
         usingFallbackModel: false,
         responseTime: 12000
       },
-      // Add more models here if needed
+      // Mistral model for general questions
+      mistralModel: {
+        name: "LegalMind", // Display name stays as LegalMind for UI consistency
+        endpoints: [
+          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", // Mistral model
+        ],
+        authTokens: [
+          "hf_ZyAqVZuteFYjaVyoIODEKpyCWTmLfX1BBr"  // Auth token for Mistral
+        ],
+        currentEndpointIndex: 0,
+        currentTokenIndex: 0,
+        usingFallbackModel: false,
+        responseTime: 10000
+      },
+      // DeepSeek general model as fallback
+      deepseekModel: {
+        name: "LegalMind", // Display name stays as LegalMind for UI consistency
+        endpoints: [
+          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324" // DeepSeek general model
+        ],
+        authTokens: [
+          "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"  // Auth token for DeepSeek
+        ],
+        currentEndpointIndex: 0,
+        currentTokenIndex: 0,
+        usingFallbackModel: false,
+        responseTime: 11000
+      }
     };
-
+    
     // Current active model
-    let activeModel = "legalMind";
+    let activeModel = "mistralModel"; // Default to Mistral for general queries
     // Flag to track if endpoints are being connected
     let connectingEndpoints = false;
     // Store conversation context for continuity
     let conversationHistory = {};
+    // Track if document is a legal document
+    let isLegalDocument = false;
 
     // Function to show a notification
     function showNotification(message, type = 'info') {
@@ -2888,7 +2914,7 @@
     }
 
     // Initialize dark mode from preferences
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
       // Check for saved dark mode preference
       if (localStorage.getItem('darkMode') === 'enabled') {
         document.body.classList.add('dark-mode');
@@ -2899,10 +2925,58 @@
           document.getElementById('darkModeText').textContent = 'Light Mode';
         }
       }
-
+      
       // Connect to all endpoints as soon as the website loads
       connectToAllEndpoints();
-
+      
+      // Create a new chat if none exists
+      if (!currentChatId) {
+        // Check if there are any existing chats in the list
+        const chatList = document.getElementById("chatList");
+        if (chatList && chatList.children.length === 0) {
+          // If no chats exist, create a new one
+          addNewChat();
+        } else if (chatList && chatList.children.length > 0) {
+          // If chats exist but none is selected, select the first one
+          const firstChat = chatList.children[0];
+          const chatId = firstChat.getAttribute("data-chat-id");
+          if (chatId) {
+            firstChat.classList.add('active');
+            loadChat(chatId);
+            
+            // Add a default "Hi" message if this is a page reload but the chat exists
+            setTimeout(() => {
+              // Only add if this chat doesn't have any messages yet
+              if (currentChatId && (!chats[currentChatId].messages || chats[currentChatId].messages.length === 0)) {
+                // Add the message to the UI
+                appendMessage("user", "Hi");
+                
+                // Add to conversation history for continuity
+                if (!conversationHistory[currentChatId]) {
+                  conversationHistory[currentChatId] = [];
+                }
+                conversationHistory[currentChatId].push({
+                  role: "user",
+                  content: "Hi"
+                });
+                
+                // Automatically trigger a response
+                setTimeout(() => {
+                  const greetingResponse = getGreetingResponse();
+                  appendMessage("bot", greetingResponse);
+                  
+                  // Store in conversation history
+                  conversationHistory[currentChatId].push({
+                    role: "assistant",
+                    content: greetingResponse
+                  });
+                }, 500);
+              }
+            }, 300);
+          }
+        }
+      }
+      
       // Mobile menu handlers
       document.getElementById('mobileMenuToggle').addEventListener('click', function () {
         document.getElementById('mobileMenu').classList.add('active');
@@ -3014,35 +3088,64 @@
           <i class="fas fa-times"></i>
         </button>
       `;
-
-      chatItem.addEventListener("click", function (e) {
+      
+      chatItem.addEventListener("click", function(e) {
         if (e.target.classList.contains("delete-chat") || e.target.closest('.delete-chat')) return;
-
+        
         document.querySelectorAll('#chatList li').forEach(item => {
           item.classList.remove('active');
         });
-
+        
         this.classList.add('active');
         loadChat(chatId, chatName);
-
+        
         // On mobile, collapse sidebar after selecting chat
         if (window.innerWidth <= 992) {
           document.querySelector('.sidebar').classList.add('collapsed');
         }
       });
-
+      
       chatList.appendChild(chatItem);
       chats[chatId] = [];
       loadChat(chatId, chatName);
-
+      
       // Show the chat list after creating new chat
       const sidebar = document.querySelector('.sidebar');
       if (sidebar.classList.contains('collapsed')) {
         sidebar.classList.remove('collapsed');
       }
-
+      
       // Update mobile menu after adding new chat
       setTimeout(updateMobileChats, 100);
+      
+      // Add a default "Hi" message from the user with slight delay to ensure chat is loaded
+      setTimeout(() => {
+        if (currentChatId === chatId) {
+          // Add the message to the UI
+          appendMessage("user", "Hi");
+          
+          // Add to conversation history for continuity
+          if (!conversationHistory[chatId]) {
+            conversationHistory[chatId] = [];
+          }
+          conversationHistory[chatId].push({
+            role: "user",
+            content: "Hi"
+          });
+          
+          // Automatically trigger a response to the greeting after a short delay
+          setTimeout(() => {
+            const greetingResponse = getGreetingResponse();
+            appendMessage("bot", greetingResponse);
+            
+            // Store in conversation history
+            conversationHistory[chatId].push({
+              role: "assistant",
+              content: greetingResponse
+            });
+          }, 500);
+        }
+      }, 300);
     }
 
     function loadChat(chatId) {
@@ -3476,18 +3579,21 @@
         if (isMathQuestion(userMessageText)) {
           console.log("Detected math question, using DeepSeek Math model");
           selectedModel = "mathModel";
+        } else if (isLegalDocument) {
+          console.log("Using LegalMind model for legal document analysis");
+          selectedModel = "legalMind";
         }
-
+        
         // Show typing indicator with a slight delay
         const typingIndicator = setTimeout(() => {
           // Get current model name - always show LegalMind in UI regardless of actual model
           const displayModelName = "LegalMind";
           let modelName = displayModelName;
-
+          
           // Create thinking message with model info and data attribute for animation
           const thinkingMessage = `<span data-thinking="true">Thinking...</span>`;
           appendHtmlMessage("bot", thinkingMessage);
-
+          
           // Reference to the thinking message to remove it later
           const thinkingMsg = document.querySelector(".message.bot:last-child");
 
@@ -3739,12 +3845,12 @@
               // Specific handling for timeout errors
               if (error.message.includes('timed out')) {
                 console.log("API request timed out - automatically trying next endpoint");
-                showNotification("Model response timed out. Trying next model...", "warning");
+                showNotification("Getting response, please wait...", "warning");
 
                 // Automatically try the next endpoint or token
                 if (tryNextEndpointOrToken(selectedModel)) {
                   const endpointInfo = getCurrentEndpointInfo(selectedModel);
-                  console.log(`Switching to endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) after timeout`);
+                  console.log(`Switching to endpoint ${endpointInfo.endpointIndex} after timeout`);
 
                   // Remove the thinking message if it exists
                   if (thinkingMsg && thinkingMsg.parentNode) {
@@ -3760,7 +3866,7 @@
               // Try alternative endpoint or token for other errors
               if (tryNextEndpointOrToken(selectedModel)) {
                 const endpointInfo = getCurrentEndpointInfo(selectedModel);
-                console.log(`Switching to endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) after error`);
+                console.log(`Switching to endpoint ${endpointInfo.endpointIndex} after error`);
 
                 // Remove the thinking message if it exists
                 if (thinkingMsg && thinkingMsg.parentNode) {
@@ -4717,82 +4823,126 @@
 
     // Function to process document content
     function processDocumentContent(file) {
-      console.log("Processing document:", file.name);
-      showNotification("Processing document: " + file.name, "info");
-
-      if (file.name.endsWith('.pdf')) {
-        extractTextFromPDF(file)
-          .then(text => {
-            console.log("Extracted PDF text length:", text.length);
-            uploadedDocuments[file.name] = text;
-            showNotification("PDF processed successfully", "success");
-          })
-          .catch(error => {
-            console.error("Error extracting PDF text:", error);
-            showNotification("Error processing PDF", "error");
-          });
-      } else if (file.name.endsWith('.txt')) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          const text = e.target.result;
-          uploadedDocuments[file.name] = text;
-          console.log("Processed text file:", file.name);
-          showNotification("Text file processed successfully", "success");
-        };
-        reader.onerror = function () {
-          console.error("Error reading text file");
-          showNotification("Error processing text file", "error");
-        };
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const content = e.target.result;
+        
+        // Store the document content
+        if (!uploadedDocuments[file.name]) {
+          uploadedDocuments[file.name] = {};
+        }
+        uploadedDocuments[file.name].content = content;
+        
+        // Detect if this is a legal document
+        isLegalDocument = detectLegalDocument(content);
+        
+        if (isLegalDocument) {
+          console.log(`Document detected as legal document: ${file.name}`);
+          // Switch active model to LegalMind for legal documents
+          activeModel = "legalMind";
+        }
+        
+        console.log(`Processed document: ${file.name}, Content length: ${content.length} characters`);
+      };
+      
+      if (file.type.startsWith('text/')) {
         reader.readAsText(file);
-      } else if (file.type.startsWith('image/')) {
-        // For images, just store a placeholder
-        uploadedDocuments[file.name] = "[Image: " + file.name + "]";
-        showNotification("Image added to conversation", "success");
-      } else {
-        // For other files, store a note that they can't be processed
-        uploadedDocuments[file.name] = "[File type not supported for content extraction: " + file.name + "]";
-        showNotification("File type not supported for content processing", "warning");
+      } else if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        // Handle PDF files using PDF.js
+        const fileReader = new FileReader();
+        fileReader.onload = function() {
+          const typedArray = new Uint8Array(this.result);
+          
+          pdfjsLib.getDocument(typedArray).promise.then(function(pdf) {
+            let textContent = '';
+            
+            // Get all pages
+            const pagePromises = [];
+            for (let i = 1; i <= pdf.numPages; i++) {
+              pagePromises.push(
+                pdf.getPage(i).then(function(page) {
+                  return page.getTextContent().then(function(content) {
+                    return content.items.map(item => item.str).join(' ');
+                  });
+                })
+              );
+            }
+            
+            // Combine text from all pages
+            Promise.all(pagePromises).then(function(pagesText) {
+              textContent = pagesText.join('\n\n');
+              
+              // Store the extracted text
+              if (!uploadedDocuments[file.name]) {
+                uploadedDocuments[file.name] = {};
+              }
+              uploadedDocuments[file.name].content = textContent;
+              
+              // Detect if this is a legal document
+              isLegalDocument = detectLegalDocument(textContent);
+              
+              if (isLegalDocument) {
+                console.log(`PDF detected as legal document: ${file.name}`);
+                // Switch active model to LegalMind for legal documents
+                activeModel = "legalMind";
+              }
+              
+              console.log(`Processed PDF: ${file.name}, Content length: ${textContent.length} characters`);
+            });
+          });
+        };
+        fileReader.readAsArrayBuffer(file);
+      } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        // For Word documents, store as placeholder and we'll handle separately
+        if (!uploadedDocuments[file.name]) {
+          uploadedDocuments[file.name] = {};
+        }
+        uploadedDocuments[file.name].content = `Document: ${file.name} (Word document - contents not fully extracted)`;
+        
+        // Assume Word documents might be legal documents
+        isLegalDocument = true;
+        activeModel = "legalMind";
+        
+        console.log(`Processed Word document: ${file.name} (assumed as legal document)`);
       }
     }
-
-    // Function to extract text from PDF
-    async function extractTextFromPDF(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-
-        reader.onload = async function (e) {
-          const typedArray = new Uint8Array(e.target.result);
-
-          try {
-            // Load the PDF document
-            const loadingTask = pdfjsLib.getDocument(typedArray);
-            const pdf = await loadingTask.promise;
-
-            let fullText = "";
-
-            // Loop through each page to extract text
-            for (let i = 1; i <= pdf.numPages; i++) {
-              const page = await pdf.getPage(i);
-              const textContent = await page.getTextContent();
-
-              // Extract the text items
-              const pageText = textContent.items.map(item => item.str).join(' ');
-              fullText += pageText + "\n\n"; // Add page breaks
-            }
-
-            resolve(fullText);
-          } catch (error) {
-            console.error("PDF.js error:", error);
-            reject(error);
-          }
-        };
-
-        reader.onerror = function () {
-          reject(new Error("Error reading the file"));
-        };
-
-        reader.readAsArrayBuffer(file);
+    
+    // Function to detect if content is likely a legal document
+    function detectLegalDocument(content) {
+      if (!content) return false;
+      
+      // Convert to lowercase for case-insensitive matching
+      const lowerContent = content.toLowerCase();
+      
+      // List of legal terms to check for
+      const legalTerms = [
+        'agreement', 'contract', 'legally', 'clause', 'terms and conditions', 
+        'hereinafter', 'party', 'parties', 'whereas', 'shall', 'provision',
+        'pursuant to', 'covenant', 'liability', 'indemnity', 'jurisdiction',
+        'law', 'legal', 'attorney', 'court', 'rights', 'obligations',
+        'defendant', 'plaintiff', 'judgment', 'tort', 'statute', 'regulation'
+      ];
+      
+      // Check for common legal document headers
+      const legalHeaders = [
+        'terms of service', 'privacy policy', 'end user license', 
+        'non-disclosure', 'employment agreement', 'lease agreement',
+        'confidentiality agreement', 'terms of use'
+      ];
+      
+      // Count how many legal terms appear in the document
+      let legalTermCount = 0;
+      legalTerms.forEach(term => {
+        if (lowerContent.includes(term)) {
+          legalTermCount++;
+        }
       });
+      
+      // Check for legal headers
+      const hasLegalHeader = legalHeaders.some(header => lowerContent.includes(header));
+      
+      // If the document has a legal header or contains multiple legal terms, consider it a legal document
+      return hasLegalHeader || legalTermCount >= 3;
     }
 
     // Function to get document summary for the prompt
@@ -4876,16 +5026,8 @@
 
       console.log(`Switching from endpoint ${currentEndpoint} to ${newEndpoint}`);
 
-      // Show appropriate notification based on which endpoint we're switching to
-      if (newEndpoint.includes("mistral")) {
-        showNotification("Switching to Mistral 7B model for faster response", "info");
-      } else if (newEndpoint.includes("legalmind") || newEndpoint.includes("Abbasgamer1")) {
-        showNotification("Switching to LegalMind specialized model", "info");
-      } else if (newEndpoint.includes("deepseek")) {
-        showNotification("Switching to DeepSeek general model", "info");
-      } else {
-        showNotification("Trying alternative model endpoint...", "info");
-      }
+      // Generic notification that doesn't reveal model details
+      showNotification("Getting response, please wait...", "info");
 
       // If we've cycled through all endpoints, try the next token
       if (config.currentEndpointIndex === 0) {
@@ -4893,11 +5035,11 @@
         config.currentTokenIndex = (config.currentTokenIndex + 1) % config.authTokens.length;
         console.log(`Switching from token ${prevToken} to ${config.authTokens[config.currentTokenIndex]}`);
 
-        showNotification("Trying alternative API token...", "info");
+        showNotification("Trying alternative API connection...", "info");
 
         // If we've cycled through all tokens, return false to indicate we've tried everything
         if (config.currentTokenIndex === 0) {
-          showNotification("All models and tokens attempted without success. Please try again later.", "error");
+          showNotification("All available connections attempted without success. Please try again later.", "error");
           return false;
         }
       }
@@ -5258,7 +5400,7 @@
         let testPromises = [];
 
         model.endpoints.forEach((endpoint, endpointIndex) => {
-          const token = model.authTokens[0]; // Use first token for testing
+          const token = model.authTokens[model.currentTokenIndex]; // Use model's specific token
 
           // Create a promise for this endpoint
           const testPromise = new Promise((resolve) => {
@@ -5334,41 +5476,59 @@
         return Promise.all(testPromises);
       }
 
-      // Test all models
+      // Test all models in parallel
       Promise.all([
         testModelConnection("legalMind"),
-        testModelConnection("mathModel")
+        testModelConnection("mathModel"),
+        testModelConnection("mistralModel"),
+        testModelConnection("deepseekModel")
       ])
         .then(results => {
           // Flatten results
           const allResults = results.flat();
 
-          // Find fastest responding endpoint
+          // Find fastest responding endpoint for each model type
           const successfulResults = allResults.filter(r => r && r.success);
-          let fastestModel = null;
-
+          
           if (successfulResults.length > 0) {
-            // Sort by response time
-            successfulResults.sort((a, b) => a.responseTime - b.responseTime);
-            fastestModel = successfulResults[0];
-
-            console.log(`Fastest model endpoint is ${fastestModel.modelKey} endpoint ${fastestModel.endpointIndex} (${fastestModel.responseTime}ms)`);
-
             // Set timeouts based on measured response times
             for (const key in modelConfig) {
               if (modelConfig[key].responseTime && modelConfig[key].responseTime < 15000) {
                 // Set timeout to response time + 3 seconds buffer (or minimum 15 sec)
-                const timeout = Math.max(modelConfig[key].responseTime + 3000, 15000);
-                modelConfig[key].timeout = timeout;
-                console.log(`Setting ${key} timeout to ${timeout}ms`);
+                // For LegalMind with legal documents, use the specific longer timeout
+                if (key === "legalMind") {
+                  modelConfig[key].timeout = modelConfig[key].legalDocTimeout || 20000;
+                  console.log(`Setting ${key} timeout to ${modelConfig[key].timeout}ms for legal documents`);
+                } else {
+                  const timeout = Math.max(modelConfig[key].responseTime + 3000, 15000);
+                  modelConfig[key].timeout = timeout;
+                  console.log(`Setting ${key} timeout to ${timeout}ms`);
+                }
               } else {
                 // Default timeout
-                modelConfig[key].timeout = 15000;
+                modelConfig[key].timeout = key === "legalMind" ? 20000 : 15000;
               }
+            }
+            
+            // Find the fastest model for general use (not math or legal specific)
+            const generalModels = successfulResults.filter(r => 
+              r.modelKey !== "mathModel" && r.modelKey !== "legalMind");
+            
+            if (generalModels.length > 0) {
+              // Sort by response time
+              generalModels.sort((a, b) => a.responseTime - b.responseTime);
+              const fastestGeneralModel = generalModels[0];
+              
+              // Set the default active model to the fastest general model
+              activeModel = fastestGeneralModel.modelKey;
+              console.log(`Setting fastest general model as default: ${activeModel} (${modelConfig[activeModel].responseTime}ms)`);
             }
           }
 
           connectingEndpoints = false;
+          
+          // Display model response times in the console
+          displayModelResponseTimes();
         })
         .catch(error => {
           console.error("Error testing endpoints:", error);
@@ -5812,6 +5972,82 @@
         }, 1500);
       }
     }
+
+    // Function to display all model response times
+    function displayModelResponseTimes() {
+      console.log("=== MODEL RESPONSE TIMES ===");
+      
+      for (const modelKey in modelConfig) {
+        console.log(`\n${modelKey.toUpperCase()}:`);
+        console.log(`- Model Name: ${modelConfig[modelKey].name}`);
+        console.log(`- Overall Response Time: ${modelConfig[modelKey].responseTime || 'Not measured'} ms`);
+        
+        // Set timeout to 20 seconds for LegalMind
+        if (modelKey === 'legalMind') {
+          modelConfig[modelKey].timeout = 20000; // 20 seconds for LegalMind
+          console.log(`- Timeout Setting: 20000 ms (fixed 20 second timeout for legal processing)`);
+        } else {
+          // For other models, calculate based on response time
+          if (modelConfig[modelKey].responseTime) {
+            modelConfig[modelKey].timeout = Math.max(modelConfig[modelKey].responseTime + 3000, 15000);
+          }
+          console.log(`- Timeout Setting: ${modelConfig[modelKey].timeout || 15000} ms`);
+        }
+        
+        console.log('\nEndpoints:');
+        modelConfig[modelKey].endpoints.forEach((endpoint, index) => {
+          // Extract endpoint name from URL
+          const endpointName = endpoint.includes('/') ? 
+            endpoint.split('/').slice(-2).join('/') : 
+            endpoint;
+          
+          // Add an indicator for the currently active endpoint
+          const isActive = index === modelConfig[modelKey].currentEndpointIndex ? ' [ACTIVE]' : '';
+          
+          console.log(`${index+1}. ${endpointName}${isActive}`);
+        });
+        
+        console.log('\nAuth Tokens:');
+        modelConfig[modelKey].authTokens.forEach((token, index) => {
+          // Mask token for security, showing only first few and last few characters
+          const maskedToken = token.substring(0, 5) + '...' + token.substring(token.length - 4);
+          
+          // Add an indicator for the currently active token
+          const isActive = index === modelConfig[modelKey].currentTokenIndex ? ' [ACTIVE]' : '';
+          
+          console.log(`${index+1}. ${maskedToken}${isActive}`);
+        });
+      }
+      
+      console.log("\n=== MODEL TEST RECOMMENDATIONS ===");
+      // Recommend the faster model
+      let fastestModel = null;
+      let fastestTime = Infinity;
+      
+      for (const modelKey in modelConfig) {
+        if (modelConfig[modelKey].responseTime && modelConfig[modelKey].responseTime < fastestTime) {
+          fastestModel = modelKey;
+          fastestTime = modelConfig[modelKey].responseTime;
+        }
+      }
+      
+      if (fastestModel) {
+        console.log(`\nFastest model: ${fastestModel.toUpperCase()} (${fastestTime} ms)`);
+        
+        // For display purposes only - the actual timeouts are set above
+        const recommendedTimeout = fastestModel === 'legalMind' ? 
+          20000 : Math.max(fastestTime + 3000, 15000);
+        console.log(`Recommended timeout: ${recommendedTimeout} ms`);
+      } else {
+        console.log("\nNo response time measurements available. Please connect to endpoints first.");
+      }
+    }
+    
+    // Make this function globally accessible for direct console access
+    window.showModelResponseTimes = function() {
+      displayModelResponseTimes();
+      return "Model response times have been logged to the console. Check the console output for details.";
+    };
 
   </script>
 </body>
