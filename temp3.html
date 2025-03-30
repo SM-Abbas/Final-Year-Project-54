@@ -813,8 +813,8 @@
       flex: 1;
       width: 100%;
       padding: var(--spacing-md) var(--spacing-lg);
-      padding-left: 80px;
-      padding-right: 50px;
+      padding-left: 16px;
+      padding-right: 135px;
       border: 1px solid var(--light-border);
       border-radius: 30px;
       font-size: 1rem;
@@ -838,7 +838,7 @@
     
     .attach-btn {
       position: absolute;
-      left: 12px;
+      right: 55px;
       top: 50%;
       transform: translateY(-50%);
       color: #6c757d;
@@ -861,7 +861,7 @@
     
     .image-btn {
       position: absolute;
-      left: 45px;
+      right: 95px;
       top: 50%;
       transform: translateY(-50%);
       color: #6c757d;
@@ -1983,7 +1983,21 @@
       
       .attach-btn {
         position: absolute;
-        left: 15px;
+        right: 55px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        margin: 0;
+      }
+      
+      .image-btn {
+        position: absolute;
+        right: 95px;
         top: 50%;
         transform: translateY(-50%);
         display: flex;
@@ -1998,7 +2012,8 @@
       .chat-input input {
         height: 50px;
         font-size: 16px;
-        padding: 12px 50px 12px 80px;
+        padding: 12px 50px 12px 15px;
+        padding-right: 135px;
         border: none;
         background: transparent;
         width: 100%;
@@ -2040,11 +2055,13 @@
       .attach-btn {
         width: 35px;
         height: 35px;
+        right: 52px;
       }
       
       .image-btn {
         width: 35px;
         height: 35px;
+        right: 90px;
       }
     }
 
@@ -2061,11 +2078,13 @@
       .attach-btn {
         width: 32px;
         height: 32px;
+        right: 50px;
       }
       
       .image-btn {
         width: 32px;
         height: 32px;
+        right: 85px;
       }
     }
 
@@ -2587,16 +2606,6 @@
 
       <div class="chat-input">
         <div class="input-container">
-          <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
-            <i class="fas fa-paperclip"></i>
-          </span>
-          <input type="file" id="fileInput" accept=".pdf,.txt,.docx" style="display:none;" onchange="previewFile(event)">
-          
-          <span class="image-btn" onclick="document.getElementById('imageInput').click()">
-            <i class="fas fa-camera"></i>
-          </span>
-          <input type="file" id="imageInput" accept="image/png,image/jpeg,image/jpg" style="display:none;" onchange="processImage(event)">
-          
           <input 
             type="text" 
             id="messageInput" 
@@ -2604,6 +2613,17 @@
             aria-label="Type your message"
             onkeypress="if(event.key === 'Enter') sendMessage()"
           >
+          
+          <span class="image-btn" onclick="document.getElementById('imageInput').click()">
+            <i class="fas fa-camera"></i>
+          </span>
+          <input type="file" id="imageInput" accept="image/png,image/jpeg,image/jpg" style="display:none;" onchange="processImage(event)">
+          
+          <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-paperclip"></i>
+          </span>
+          <input type="file" id="fileInput" accept=".pdf,.txt,.docx" style="display:none;" onchange="previewFile(event)">
+          
           <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
             <i class="fas fa-paper-plane"></i>
           </button>
