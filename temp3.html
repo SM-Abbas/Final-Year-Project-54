@@ -2,13 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="LegalMind - AI-powered legal document assistant">
   <title>LegalMind Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Add PDF.js library for PDF processing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <!-- Add Tesseract.js for OCR (image text recognition) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.3/dist/tesseract.min.js"></script>
+  
+  <!-- OCR Styles -->
+  <style>
+    .file-preview-container.ocr-preview {
+      padding: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    
+    body.dark-mode .file-preview-container.ocr-preview {
+      background-color: #2d2d2d;
+    }
+    
+    body.dark-mode .file-preview-container.ocr-preview textarea {
+      background-color: #2d2d2d;
+      color: #e1e1e1;
+      border-color: #444;
+    }
+  </style>
   <style>
     /* CSS Variables for theming */
     :root {
@@ -1669,6 +1693,22 @@
         z-index: 2;
       }
       
+      .image-btn {
+        position: absolute;
+        left: 40px;
+        top: 50%;
+        transform: translateY(-50%);
+        height: auto;
+        width: auto;
+        background: transparent;
+        border: none;
+        z-index: 2;
+      }
+      
+      #messageInput {
+        padding-left: 70px !important;
+      }
+      
       #sendBtn {
         right: 8px;
         font-size: 1.2rem;
@@ -1738,6 +1778,17 @@
       .attach-btn {
         position: absolute;
         left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: transparent;
+        border: none;
+        color: #6c757d;
+        z-index: 2;
+      }
+      
+      .image-btn {
+        position: absolute;
+        left: 40px;
         top: 50%;
         transform: translateY(-50%);
         background: transparent;
@@ -2217,6 +2268,26 @@
     body.dark-mode .wake-up-btn:hover {
       background-color: #155724;
     }
+
+    .chat-input .attach-btn:hover {
+      color: var(--primary-color);
+    }
+    
+    .chat-input .image-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      color: #888;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .chat-input .image-btn:hover {
+      color: var(--primary-color);
+    }
+    
+    /* Mobile specific fixes */
   </style>
   
   <script>
@@ -2440,7 +2511,7 @@
       <div class="welcome-message">
         <h2>Hi, I'm LegalMind.</h2>
           <p>Ask me anything about legal documents and concepts.</p>
-          <p><i class="fas fa-file-upload"></i> Upload documents using the paperclip icon and I can analyze them for you.</p>
+          <p><i class="fas fa-file-upload"></i> Upload documents using the paperclip icon or <i class="fas fa-camera"></i> upload images with text using the camera icon.</p>
           <div class="model-info">
             <i class="fas fa-plug"></i> Connected to <span id="welcomeModelName">LegalMind</span> model 
             <span class="model-id">(revision: 81f0038)</span>
@@ -2456,7 +2527,13 @@
           <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
             <i class="fas fa-paperclip"></i>
           </span>
-          <input type="file" id="fileInput" accept="image/*,.pdf,.txt,.png,.jpg,.docx" style="display:none;" onchange="previewFile(event)">
+          <input type="file" id="fileInput" accept=".pdf,.txt,.docx" style="display:none;" onchange="previewFile(event)">
+          
+          <span class="image-btn" onclick="document.getElementById('imageInput').click()">
+            <i class="fas fa-camera"></i>
+          </span>
+          <input type="file" id="imageInput" accept="image/png,image/jpeg,image/jpg" style="display:none;" onchange="processImage(event)">
+          
           <input 
             type="text" 
             id="messageInput" 
@@ -2483,12 +2560,12 @@
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
-        // Original endpoint is scaled to zero due to inactivity
+        // Reordered endpoints to prioritize DeepSeek and put the original endpoint last
         endpoints: [
-          "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
+          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324", // Now first priority
           "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
           "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind",
-          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324" // Hidden fallback
+          "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud" // Moved to last position
         ],
         // Multiple API tokens to try as alternatives
         authTokens: [
@@ -2499,8 +2576,8 @@
         // Track which endpoint and token is currently being used
         currentEndpointIndex: 0,
         currentTokenIndex: 0,
-        // Flag to indicate we're using the fallback model
-        usingFallbackModel: false
+        // Flag to indicate we're using the DeepSeek model
+        usingFallbackModel: true // Set to true since DeepSeek is now the first endpoint
       },
       // Add more models here if needed
     };
@@ -2932,37 +3009,76 @@
         /introduce yourself/,
         /your name/,
         /^who created you/,
+        /^who made you/,
+        /^who is your owner/,
         /^what do you do/,
         /^what can you do/
       ];
       
       return identityPatterns.some(pattern => pattern.test(lowerText));
     }
+    
+    // Function to handle identity questions
+    function getIdentityResponse(text) {
+      const lowerText = text.toLowerCase().trim();
+      
+      // Check if asking about creator/owner
+      if (lowerText.includes("who made you") || 
+          lowerText.includes("who created you") || 
+          lowerText.includes("who is your owner") ||
+          lowerText.includes("who developed you")) {
+        return "I was created by Mohammad Suheb Abbas. You can find the project repository at https://github.com/SM-Abbas/Final-Year-Project-54";
+      }
+      
+      // Default identity response
+      return "I am LegalMind, an AI legal assistant that specializes in analyzing legal documents. I can help review contracts, legal agreements, and other documents, providing insights and suggestions for improvements. If you have a document you'd like me to analyze, please upload it using the paperclip icon in the chat input.";
+    }
 
-    // Improved send message function
+    // Send message function
     function sendMessage() {
       const messageInput = document.getElementById("messageInput");
       const userMessageText = messageInput.value.trim();
+      messageInput.value = "";
       
-      if (userMessageText && currentChatId) {
-        // Clear input immediately for better UX
-        messageInput.value = "";
-        
-        // Append user's message
+      // Don't send empty messages
+      if (!userMessageText) return;
+      
+      if (currentChatId) {
+        // Append user message to chat
         appendMessage("user", userMessageText);
         
-        // Check if this is an identity question
+        // Add message to chat history
+        if (!chats[currentChatId].messages) {
+          chats[currentChatId].messages = [];
+        }
+        chats[currentChatId].messages.push({
+          sender: "user",
+          content: userMessageText
+        });
+        
+        // Check for identity questions and provide canned response
         if (isIdentityQuestion(userMessageText)) {
           // Provide standard identity response
-          const identityResponse = "I'm LegalMind, an AI legal document assistant.";
+          const identityResponse = getIdentityResponse(userMessageText);
           setTimeout(() => {
-            console.log("Responding with standard identity response:", identityResponse);
+            console.log("Responding with identity response:", identityResponse);
             appendMessage("bot", identityResponse);
           }, 300);
           return;
         }
         
-        // Show loading indicator with a slight delay
+        // Check for greeting messages
+        if (isGreeting(userMessageText)) {
+          // Provide greeting response
+          const greetingResponse = getGreetingResponse();
+          setTimeout(() => {
+            console.log("Responding with greeting response:", greetingResponse);
+            appendMessage("bot", greetingResponse);
+          }, 300);
+          return;
+        }
+        
+        // Show typing indicator with a slight delay
         const typingIndicator = setTimeout(() => {
           appendMessage("bot", "Thinking...");
           
@@ -2998,7 +3114,7 @@
             });
             
             fullPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\nUser: ${userMessageText}\nAssistant:`;
-            console.log("Using DeepSeek fallback model with specialized prompt format");
+            console.log("Using DeepSeek model with specialized prompt format");
           }
           
           console.log("Sending prompt:", fullPrompt);
@@ -3007,23 +3123,26 @@
           const documentContext = getDocumentContext(userMessageText);
           let finalPrompt = fullPrompt;
           
-          // If there are relevant documents, add context
-          if (documentContext) {
+          // Check if there are uploaded documents
+          const hasDocuments = Object.keys(uploadedDocuments).length > 0;
+          
+          // Always include document context if available, regardless of the query
+          if (hasDocuments) {
             if (modelConfig[activeModel].usingFallbackModel) {
               finalPrompt = 
                 `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
                 "Document(s) uploaded by user:" + 
                 documentContext + 
                 "\n\nUser: " + userMessageText + "\n" +
-                "For any document analysis, ALWAYS include a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness. Focus on making suggestions that are concise and directly applicable.\n" +
+                "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
                 "Assistant:";
             } else {
               finalPrompt = 
-                "You are LegalMind, a legal assistant that can analyze documents.\n\n" +
+                "You are LegalMind, a legal assistant that specializes in document analysis.\n\n" +
                 "User has uploaded the following document(s):" + 
                 documentContext + 
                 "\n\nUser: " + userMessageText + "\n" +
-                "For any document analysis, ALWAYS include a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness. Focus on making suggestions that are concise and directly applicable.\n" +
+                "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
                 "Assistant:";
             }
             
@@ -3042,7 +3161,7 @@
             return_full_text: false
           };
           
-          // Use DeepSeek's recommended parameters if using the fallback model
+          // Use DeepSeek's recommended parameters if using the DeepSeek model
           if (modelConfig[activeModel].usingFallbackModel) {
             requestParams = {
               max_new_tokens: 1024,
@@ -3122,7 +3241,7 @@
               botResponse = "I apologize, but I received an unexpected response format. Please try again with your question.";
             }
             
-            // If we are using the DeepSeek fallback model, check response for any non-English part and format
+            // If we are using the DeepSeek model, check response for any non-English part and format
             if (modelConfig[activeModel].usingFallbackModel && botResponse) {
               // Remove any "Assistant:" prefix that might be in the response
               botResponse = botResponse.replace(/^Assistant:\s*/i, '');
@@ -3575,12 +3694,12 @@
       }
     });
 
-    // Updated previewFile function
+    // Updated previewFile function to auto-analyze uploaded documents
     function previewFile(event) {
       const file = event.target.files[0];
       if (!file) return;
       
-      // Process document content for the chat
+      // Process document content for analysis
       processDocumentContent(file);
       
       // For mobile devices, just show the file in the chat as a message
@@ -3602,6 +3721,11 @@
           
           // Create and append the HTML message
           appendHtmlMessage("user", fileMessage);
+          
+          // Auto-analyze the document after a short delay
+          setTimeout(() => {
+            autoAnalyzeDocument(file.name);
+          }, 1500);
         }
         return;
       }
@@ -3620,29 +3744,29 @@
       
       // Update toggle button icon if needed
       const toggleBtn = document.getElementById('documentsToggle');
-      if (toggleBtn) {
-        const icon = toggleBtn.querySelector('i');
-        if (icon.classList.contains('fa-chevron-down')) {
-          icon.classList.remove('fa-chevron-down');
-          icon.classList.add('fa-chevron-up');
-        }
+      if (toggleBtn && toggleBtn.querySelector('i').classList.contains('fa-chevron-down')) {
+        toggleBtn.querySelector('i').classList.remove('fa-chevron-down');
+        toggleBtn.querySelector('i').classList.add('fa-chevron-up');
       }
       
-      const fileItem = document.createElement("div");
-      fileItem.classList.add("file-item");
+      // Create file item element
+      const fileItem = document.createElement('div');
+      fileItem.classList.add('file-item');
+      fileItem.setAttribute('data-filename', file.name);
       
-      // Create file header with name and delete button
-      const fileHeader = document.createElement("div");
-      fileHeader.classList.add("file-header");
+      // Create file header
+      const fileHeader = document.createElement('div');
+      fileHeader.className = 'file-header';
       
-      // Create the name container with icon and name
-      const fileNameContainer = document.createElement("div");
-      fileNameContainer.classList.add("file-name-container");
+      // Create file name container
+      const fileNameContainer = document.createElement('div');
+      fileNameContainer.className = 'file-name';
       
-      // Create icon based on file type
+      // Create file icon
       const fileIcon = document.createElement('i');
       fileIcon.classList.add('fas');
       
+      // Set appropriate icon based on file type
       if (file.name.endsWith('.pdf')) {
         fileIcon.classList.add('fa-file-pdf');
         fileIcon.classList.add('pdf-icon');
@@ -3663,14 +3787,14 @@
       fileNameContainer.appendChild(fileName);
       
       // Create delete button
-        const closeBtn = document.createElement("button");
+      const closeBtn = document.createElement("button");
       closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-        closeBtn.classList.add("delete-file");
+      closeBtn.classList.add("delete-file");
       closeBtn.setAttribute('aria-label', 'Remove file');
       
       closeBtn.addEventListener("click", function(e) {
         e.stopPropagation();
-          filePreview.removeChild(fileItem);
+        filePreview.removeChild(fileItem);
         
         // If no more files, show welcome message
         if (filePreview.children.length === 0) {
@@ -3714,8 +3838,8 @@
           
           fileItem.appendChild(previewContainer);
         };
-      reader.readAsDataURL(file);
-    }
+        reader.readAsDataURL(file);
+      }
       
       filePreview.appendChild(fileItem);
       
@@ -3742,7 +3866,210 @@
         `;
         
         appendHtmlMessage("user", fileMessage);
+        
+        // Auto-analyze the document after a short delay
+        setTimeout(() => {
+          autoAnalyzeDocument(file.name);
+        }, 1500);
       }
+    }
+    
+    // Function to automatically analyze a document after upload
+    function autoAnalyzeDocument(filename) {
+      if (!currentChatId) return;
+      
+      // Wait until the document is processed and available
+      function checkAndAnalyze() {
+        if (uploadedDocuments[filename]) {
+          // Determine document type for customized analysis
+          const fileType = getFileType(filename);
+          
+          // Customize analysis message based on file type
+          let analysisMessage = `Please analyze the document ${filename} I just uploaded. Provide a summary and suggestions for improvement.`;
+          
+          // Add the message to chat history
+          if (!chats[currentChatId].messages) {
+            chats[currentChatId].messages = [];
+          }
+          
+          chats[currentChatId].messages.push({
+            sender: "user",
+            content: analysisMessage
+          });
+          
+          // Append a message saying the document is being analyzed
+          appendMessage("bot", `I'm analyzing ${filename}. Here's what I found:`);
+          
+          // Create a thinking message
+          const thinkingMsg = document.querySelector(".message.bot:last-child");
+          
+          // Get document context
+          const documentContext = getDocumentContext(analysisMessage);
+          
+          // Prepare the prompt based on which model is active and file type
+          let analysisPrompt;
+          const today = new Date();
+          const formattedDate = today.toLocaleDateString('en-US', { 
+            month: 'long', 
+            day: 'numeric',
+            weekday: 'long' 
+          });
+          
+          // Customize prompt based on file type
+          let fileTypePrompt = "";
+          if (fileType === "pdf" || fileType === "docx" || fileType === "doc") {
+            fileTypePrompt = "For this legal document: Evaluate its legal soundness, identify potential loopholes, suggest stronger legal language, and note any missing clauses that should be included.";
+          } else if (fileType === "txt") {
+            fileTypePrompt = "For this text document: Focus on organization, clarity, and structural improvements. Check for inconsistent terminology and logical flow.";
+          } else if (fileType === "image") {
+            fileTypePrompt = "For this OCR-extracted text: Note any potential errors in text recognition, evaluate the document structure, and suggest improvements to both content and formatting.";
+          }
+          
+          if (modelConfig[activeModel].usingFallbackModel) {
+            analysisPrompt = 
+              `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
+              "Document(s) uploaded by user:" + 
+              documentContext + 
+              "\n\nUser: Please analyze this document in detail and provide feedback.\n" +
+              `${fileTypePrompt}\n` +
+              "Always include these sections in your response:\n" +
+              "1. 'Document Summary' with key points\n" +
+              "2. 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness\n" +
+              "3. 'Next Steps' with 2-3 recommendations on what the user should do next with this document\n" +
+              "Assistant:";
+          } else {
+            analysisPrompt = 
+              "You are LegalMind, a legal assistant that specializes in document analysis.\n\n" +
+              "User has uploaded the following document(s):" + 
+              documentContext + 
+              "\n\nUser: Please analyze this document in detail and provide feedback.\n" +
+              `${fileTypePrompt}\n` +
+              "Always include these sections in your response:\n" +
+              "1. 'Document Summary' with key points\n" +
+              "2. 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness\n" +
+              "3. 'Next Steps' with 2-3 recommendations on what the user should do next with this document\n" +
+              "Assistant:";
+          }
+          
+          // Prepare API request parameters
+          let requestParams = {
+            max_new_tokens: 1024,
+            temperature: 0.7,
+            top_p: 0.95,
+            do_sample: true,
+            return_full_text: false
+          };
+          
+          // Use DeepSeek's recommended parameters if using the DeepSeek model
+          if (modelConfig[activeModel].usingFallbackModel) {
+            requestParams = {
+              max_new_tokens: 1024,
+              temperature: 0.3,  // DeepSeek recommends 0.3
+              top_p: 0.8,
+              do_sample: true
+            };
+          }
+          
+          // Create a timeout promise that will reject after 15 seconds
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(new Error('API request timed out after 15 seconds'));
+            }, 15000); // 15 seconds timeout
+          });
+          
+          // Race between the fetch request and the timeout
+          Promise.race([
+            fetch(modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex], {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${modelConfig[activeModel].authTokens[modelConfig[activeModel].currentTokenIndex]}`
+              },
+              body: JSON.stringify({
+                inputs: analysisPrompt,
+                parameters: requestParams
+              })
+            }),
+            timeoutPromise
+          ])
+          .then(response => {
+            if (!response.ok) {
+              return response.text().then(text => {
+                throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+              });
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Remove the thinking message if it exists
+            if (thinkingMsg && thinkingMsg.parentNode) {
+              thinkingMsg.parentNode.removeChild(thinkingMsg);
+            }
+            
+            // Add bot response from the API
+            let botResponse = ""; // Empty default
+            
+            // Specific handling for Mistral model
+            if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+              botResponse = data[0].generated_text.trim();
+            } else if (data && data.generated_text) {
+              botResponse = data.generated_text.trim();
+            } else if (typeof data === 'string') {
+              botResponse = data.trim();
+            } else if (data && data.choices && data.choices.length > 0) {
+              // Handle OpenAI-like format
+              botResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
+            } else {
+              botResponse = "I apologize, but I received an unexpected response format. Please try asking directly about the document.";
+            }
+            
+            // If we are using the DeepSeek model, check response for any non-English part and format
+            if (modelConfig[activeModel].usingFallbackModel && botResponse) {
+              // Remove any "Assistant:" prefix that might be in the response
+              botResponse = botResponse.replace(/^Assistant:\s*/i, '');
+              
+              // If response starts with Chinese characters, try to find the first English part
+              if (/^[\u4e00-\u9fa5]/.test(botResponse)) {
+                const englishPart = botResponse.match(/[a-zA-Z]/);
+                if (englishPart && englishPart.index > 0) {
+                  botResponse = botResponse.substring(englishPart.index);
+                }
+              }
+            }
+            
+            // Safety check for empty responses
+            if (!botResponse) {
+              botResponse = "I apologize, but I couldn't analyze the document properly. Please ask me specific questions about it.";
+            }
+            
+            appendMessage("bot", botResponse);
+          })
+          .catch(error => {
+            console.error("Error analyzing document:", error);
+            
+            // Remove the thinking message if it exists
+            if (thinkingMsg && thinkingMsg.parentNode) {
+              thinkingMsg.parentNode.removeChild(thinkingMsg);
+            }
+            
+            appendMessage("bot", "I had trouble analyzing this document. Please ask me specific questions about it, and I'll do my best to answer.");
+          });
+        } else {
+          // If document isn't available yet, wait and check again
+          setTimeout(checkAndAnalyze, 500);
+        }
+      }
+      
+      checkAndAnalyze();
+    }
+    
+    // Helper function to determine file type for customized analysis
+    function getFileType(filename) {
+      if (filename.endsWith('.pdf')) return "pdf";
+      if (filename.endsWith('.docx') || filename.endsWith('.doc')) return "doc";
+      if (filename.endsWith('.txt')) return "txt";
+      if (filename.match(/\.(jpg|jpeg|png|gif)$/i)) return "image";
+      return "other";
     }
 
     // Simple scroll-to-bottom button handler
@@ -3860,9 +4187,9 @@
           if (currentChatId) {
             let successMessage = `API Test Result: Connection successful! Using endpoint ${model.currentEndpointIndex} and token ${model.currentTokenIndex}.`;
             
-            // If we're using the DeepSeek fallback model, indicate this in the message
-            if (model.currentEndpointIndex === model.endpoints.length - 1) {
-              successMessage = "API Test Result: Connection successful using fallback model. The original model endpoints are not available, but this alternative will work.";
+            // If we're using the DeepSeek model, indicate this in the message
+            if (model.currentEndpointIndex === 0) {
+              successMessage = "API Test Result: Connection successful using DeepSeek model. This model should provide reliable responses.";
             }
             
             appendMessage("bot", successMessage);
@@ -4054,15 +4381,24 @@
         model.currentEndpointIndex++;
         model.currentTokenIndex = 0;
         
-        // Check if we're now using the DeepSeek fallback model (last endpoint)
-        if (model.currentEndpointIndex === model.endpoints.length - 1) {
-          console.log("Switching to hidden fallback model DeepSeek-V3-0324");
+        // Set the flag based on which endpoint we're now using
+        const newEndpoint = model.endpoints[model.currentEndpointIndex];
+        
+        if (newEndpoint.includes("deepseek")) {
+          // Using DeepSeek model
           model.usingFallbackModel = true;
-          showNotification("Trying alternative model (fallback)...", "info");
+          console.log("Switching to DeepSeek V3 model");
+        } else if (newEndpoint.includes("aws.endpoints")) {
+          // Using original LegalMind AWS endpoint
+          model.usingFallbackModel = false;
+          console.log("Trying original LegalMind AWS endpoint (may be scaled to zero)");
         } else {
-          console.log(`Switching to alternative endpoint ${model.currentEndpointIndex} with token ${model.currentTokenIndex}`);
+          // Using other HuggingFace endpoints
+          model.usingFallbackModel = false;
+          console.log(`Switching to alternative endpoint: ${newEndpoint}`);
         }
         
+        showNotification("Trying alternative model endpoint...", "info");
         return true;
       }
       
@@ -4070,7 +4406,7 @@
       console.log("All endpoints and tokens attempted without success");
       model.currentEndpointIndex = 0;
       model.currentTokenIndex = 0;
-      model.usingFallbackModel = false;
+      model.usingFallbackModel = true; // Reset to true because DeepSeek is now first
       return false;
     }
     
@@ -4088,11 +4424,11 @@
     // Function to wake up a scaled-to-zero endpoint
     function wakeUpEndpoint() {
       const model = modelConfig.legalMind;
-      // Force using the first endpoint (AWS endpoint) which is scaled to zero
-      model.currentEndpointIndex = 0;
+      // Force using the original AWS endpoint which is scaled to zero (now at index 3)
+      model.currentEndpointIndex = 3; // Updated index for the AWS endpoint
       model.currentTokenIndex = 0;
       
-      const endpoint = model.endpoints[0];
+      const endpoint = model.endpoints[3]; // Use the correct index for the AWS endpoint
       const token = model.authTokens[0];
       
       console.log("Attempting to wake up endpoint:", endpoint);
@@ -4166,25 +4502,219 @@
       });
     }
 
-    // Function to check if the message is asking about chatbot identity
-    function isIdentityQuestion(text) {
+    // Function to check if message is a greeting
+    function isGreeting(text) {
       const lowerText = text.toLowerCase().trim();
       
-      // Check for common identity questions
-      const identityPatterns = [
-        /^who are you/,
-        /^what are you/,
-        /tell me about yourself/,
-        /^who is legal ?mind/,
-        /^what is legal ?mind/,
-        /introduce yourself/,
-        /your name/,
-        /^who created you/,
-        /^what do you do/,
-        /^what can you do/
+      const greetingPatterns = [
+        /^hi$/,
+        /^hello$/,
+        /^hey$/,
+        /^greetings$/,
+        /^hi there$/,
+        /^hello there$/,
+        /^hey there$/,
+        /^howdy$/,
+        /^good morning$/,
+        /^good afternoon$/,
+        /^good evening$/
       ];
       
-      return identityPatterns.some(pattern => pattern.test(lowerText));
+      return greetingPatterns.some(pattern => pattern.test(lowerText));
+    }
+    
+    // Function to get greeting response
+    function getGreetingResponse() {
+      return "Hello! I'm LegalMind, your AI legal assistant. I specialize in analyzing legal documents and providing insights. To get the most out of our conversation, please upload your document using the paperclip icon or images with text using the camera icon. I can read and analyze the content, provide a summary, and suggest improvements.";
+    }
+
+    // Function to process image and extract text using OCR
+    function processImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // Check if it's actually an image
+      if (!file.type.startsWith('image/')) {
+        showNotification("Please select a valid image file (PNG, JPG, JPEG)", "error");
+        return;
+      }
+      
+      showNotification("Processing image: " + file.name, "info");
+      
+      // For mobile devices, show the image in the chat
+      if (window.innerWidth <= 992) {
+        if (currentChatId) {
+          // Add a file upload message with camera icon
+          const fileMessage = `
+            <div class="file-upload">
+              <i class="fas fa-camera"></i>
+              <span>${file.name}</span>
+            </div>
+          `;
+          
+          // Create and append the HTML message
+          appendHtmlMessage("user", fileMessage);
+        }
+      }
+      
+      // Desktop and mobile: Process the image with OCR
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const imageUrl = e.target.result;
+        
+        // Add a loading message
+        let ocrLoadingMsg;
+        if (currentChatId) {
+          appendMessage("bot", "Reading text from image...");
+          ocrLoadingMsg = document.querySelector(".message.bot:last-child");
+        }
+        
+        // Process with Tesseract.js
+        Tesseract.recognize(
+          imageUrl,
+          'eng', // English language
+          { 
+            logger: info => {
+              console.log(info);
+              if (info.status === 'recognizing text' && info.progress < 1) {
+                // Update the loading message with progress
+                if (ocrLoadingMsg) {
+                  ocrLoadingMsg.textContent = `Reading text from image... ${Math.round(info.progress * 100)}%`;
+                }
+              }
+            }
+          }
+        ).then(({ data: { text } }) => {
+          console.log("Extracted text from image:", text);
+          
+          // Remove the loading message
+          if (ocrLoadingMsg && ocrLoadingMsg.parentNode) {
+            ocrLoadingMsg.parentNode.removeChild(ocrLoadingMsg);
+          }
+          
+          if (!text || text.trim() === '') {
+            showNotification("No text could be detected in the image", "warning");
+            appendMessage("bot", "I couldn't detect any text in this image. Please try with a clearer image or upload a text document instead.");
+            return;
+          }
+          
+          // Store the extracted text in uploadedDocuments
+          uploadedDocuments[file.name] = text;
+          showNotification("Image text extracted successfully", "success");
+          
+          // Add the extracted text to the document preview panel
+          const filePreview = document.getElementById("documentPreviews");
+          
+          // Clear welcome message if it exists
+          const welcomeMessage = filePreview.querySelector('.empty-preview-message');
+          if (welcomeMessage) {
+            filePreview.removeChild(welcomeMessage);
+          }
+          
+          // Create file item element for the document preview
+          const fileItem = document.createElement('div');
+          fileItem.classList.add('file-item');
+          fileItem.setAttribute('data-filename', file.name);
+          
+          // Create file header
+          const fileHeader = document.createElement('div');
+          fileHeader.className = 'file-header';
+          
+          // Create file name container
+          const fileNameContainer = document.createElement('div');
+          fileNameContainer.className = 'file-name';
+          
+          // Create file icon (camera for images)
+          const fileIcon = document.createElement('i');
+          fileIcon.classList.add('fas', 'fa-camera');
+          
+          // Create filename span
+          const fileName = document.createElement('span');
+          fileName.textContent = `${file.name} (OCR text)`;
+          
+          // Add icon and filename to the name container
+          fileNameContainer.appendChild(fileIcon);
+          fileNameContainer.appendChild(fileName);
+          
+          // Create delete button
+          const closeBtn = document.createElement("button");
+          closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+          closeBtn.classList.add("delete-file");
+          closeBtn.setAttribute('aria-label', 'Remove file');
+          
+          closeBtn.addEventListener("click", function(e) {
+            e.stopPropagation();
+            filePreview.removeChild(fileItem);
+            
+            // If no more files, show welcome message
+            if (filePreview.children.length === 0) {
+              const welcomeText = document.createElement('p');
+              welcomeText.className = 'empty-preview-message';
+              welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
+              filePreview.appendChild(welcomeText);
+            }
+          });
+          
+          // Add name container and delete button to header
+          fileHeader.appendChild(fileNameContainer);
+          fileHeader.appendChild(closeBtn);
+          
+          // Add header to file item
+          fileItem.appendChild(fileHeader);
+          
+          // Create a text preview for the OCR content
+          const previewContainer = document.createElement('div');
+          previewContainer.className = 'file-preview-container ocr-preview';
+          
+          // Add a textarea with the OCR text
+          const textPreview = document.createElement('textarea');
+          textPreview.readOnly = true;
+          textPreview.value = text;
+          textPreview.style.width = '100%';
+          textPreview.style.height = '150px';
+          textPreview.style.resize = 'none';
+          textPreview.style.fontFamily = 'monospace';
+          textPreview.style.fontSize = '12px';
+          textPreview.style.padding = '8px';
+          textPreview.style.border = '1px solid #ddd';
+          textPreview.style.borderRadius = '4px';
+          
+          previewContainer.appendChild(textPreview);
+          fileItem.appendChild(previewContainer);
+          
+          filePreview.appendChild(fileItem);
+          
+          // Force document preview section visible
+          const previewSection = document.querySelector('.documents-preview');
+          previewSection.style.display = 'block';
+          previewSection.style.visibility = 'visible';
+          previewSection.style.opacity = '1';
+          
+          // Now auto-analyze the extracted text
+          setTimeout(() => {
+            autoAnalyzeDocument(file.name);
+          }, 1000);
+        }).catch(error => {
+          console.error("OCR Error:", error);
+          showNotification("Error processing image text", "error");
+          
+          // Remove the loading message
+          if (ocrLoadingMsg && ocrLoadingMsg.parentNode) {
+            ocrLoadingMsg.parentNode.removeChild(ocrLoadingMsg);
+          }
+          
+          if (currentChatId) {
+            appendMessage("bot", "I encountered an error processing the text in this image. Please try again with a clearer image or upload a text document instead.");
+          }
+        });
+      };
+      
+      reader.onerror = function() {
+        console.error("Error reading image file");
+        showNotification("Error processing image", "error");
+      };
+      
+      reader.readAsDataURL(file);
     }
   </script>
 </body>
