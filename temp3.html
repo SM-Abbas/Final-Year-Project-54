@@ -71,6 +71,38 @@
       100% { content: ''; }
     }
     
+    .message.bot:has(span[data-thinking="true"]) {
+      position: relative;
+      background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    span[data-thinking="true"] {
+      position: relative;
+      font-style: italic;
+      font-weight: bold;
+      color: #0056b3;
+    }
+    
+    span[data-thinking="true"]::after {
+      content: '';
+      position: relative;
+      display: inline-block;
+      animation: ellipsis 1.5s infinite steps(4);
+      width: 1.5em;
+      overflow: hidden;
+      vertical-align: bottom;
+      margin-left: 0.2em;
+      font-weight: bold;
+    }
+    
+    .dark-mode span[data-thinking="true"] {
+      color: #66a6ff;
+    }
+    
+    .dark-mode .message.bot:has(span[data-thinking="true"]) {
+      background-color: rgba(102, 166, 255, 0.1);
+    }
+    
     .message.bot:last-child:has(span[data-thinking="true"]) {
       position: relative;
     }
@@ -2666,11 +2698,11 @@
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
-        // Reordered endpoints to prioritize fastest models first, with LegalMind model second
+        // Reordered endpoints to prioritize Legal Mind first, then Mistral, then others
         endpoints: [
-          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", // Fastest model first
-          "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind", // Legal mind second
-          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324", // Moved to third position
+          "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind", // Legal Mind first
+          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", // Mistral second
+          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324", // DeepSeek third
           "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud" // Keep as last position
         ],
         // Multiple API tokens to try as alternatives
@@ -2682,7 +2714,7 @@
         // Track which endpoint and token is currently being used
         currentEndpointIndex: 0,
         currentTokenIndex: 0,
-        // Set this to false as we're now using Mistral as default
+        // Set this to false as we now prioritize Legal Mind model
         usingFallbackModel: false
       },
       // Add more models here if needed
@@ -3050,6 +3082,12 @@
                 top: chatBox.scrollHeight,
                 behavior: 'smooth'
             });
+        } else {
+            // Add visible scroll button indicator when new messages arrive but we're not at bottom
+            const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+            if (scrollBottomBtn) {
+                scrollBottomBtn.classList.add('visible');
+            }
         }
         
         // Store in current chat if available
@@ -3197,6 +3235,12 @@
       if (!userMessageText) return;
       
       if (currentChatId) {
+        // First, hide welcome message when user sends their first message
+        const welcomeMessage = document.querySelector('.welcome-message');
+        if (welcomeMessage) {
+          welcomeMessage.classList.add('hidden');
+        }
+        
         // Check for inappropriate content before proceeding
         if (containsInappropriateContent(userMessageText)) {
           // Display user message but mark it as flagged
@@ -3212,10 +3256,12 @@
               chats[currentChatId].messages = [];
             }
             chats[currentChatId].messages.push({
+              type: 'text',
               sender: "user",
               content: userMessageText
             });
             chats[currentChatId].messages.push({
+              type: 'text',
               sender: "bot",
               content: moderationResponse
             });
@@ -3223,25 +3269,40 @@
           return;
         }
         
-        // Append user message to chat
+        // Append user message to chat - ensure it's immediately visible
         appendMessage("user", userMessageText);
+        
+        // Force scroll to the bottom to make sure the message is visible
+        const chatBox = document.getElementById('chatBox');
+        if (chatBox) {
+          setTimeout(() => {
+            chatBox.scrollTo({
+              top: chatBox.scrollHeight,
+              behavior: 'auto'
+            });
+          }, 50);
+        }
         
         // Add message to chat history
         if (!chats[currentChatId].messages) {
           chats[currentChatId].messages = [];
         }
         chats[currentChatId].messages.push({
+          type: 'text',
           sender: "user",
           content: userMessageText
         });
         
         // Check for identity questions and provide canned response
         if (isIdentityQuestion(userMessageText)) {
-          // Provide standard identity response
           const identityResponse = getIdentityResponse(userMessageText);
           setTimeout(() => {
-            console.log("Responding with identity response:", identityResponse);
             appendMessage("bot", identityResponse);
+            
+            // Add to chat history (if not already added through appendMessage)
+            if (!chats[currentChatId].messages) {
+              chats[currentChatId].messages = [];
+            }
           }, 300);
           return;
         }
@@ -4130,6 +4191,23 @@
           // Create a thinking message
           const thinkingMsg = document.querySelector(".message.bot:last-child");
           
+          // Create thinking message with model info
+          const currentModel = modelConfig[activeModel].name;
+          const currentEndpoint = modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex];
+          let modelName = currentModel;
+          
+          // Add model variant based on endpoint
+          if (currentEndpoint.includes("mistral")) {
+            modelName += " (Mistral)";
+          } else if (currentEndpoint.includes("Abbasgamer1")) {
+            modelName += " (Legal)";
+          } else if (currentEndpoint.includes("deepseek")) {
+            modelName += " (DeepSeek)";
+          }
+          
+          // Update thinking message with model info and data attribute for animation
+          thinkingMsg.innerHTML = `<span data-thinking="true">Analyzing document using ${modelName}</span>`;
+          
           // Get document context
           const documentContext = getDocumentContext(analysisMessage);
           
@@ -4963,6 +5041,72 @@
       
       reader.readAsDataURL(file);
     }
+
+    // Set up event handlers
+    document.addEventListener('DOMContentLoaded', function() {
+      const messageInput = document.getElementById('messageInput');
+      if (messageInput) {
+        messageInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+            
+            // Ensure input is cleared after sending
+            messageInput.value = '';
+            
+            // Focus back on input for next message
+            setTimeout(() => messageInput.focus(), 100);
+          }
+        });
+        
+        // Also listen for input events to resize the textarea
+        messageInput.addEventListener('input', function() {
+          // Auto-resize the textarea
+          this.style.height = 'auto';
+          this.style.height = (this.scrollHeight) + 'px';
+          
+          // Limit height to 150px max
+          if (parseInt(this.style.height) > 150) {
+            this.style.height = '150px';
+            this.style.overflowY = 'auto';
+          } else {
+            this.style.overflowY = 'hidden';
+          }
+        });
+      }
+      
+      // Event handler for the scroll-to-bottom button
+      document.addEventListener('click', function(e) {
+        if (e.target.closest('#scrollBottomBtn')) {
+          const chatBox = document.getElementById('chatBox');
+          if (chatBox) {
+            chatBox.scrollTo({
+              top: chatBox.scrollHeight,
+              behavior: 'smooth'
+            });
+            
+            // Hide the button after clicking
+            document.getElementById('scrollBottomBtn').classList.remove('visible');
+          }
+        }
+      });
+      
+      // Monitor chat box scroll to toggle scroll button visibility
+      const chatBox = document.getElementById('chatBox');
+      if (chatBox) {
+        chatBox.addEventListener('scroll', function() {
+          const scrollBtn = document.getElementById('scrollBottomBtn');
+          if (scrollBtn) {
+            const isNearBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 100;
+            if (isNearBottom) {
+              scrollBtn.classList.remove('visible');
+            } else {
+              scrollBtn.classList.add('visible');
+            }
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>
