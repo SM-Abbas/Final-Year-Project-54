@@ -1779,6 +1779,20 @@
       #sendBtn, .attach-btn {
         font-size: 1.1rem;
       }
+
+      #sendBtn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        right: 8px;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+      }
+      
+      #sendBtn i {
+        font-size: 0.85rem;
+      }
     }
     
     /* Small mobile screens */
@@ -1795,6 +1809,20 @@
       
       #sendBtn, .attach-btn {
         font-size: 1rem;
+      }
+
+      #sendBtn {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        right: 8px;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+      }
+      
+      #sendBtn i {
+        font-size: 0.85rem;
       }
     }
 
@@ -1870,6 +1898,27 @@
         border: none;
         background: transparent;
         width: 100%;
+      }
+      
+      #sendBtn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        right: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+      }
+      
+      #sendBtn i {
+        font-size: 0.9rem;
+      }
+      
+      body.dark-mode #sendBtn {
+        background-color: var(--primary-color);
       }
     }
 
@@ -3003,17 +3052,28 @@
             };
           }
           
-          fetch(modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex], {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${modelConfig[activeModel].authTokens[modelConfig[activeModel].currentTokenIndex]}`
-            },
-            body: JSON.stringify({
-              inputs: finalPrompt,
-              parameters: requestParams
-            })
-          })
+          // Create a timeout promise that will reject after 15 seconds
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(new Error('API request timed out after 15 seconds'));
+            }, 15000); // 15 seconds timeout
+          });
+          
+          // Race between the fetch request and the timeout
+          Promise.race([
+            fetch(modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex], {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${modelConfig[activeModel].authTokens[modelConfig[activeModel].currentTokenIndex]}`
+              },
+              body: JSON.stringify({
+                inputs: finalPrompt,
+                parameters: requestParams
+              })
+            }),
+            timeoutPromise
+          ])
           .then(response => {
             console.log("API Response Status:", response.status);
             console.log("API Response Headers:", [...response.headers.entries()]);
@@ -3091,7 +3151,23 @@
               endpoint: modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex]
             });
             
-            // Try alternative endpoint or token
+            // Specific handling for timeout errors
+            if (error.message.includes('timed out')) {
+              console.log("API request timed out - automatically trying next endpoint");
+              showNotification("Model response timed out. Trying next model...", "warning");
+              
+              // Automatically try the next endpoint or token
+              if (tryNextEndpointOrToken(activeModel)) {
+                const endpointInfo = getCurrentEndpointInfo(activeModel);
+                console.log(`Switching to endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) after timeout`);
+                
+                // Retry with new endpoint/token (message indicator stays)
+                setTimeout(() => sendMessage(), 1000);
+                return;
+              }
+            }
+            
+            // Try alternative endpoint or token for other errors
             if (tryNextEndpointOrToken(activeModel)) {
               const endpointInfo = getCurrentEndpointInfo(activeModel);
               console.log(`Retrying with endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) and token ${endpointInfo.tokenIndex}`);
@@ -3120,6 +3196,9 @@
             } else if (error.message.includes("CORS") || error.message.includes("Failed to fetch")) {
               errorMessage = "Network error: CORS or connectivity issue. Please check your network settings or try the Test API Connection button.";
               showNotification("Network connectivity issue. Try the Test API Connection button.", "error");
+            } else if (error.message.includes('timed out')) {
+              errorMessage = "The model took too long to respond. I've tried all available models but none responded in time.";
+              showNotification("All models timed out. Please try again later.", "error");
             } else {
               errorMessage = "I'm having trouble connecting to my knowledge base right now. Please try again later.";
               showNotification("Connection error to LegalMind API", "error");
@@ -3713,24 +3792,35 @@
         return;
       }
       
-      // Make a simple test request
-      fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          inputs: "Hello, can you give me a very brief response to test the connection?",
-          parameters: {
-            max_new_tokens: 50,
-            temperature: 0.7,
-            top_p: 0.95,
-            do_sample: true,
-            return_full_text: false
-          }
-        })
-      })
+      // Create a timeout promise that will reject after 15 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('API request timed out after 15 seconds'));
+        }, 15000); // 15 seconds timeout
+      });
+      
+      // Race between the fetch request and the timeout
+      Promise.race([
+        // Make a simple test request
+        fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            inputs: "Hello, can you give me a very brief response to test the connection?",
+            parameters: {
+              max_new_tokens: 50,
+              temperature: 0.7,
+              top_p: 0.95,
+              do_sample: true,
+              return_full_text: false
+            }
+          })
+        }),
+        timeoutPromise
+      ])
       .then(response => {
         console.log("Test API Status:", response.status);
         console.log("Test API Headers:", [...response.headers.entries()]);
@@ -3781,9 +3871,24 @@
       })
       .catch(error => {
         console.error("Test API Error:", error);
+        
+        // Specific handling for timeout errors
+        if (error.message.includes('timed out')) {
+          console.log("Test API request timed out - trying next endpoint");
+          showNotification("Test API connection timed out. Trying next model...", "warning");
+          
+          // Try next endpoint or token
+          if (tryNextEndpointOrToken("legalMind")) {
+            setTimeout(testAPIConnection, 1000);
+          } else {
+            showNotification("All models timed out during testing. Please try again later.", "error");
+          }
+          return;
+        }
+        
         showNotification("API connection error: " + error.message, "error");
         
-        // Try next endpoint or token
+        // Try next endpoint or token for other errors
         if (tryNextEndpointOrToken("legalMind")) {
           setTimeout(testAPIConnection, 1000);
         }
@@ -3993,22 +4098,33 @@
       console.log("Attempting to wake up endpoint:", endpoint);
       showNotification("Attempting to wake up endpoint...", "info");
       
-      // Make a simple test request to wake it up
-      fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          inputs: "Wake up",
-          parameters: {
-            max_new_tokens: 10,
-            temperature: 0.7,
-            do_sample: true
-          }
-        })
-      })
+      // Create a timeout promise that will reject after 15 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Wake up request timed out after 15 seconds'));
+        }, 15000); // 15 seconds timeout
+      });
+      
+      // Race between the fetch request and the timeout
+      Promise.race([
+        // Make a simple test request to wake it up
+        fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            inputs: "Wake up",
+            parameters: {
+              max_new_tokens: 10,
+              temperature: 0.7,
+              do_sample: true
+            }
+          })
+        }),
+        timeoutPromise
+      ])
       .then(response => {
         console.log("Wake up status:", response.status);
         
@@ -4036,6 +4152,16 @@
       })
       .catch(error => {
         console.error("Wake up error:", error);
+        
+        // Specific handling for timeout errors
+        if (error.message.includes('timed out')) {
+          showNotification("Wake up request timed out. The endpoint may be unavailable.", "warning");
+          if (currentChatId) {
+            appendMessage("bot", "The wake up request timed out. The endpoint appears to be unavailable. I'll automatically try alternative models for your requests.");
+          }
+          return;
+        }
+        
         showNotification("Error sending wake up request: " + error.message, "error");
       });
     }
