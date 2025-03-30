@@ -3097,6 +3097,53 @@
       return "I am LegalMind, an AI legal assistant that specializes in analyzing legal documents. I can help review contracts, legal agreements, and other documents, providing insights and suggestions for improvements. If you have a document you'd like me to analyze, please upload it using the paperclip icon in the chat input.";
     }
 
+    // Function to determine if a question is a continuation of previous conversation
+    function isContinuationQuestion(text, messages) {
+      if (!text || !messages || messages.length < 2) return false;
+      
+      const lowerText = text.toLowerCase().trim();
+      
+      // Very short questions are often continuations
+      if (lowerText.split(' ').length <= 5) {
+        return true;
+      }
+      
+      // Check for pronouns and continuation phrases
+      const continuationPatterns = [
+        /\b(it|this|that|they|them|these|those)\b/i,
+        /\b(its|their|theirs)\b/i,
+        /\b(why|how|what|when|where|who)\b.*\?$/i,
+        /^(and|but|so|also|besides|additionally)\b/i,
+        /\b(more|elaboration|clarify|explain|details)\b/i,
+        /\bcan you/i,
+        /\b(the|your|previous) (answer|response|explanation)\b/i
+      ];
+      
+      return continuationPatterns.some(pattern => pattern.test(lowerText));
+    }
+    
+    // Function to detect and filter inappropriate content related to intimacy
+    function containsInappropriateContent(text) {
+      if (!text) return false;
+      
+      const lowerText = text.toLowerCase().trim();
+      
+      // Define patterns for inappropriate content related to intimacy
+      const inappropriatePatterns = [
+        /\b(sex|sexual|sexuality|nude|naked|porn|explicit|adult content)\b/i,
+        /\b(intercourse|foreplay|orgasm|climax|ejacul|penetrat)\w*\b/i,
+        /\b(masturbat|genital|privates|private parts)\w*\b/i,
+        /\b(erotic|erotica|69|bdsm|fetish|kink)\b/i,
+        /\b(nsfw|xxx|x-rated|arousal|aroused)\b/i,
+        /\b(boob|breast|tit|ass|butt|penis|vagina|dick|cock|pussy)\w*\b/i,
+        /\b(fuck|fucking|fucked|anal|oral sex|blow job|hand job)\b/i,
+        /\b(intimate|intimacy)\b.*\b(physical|detail|guide|how|instruct)/i,
+        /\b(dirty talk|obscen|lewd|lust|horny|sensual pleasure)\b/i
+      ];
+      
+      return inappropriatePatterns.some(pattern => pattern.test(lowerText));
+    }
+
     // Send message function
     function sendMessage() {
       const messageInput = document.getElementById("messageInput");
@@ -3107,6 +3154,32 @@
       if (!userMessageText) return;
       
       if (currentChatId) {
+        // Check for inappropriate content before proceeding
+        if (containsInappropriateContent(userMessageText)) {
+          // Display user message but mark it as flagged
+          appendMessage("user", userMessageText);
+          
+          // Send censored response
+          setTimeout(() => {
+            const moderationResponse = "I'm designed to provide legal and professional assistance only. I cannot discuss topics related to intimate or adult content. Please keep our conversation professional and focused on legal document analysis and advice. How else can I assist you today?";
+            appendMessage("bot", moderationResponse);
+            
+            // Add to chat history
+            if (!chats[currentChatId].messages) {
+              chats[currentChatId].messages = [];
+            }
+            chats[currentChatId].messages.push({
+              sender: "user",
+              content: userMessageText
+            });
+            chats[currentChatId].messages.push({
+              sender: "bot",
+              content: moderationResponse
+            });
+          }, 300);
+          return;
+        }
+        
         // Append user message to chat
         appendMessage("user", userMessageText);
         
@@ -3151,8 +3224,15 @@
           // Prepare conversation history for context
           let conversationContext = "";
           if (chats[currentChatId] && chats[currentChatId].messages) {
-            // Get last 5 messages for context
-            const recentMessages = chats[currentChatId].messages.slice(-10);
+            // Check if this appears to be a continuation question
+            const isContinuation = isContinuationQuestion(userMessageText, chats[currentChatId].messages);
+            
+            // Get more context for continuations, otherwise use standard context length
+            const contextLength = isContinuation ? 15 : 10;
+            
+            // Get recent messages for context, more if it's a continuation
+            const recentMessages = chats[currentChatId].messages.slice(-contextLength);
+            
             for (const msg of recentMessages) {
               if (msg.sender === "user") {
                 conversationContext += "User: " + msg.content + "\n";
@@ -3160,10 +3240,14 @@
                 conversationContext += "Assistant: " + msg.content + "\n";
               }
             }
+            
+            console.log("Is continuation question:", isContinuation);
           }
           
           // Add the current query
-          let fullPrompt = "You are LegalMind, a helpful assistant. Please respond to this query:\nUser: " + userMessageText + "\nAssistant:";
+          let fullPrompt = "You are LegalMind, a helpful assistant. Please respond to this query:\n" + 
+                          conversationContext + 
+                          "User: " + userMessageText + "\nAssistant:";
           
           // If we're using the DeepSeek model, use its recommended format
           const currentEndpointInfo = getCurrentEndpointInfo(activeModel);
@@ -3176,7 +3260,9 @@
               weekday: 'long' 
             });
             
-            fullPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\nUser: ${userMessageText}\nAssistant:`;
+            fullPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
+                        conversationContext +
+                        "User: " + userMessageText + "\nAssistant:";
             console.log("Using DeepSeek model with specialized prompt format");
           }
           
@@ -3196,7 +3282,8 @@
                 `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
                 "Document(s) uploaded by user:" + 
                 documentContext + 
-                "\n\nUser: " + userMessageText + "\n" +
+                "\n\n" + conversationContext + 
+                "User: " + userMessageText + "\n" +
                 "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
                 "Assistant:";
             } else {
@@ -3204,7 +3291,8 @@
                 "You are LegalMind, a legal assistant that specializes in document analysis.\n\n" +
                 "User has uploaded the following document(s):" + 
                 documentContext + 
-                "\n\nUser: " + userMessageText + "\n" +
+                "\n\n" + conversationContext + 
+                "User: " + userMessageText + "\n" +
                 "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
                 "Assistant:";
             }
