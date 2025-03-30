@@ -18,19 +18,49 @@
       padding: 10px;
       max-height: 200px;
       overflow-y: auto;
-      background-color: #f8f9fa;
-      border-radius: 4px;
+      background-color: var(--light-bg);
+      border-radius: 5px;
       margin-top: 10px;
     }
     
-    body.dark-mode .file-preview-container.ocr-preview {
-      background-color: #2d2d2d;
+    .file-preview-container.ocr-preview textarea {
+      width: 100%;
+      height: 150px;
+      resize: none;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--main-bg);
+      color: var(--text-color);
     }
     
-    body.dark-mode .file-preview-container.ocr-preview textarea {
-      background-color: #2d2d2d;
-      color: #e1e1e1;
-      border-color: #444;
+    .dark-mode .file-preview-container.ocr-preview {
+      background-color: var(--sidebar-bg);
+    }
+    
+    .dark-mode .file-preview-container.ocr-preview textarea {
+      background-color: var(--main-bg);
+      border-color: var(--dark-border-color);
+    }
+    
+    /* Scrollbar for OCR Preview */
+    .file-preview-container.ocr-preview::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .file-preview-container.ocr-preview::-webkit-scrollbar-track {
+      background: var(--scrollbar-track);
+    }
+    
+    .file-preview-container.ocr-preview::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb);
+      border-radius: 4px;
+    }
+    
+    .file-preview-container.ocr-preview::-webkit-scrollbar-thumb:hover {
+      background-color: var(--scrollbar-thumb-hover);
     }
   </style>
   <style>
@@ -1193,7 +1223,7 @@
 
     @media (max-width: 576px) {
       .sidebar {
-        padding: 10px 5px 0;
+        padding: 8px 5px 0;
       }
       
       .chat-nav {
@@ -3722,6 +3752,16 @@
           // Create and append the HTML message
           appendHtmlMessage("user", fileMessage);
           
+          // Add a notification message about the automatic analysis
+          const analysisNotification = `
+            <div style="padding: 10px; background-color: var(--light-bg); border-left: 4px solid var(--accent-color); border-radius: 4px; margin-top: 10px; margin-bottom: 10px;">
+              <strong>📄 Document uploaded:</strong> ${file.name}
+              <div style="margin-top: 5px;">Automatically analyzing content to provide a summary...</div>
+              <div class="typing-indicator" style="margin-top: 8px;"><span></span><span></span><span></span></div>
+            </div>
+          `;
+          appendHtmlMessage("bot", analysisNotification);
+          
           // Auto-analyze the document after a short delay
           setTimeout(() => {
             autoAnalyzeDocument(file.name);
@@ -4485,8 +4525,8 @@
           appendMessage("bot", "The endpoint is waking up! Please try your request again in about 30 seconds.");
         }
         return response.json();
-      })
-      .catch(error => {
+          })
+          .catch(error => {
         console.error("Wake up error:", error);
         
         // Specific handling for timeout errors
@@ -4554,6 +4594,16 @@
           
           // Create and append the HTML message
           appendHtmlMessage("user", fileMessage);
+          
+          // Add a notification message about the automatic OCR processing
+          const ocrNotification = `
+            <div style="padding: 10px; background-color: var(--light-bg); border-left: 4px solid var(--accent-color); border-radius: 4px; margin-top: 10px; margin-bottom: 10px;">
+              <strong>🖼️ Image uploaded:</strong> ${file.name}
+              <div style="margin-top: 5px;">Extracting text with OCR and analyzing content...</div>
+              <div class="typing-indicator" style="margin-top: 8px;"><span></span><span></span><span></span></div>
+            </div>
+          `;
+          appendHtmlMessage("bot", ocrNotification);
         }
       }
       
@@ -4666,18 +4716,10 @@
           const previewContainer = document.createElement('div');
           previewContainer.className = 'file-preview-container ocr-preview';
           
-          // Add a textarea with the OCR text
+          // Add a textarea with the OCR text - using CSS classes instead of inline styles
           const textPreview = document.createElement('textarea');
           textPreview.readOnly = true;
           textPreview.value = text;
-          textPreview.style.width = '100%';
-          textPreview.style.height = '150px';
-          textPreview.style.resize = 'none';
-          textPreview.style.fontFamily = 'monospace';
-          textPreview.style.fontSize = '12px';
-          textPreview.style.padding = '8px';
-          textPreview.style.border = '1px solid #ddd';
-          textPreview.style.borderRadius = '4px';
           
           previewContainer.appendChild(textPreview);
           fileItem.appendChild(previewContainer);
@@ -4690,7 +4732,24 @@
           previewSection.style.visibility = 'visible';
           previewSection.style.opacity = '1';
           
-          // Now auto-analyze the extracted text
+          // Now auto-analyze the extracted text with a prominent notification
+          if (currentChatId) {
+            // Replace the loading message with a notification about analysis
+            if (ocrLoadingMsg && ocrLoadingMsg.parentNode) {
+              ocrLoadingMsg.parentNode.removeChild(ocrLoadingMsg);
+            }
+            
+            // Add an OCR completion notification
+            const analysisNotification = `
+              <div style="padding: 10px; background-color: var(--light-bg); border-left: 4px solid var(--accent-color); border-radius: 4px; margin-top: 10px; margin-bottom: 10px;">
+                <strong>✅ OCR completed:</strong> Successfully extracted text from ${file.name}
+                <div style="margin-top: 5px;">Now analyzing the content to provide a summary...</div>
+                <div class="typing-indicator" style="margin-top: 8px;"><span></span><span></span><span></span></div>
+              </div>
+            `;
+            appendHtmlMessage("bot", analysisNotification);
+          }
+          
           setTimeout(() => {
             autoAnalyzeDocument(file.name);
           }, 1000);
@@ -4719,3 +4778,4 @@
   </script>
 </body>
 </html>
+            
