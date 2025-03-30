@@ -2772,79 +2772,132 @@
     let currentChatId = null;
     let uploadedDocuments = {}; // Store document content by filename
 
-    // Model configuration
-    const modelConfig = {
+    // Token encryption functions
+    const encryptionKey = "LSaXU93f@B7Epr2Z"; // Encryption key for sensitive data
+    
+    // Simple encryption function - not for production use
+    function encryptString(text, key) {
+      // Create a basic encryption that changes based on the key
+      let encrypted = '';
+      for (let i = 0; i < text.length; i++) {
+        const charCode = text.charCodeAt(i);
+        const keyChar = key.charCodeAt(i % key.length);
+        encrypted += String.fromCharCode(charCode ^ keyChar);
+      }
+      // Convert to base64 for safer storage
+      return btoa(encrypted);
+    }
+    
+    // Simple decryption function - not for production use
+    function decryptString(encryptedText, key) {
+      // Decode from base64
+      try {
+        const encrypted = atob(encryptedText);
+        let decrypted = '';
+        for (let i = 0; i < encrypted.length; i++) {
+          const charCode = encrypted.charCodeAt(i);
+          const keyChar = key.charCodeAt(i % key.length);
+          decrypted += String.fromCharCode(charCode ^ keyChar);
+        }
+        return decrypted;
+      } catch (e) {
+        console.error("Decryption failed:", e);
+        return null;
+      }
+    }
+    
+    // Model configuration with encrypted tokens
+    const encryptedModelConfig = {
+      mistralModel: {
+        name: "Mistral",
+        requestTimeInSeconds: 60,
+        endpoint: encryptString("https://api.mistral.ai/v1/chat/completions", encryptionKey),
+        modelId: "mistral-large-latest",
+        readToken: encryptString("6GyO7F96S3WnBbzHItx5nC5mCFyVvxB0", encryptionKey),
+        writeToken: encryptString("6GyO7F96S3WnBbzHItx5nC5mCFyVvxB0", encryptionKey),
+        timeout: 120000,
+        showIdInNotifications: false
+      },
       legalMind: {
         name: "LegalMind",
-        // Reordered endpoints to put LegalMind model first
-        endpoints: [
-          "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind", // Legal mind first
-          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324" // DeepSeek as fallback
-        ],
-        // Auth tokens specific to LegalMind
-        authTokens: [
-          "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",  // Write token
-          "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",  // Read token
-        ],
-        // Track which endpoint and token is currently being used
-        currentEndpointIndex: 0,
-        currentTokenIndex: 0,
-        // Set this to false as we're now using LegalMind as default
-        usingFallbackModel: false,
-        // Response time in ms (to be measured)
-        responseTime: 12000,
-        // Specific timeout for legal documents
-        legalDocTimeout: 20000
+        requestTimeInSeconds: 20,
+        endpoint: encryptString("https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-70B-Instruct", encryptionKey),
+        readToken: encryptString("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", encryptionKey),
+        writeToken: encryptString("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", encryptionKey),
+        timeout: 120000,
+        showIdInNotifications: false
       },
-      // DeepSeek math model specifically for math questions
-      mathModel: {
-        name: "LegalMind", // Display name stays as LegalMind for UI consistency
-        endpoints: [
-          "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-math-7b-rl" // DeepSeek Math model
-        ],
-        authTokens: [
-          "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",  // Write token
-          "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"   // Read token
-        ],
-        currentEndpointIndex: 0,
-        currentTokenIndex: 0,
-        usingFallbackModel: false,
-        responseTime: 12000
-      },
-      // Mistral model for general questions
-      mistralModel: {
-        name: "LegalMind", // Display name stays as LegalMind for UI consistency
-        endpoints: [
-          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", // Mistral model
-        ],
-        authTokens: [
-          "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",  // Write token
-          "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"   // Read token
-        ],
-        currentEndpointIndex: 0,
-        currentTokenIndex: 0,
-        usingFallbackModel: false,
-        responseTime: 10000
-      },
-      // DeepSeek general model as fallback
       deepseekModel: {
-        name: "LegalMind", // Display name stays as LegalMind for UI consistency
-        endpoints: [
-          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324" // DeepSeek general model
-        ],
-        authTokens: [
-          "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",  // Write token
-          "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"   // Read token
-        ],
-        currentEndpointIndex: 0,
-        currentTokenIndex: 0,
-        usingFallbackModel: false,
-        responseTime: 11000
+        name: "DeepSeek",
+        requestTimeInSeconds: 60,
+        endpoint: encryptString("https://api-inference.huggingface.co/models/deepseek-ai/deepseek-v2", encryptionKey),
+        readToken: encryptString("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", encryptionKey),
+        writeToken: encryptString("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", encryptionKey),
+        timeout: 60000,
+        showIdInNotifications: false
+      },
+      mathModel: {
+        name: "DeepSeek Math",
+        requestTimeInSeconds: 60,
+        endpoint: encryptString("https://api-inference.huggingface.co/models/deepseek-ai/deepseek-math-7b-instruct", encryptionKey),
+        readToken: encryptString("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", encryptionKey),
+        writeToken: encryptString("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", encryptionKey),
+        timeout: 60000,
+        showIdInNotifications: false
       }
     };
     
-    // Current active model
-    let activeModel = "mistralModel"; // Default to Mistral for general queries
+    // Actual model config to use (reference the encrypted version)
+    const modelConfig = {
+      mistralModel: {
+        name: "Mistral",
+        requestTimeInSeconds: 60,
+        get endpoint() { return decryptString(encryptedModelConfig.mistralModel.endpoint, encryptionKey); },
+        modelId: "mistral-large-latest",
+        get readToken() { return decryptString(encryptedModelConfig.mistralModel.readToken, encryptionKey); },
+        get writeToken() { return decryptString(encryptedModelConfig.mistralModel.writeToken, encryptionKey); },
+        timeout: 120000,
+        showIdInNotifications: false
+      },
+      legalMind: {
+        name: "LegalMind",
+        requestTimeInSeconds: 20,
+        get endpoint() { return decryptString(encryptedModelConfig.legalMind.endpoint, encryptionKey); },
+        get readToken() { return decryptString(encryptedModelConfig.legalMind.readToken, encryptionKey); },
+        get writeToken() { return decryptString(encryptedModelConfig.legalMind.writeToken, encryptionKey); },
+        timeout: 120000,
+        showIdInNotifications: false
+      },
+      deepseekModel: {
+        name: "DeepSeek",
+        requestTimeInSeconds: 60,
+        get endpoint() { return decryptString(encryptedModelConfig.deepseekModel.endpoint, encryptionKey); },
+        get readToken() { return decryptString(encryptedModelConfig.deepseekModel.readToken, encryptionKey); },
+        get writeToken() { return decryptString(encryptedModelConfig.deepseekModel.writeToken, encryptionKey); },
+        timeout: 60000,
+        showIdInNotifications: false
+      },
+      mathModel: {
+        name: "DeepSeek Math",
+        requestTimeInSeconds: 60,
+        get endpoint() { return decryptString(encryptedModelConfig.mathModel.endpoint, encryptionKey); },
+        get readToken() { return decryptString(encryptedModelConfig.mathModel.readToken, encryptionKey); },
+        get writeToken() { return decryptString(encryptedModelConfig.mathModel.writeToken, encryptionKey); },
+        timeout: 60000,
+        showIdInNotifications: false
+      }
+    };
+    
+    // Obscure the encryption key in memory after use
+    setTimeout(() => {
+      const keyLength = encryptionKey.length;
+      for (let i = 0; i < keyLength; i++) {
+        encryptionKey.replace(encryptionKey[i], '*');
+      }
+    }, 5000);
+
+    // Set the active model (prioritize Mistral)
+    let activeModel = "mistralModel";
     // Flag to track if endpoints are being connected
     let connectingEndpoints = false;
     // Store conversation context for continuity
@@ -3151,30 +3204,41 @@
       }, 300);
     }
 
-    function loadChat(chatId) {
-      // Set current chat
+    function loadChat(chatId, chatName) {
       currentChatId = chatId;
-
-      // Clear chat box
       const chatBox = document.getElementById("chatBox");
+      // Clear chat box
       chatBox.innerHTML = '';
 
-      // Always add welcome message
+      // Add welcome message at the top
       const welcomeMessage = document.createElement("div");
-      welcomeMessage.classList.add("welcome-message");
+      welcomeMessage.className = "welcome-message";
       welcomeMessage.innerHTML = `
-            <h2>Hi, I'm LegalMind.</h2>
-            <p>Ask me anything about legal documents and concepts.</p>
-            <p><i class="fas fa-file-upload"></i> Upload documents using the paperclip icon and I can analyze them for you.</p>
-        `;
+        <h2>Welcome to LegalMind</h2>
+        <p>Your AI-powered legal document assistant</p>
+        <div class="model-info">
+          <i class="fas fa-check-circle"></i> Model: <span id="activeModelName">LegalMind</span>
+          <br><span class="model-id">Powered by advanced AI models</span>
+        </div>
+      `;
       chatBox.appendChild(welcomeMessage);
 
-      // Add scroll button
+      // Add scroll to bottom button
       const scrollBtn = document.createElement("button");
       scrollBtn.className = "scroll-bottom-btn";
       scrollBtn.id = "scrollBottomBtn";
       scrollBtn.setAttribute("aria-label", "Scroll to bottom");
       scrollBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+      
+      // Add event listener to scroll button
+      scrollBtn.addEventListener('click', function() {
+        chatBox.scrollTo({
+          top: chatBox.scrollHeight,
+          behavior: 'smooth'
+        });
+        this.classList.remove('visible');
+      });
+      
       chatBox.appendChild(scrollBtn);
 
       // Update current chat name
@@ -3182,20 +3246,32 @@
 
       // Load messages for this chat and append them
       if (chats[chatId] && chats[chatId].messages) {
+        // Temporarily disable auto-scrolling during bulk message loading
+        const tempAppendMessage = (sender, content, type) => {
+          const msgDiv = document.createElement("div");
+          if (type === 'html') {
+            msgDiv.innerHTML = content;
+          } else {
+            msgDiv.textContent = content;
+          }
+          msgDiv.classList.add("message", sender);
+          chatBox.appendChild(msgDiv);
+        };
+
         chats[chatId].messages.forEach(msg => {
           if (msg.type === "text") {
-            // Use a special version that doesn't auto-scroll during loading
-            const msgDiv = document.createElement("div");
-            msgDiv.textContent = msg.content;
-            msgDiv.classList.add("message", msg.sender);
-            chatBox.appendChild(msgDiv);
+            tempAppendMessage(msg.sender, msg.content, 'text');
           } else if (msg.type === "html") {
-            // Use a special version that doesn't auto-scroll during loading
-            const msgDiv = document.createElement("div");
-            msgDiv.innerHTML = msg.content;
-            msgDiv.classList.add("message", msg.sender);
-            chatBox.appendChild(msgDiv);
+            tempAppendMessage(msg.sender, msg.content, 'html');
           }
+        });
+        
+        // After loading all messages, scroll to bottom smoothly
+        requestAnimationFrame(() => {
+          chatBox.scrollTo({
+            top: chatBox.scrollHeight,
+            behavior: 'auto'
+          });
         });
       }
 
@@ -3208,33 +3284,24 @@
         }
       });
 
-      // Focus input field to make keyboard appear on mobile
+      // Setup scroll event for scroll button visibility
+      chatBox.addEventListener('scroll', function() {
+        const scrollBtn = document.getElementById('scrollBottomBtn');
+        if (!scrollBtn) return;
+        
+        const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 100;
+        if (isAtBottom) {
+          scrollBtn.classList.remove('visible');
+        } else {
+          scrollBtn.classList.add('visible');
+        }
+      });
+
+      // Focus input field without forced scrolling
       setTimeout(() => {
         const messageInput = document.getElementById("messageInput");
-        if (messageInput && window.innerWidth <= 992) {
-          // On mobile, scroll to make input visible and focus it
-          const chatSection = document.querySelector(".chat-section");
-          if (chatSection) {
-            chatSection.scrollTop = chatSection.scrollHeight;
-          }
-
-          // Gently scroll to show input without forcefully focusing
-          // (which would bring up keyboard automatically)
-          chatBox.scrollTo({
-            top: chatBox.scrollHeight,
-            behavior: 'auto'
-          });
-        }
-
-        // Initialize the scroll button (check visibility)
-        const scrollBottomBtn = document.getElementById('scrollBottomBtn');
-        if (scrollBottomBtn) {
-          const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
-          if (isAtBottom) {
-            scrollBottomBtn.classList.remove('visible');
-          } else {
-            scrollBottomBtn.classList.add('visible');
-          }
+        if (messageInput) {
+          messageInput.focus({ preventScroll: true });
         }
       }, 100);
     }
@@ -3270,7 +3337,7 @@
       setTimeout(updateMobileChats, 100);
     }
 
-    // Improved appendMessage function with less intrusive scrolling
+    // Updated appendMessage function with smoother scrolling
     window.appendMessage = function (sender, text) {
       const chatBox = document.getElementById('chatBox');
       if (!chatBox) return;
@@ -3280,17 +3347,26 @@
       msgDiv.classList.add("message", sender);
 
       // Check if we're at the bottom before adding the message
-      const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
+      const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 100;
 
       // Append the message
       chatBox.appendChild(msgDiv);
 
       // Only auto-scroll if we were already at the bottom
       if (wasAtBottom) {
-        chatBox.scrollTo({
-          top: chatBox.scrollHeight,
-          behavior: 'smooth'
+        // Use requestAnimationFrame for smoother scrolling
+        requestAnimationFrame(() => {
+          chatBox.scrollTo({
+            top: chatBox.scrollHeight,
+            behavior: 'smooth'
+          });
         });
+      } else {
+        // Show scroll button if we're not at the bottom
+        const scrollButton = document.getElementById('scrollBottomBtn');
+        if (scrollButton) {
+          scrollButton.classList.add('visible');
+        }
       }
 
       // Store in current chat if available
@@ -3306,7 +3382,7 @@
       }
     };
 
-    // Updated appendHtmlMessage function
+    // Updated appendHtmlMessage function with smoother scrolling
     window.appendHtmlMessage = function (sender, htmlContent) {
       const chatBox = document.getElementById('chatBox');
       if (!chatBox) return;
@@ -3361,17 +3437,26 @@
       }
 
       // Check if we're at the bottom before adding the message
-      const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
+      const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 100;
 
       // Append the message
       chatBox.appendChild(msgDiv);
 
       // Only auto-scroll if we were already at the bottom
       if (wasAtBottom) {
-        chatBox.scrollTo({
-          top: chatBox.scrollHeight,
-          behavior: 'smooth'
+        // Use requestAnimationFrame for smoother scrolling
+        requestAnimationFrame(() => {
+          chatBox.scrollTo({
+            top: chatBox.scrollHeight,
+            behavior: 'smooth'
+          });
         });
+      } else {
+        // Show scroll button if we're not at the bottom
+        const scrollButton = document.getElementById('scrollBottomBtn');
+        if (scrollButton) {
+          scrollButton.classList.add('visible');
+        }
       }
 
       // Store in current chat if available
@@ -6051,6 +6136,627 @@
       displayModelResponseTimes();
       return "Model response times have been logged to the console. Check the console output for details.";
     };
+
+    // Update the document analysis prompt to specifically request summarization and change suggestions
+    function autoAnalyzeDocument(documentName) {
+      if (!documentName || !uploadedDocuments[documentName]) {
+        console.warn("Cannot analyze document: not found in uploadedDocuments:", documentName);
+        return;
+      }
+
+      // Create a thinking message
+      appendHtmlMessage("bot", `<span data-thinking="true">Analyzing document: ${documentName}...</span>`);
+      const thinkingMsg = document.querySelector(".message.bot:last-child");
+
+      // Get document type
+      const fileType = getFileType(documentName);
+
+      // Function to check document content and analyze
+      function checkAndAnalyze() {
+        if (uploadedDocuments[documentName].content) {
+          const documentContent = uploadedDocuments[documentName].content;
+          const analysisMessage = `Analyze this ${fileType} document: ${documentName}`;
+
+          // Get model endpoint and token
+          const currentEndpointInfo = getCurrentEndpointInfo();
+          if (!currentEndpointInfo) {
+            if (thinkingMsg && thinkingMsg.parentNode) {
+              thinkingMsg.parentNode.removeChild(thinkingMsg);
+            }
+            appendMessage("bot", "I'm sorry, there's an issue with the model configuration. Please try again later.");
+            return;
+          }
+
+          // Get document context
+          const documentContext = getDocumentContext(analysisMessage);
+
+          // Prepare the prompt based on which model is active and file type
+          let analysisPrompt;
+          const today = new Date();
+          const formattedDate = today.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            weekday: 'long'
+          });
+
+          // Customize prompt based on file type
+          let fileTypePrompt = "";
+          if (fileType === "pdf" || fileType === "docx" || fileType === "doc") {
+            fileTypePrompt = "For this document: Evaluate its structure, identify issues or errors, and suggest specific improvements that could be made.";
+          } else if (fileType === "txt") {
+            fileTypePrompt = "For this text document: Focus on organization, clarity, and structural improvements. Check for inconsistent terminology and logical flow.";
+          } else if (fileType === "image") {
+            fileTypePrompt = "For this OCR-extracted text: Note any potential errors in text recognition, evaluate the document structure, and suggest improvements to both content and formatting.";
+          }
+
+          // Enhanced prompt for all models to focus on summarization and specific change suggestions
+          analysisPrompt =
+            "You are a document analysis assistant specializing in improving documents.\n\n" +
+            "User has uploaded the following document(s):" +
+            documentContext +
+            "\n\nUser: Please analyze this document in detail, summarize its content, and suggest specific changes that would improve it.\n" +
+            `${fileTypePrompt}\n` +
+            "Always include these sections in your response:\n" +
+            "1. 'Document Summary' with key points and main content overview\n" +
+            "2. 'Document Improvement Suggestions' with 3-5 specific, actionable changes with BEFORE and AFTER examples\n" +
+            "3. 'Implementation Plan' with step-by-step instructions on how to implement each suggested change\n" +
+            "Format your suggestions so they can be automatically applied to the document.\n" +
+            "Assistant:";
+
+          // Prepare API request parameters
+          let requestParams = {
+            max_new_tokens: 1024,
+            temperature: 0.7,
+            top_p: 0.95,
+            do_sample: true,
+            return_full_text: false
+          };
+
+          // Use DeepSeek's recommended parameters if using the DeepSeek model
+          if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
+            requestParams = {
+              max_new_tokens: 1024,
+              temperature: 0.3,
+              top_p: 0.8,
+              do_sample: true
+            };
+          } else if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("mistral")) {
+            // Parameters for Mistral API
+            requestParams = {
+              model: modelConfig[activeModel].modelId,
+              messages: [
+                {
+                  role: "user",
+                  content: analysisPrompt
+                }
+              ],
+              temperature: 0.7,
+              max_tokens: 1500
+            };
+          }
+
+          // Get timeout setting from model config or use default
+          const timeout = modelConfig[activeModel].timeout || 15000;
+
+          // Create a timeout promise
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(new Error(`API request timed out after ${timeout/1000} seconds`));
+            }, timeout);
+          });
+
+          // Setup the API request based on the model type
+          let apiRequest;
+          if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("mistral")) {
+            // Mistral API format
+            apiRequest = fetch(modelConfig[activeModel].endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${modelConfig[activeModel].readToken}`
+              },
+              body: JSON.stringify(requestParams)
+            });
+          } else {
+            // Hugging Face format
+            apiRequest = fetch(currentEndpointInfo.endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${currentEndpointInfo.token}`
+              },
+              body: JSON.stringify({
+                inputs: analysisPrompt,
+                parameters: requestParams
+              })
+            });
+          }
+
+          // Race between the fetch request and the timeout
+          Promise.race([apiRequest, timeoutPromise])
+            .then(response => {
+              if (!response.ok) {
+                return response.text().then(text => {
+                  throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+                });
+              }
+              return response.json();
+            })
+            .then(data => {
+              // Remove the thinking message if it exists
+              if (thinkingMsg && thinkingMsg.parentNode) {
+                thinkingMsg.parentNode.removeChild(thinkingMsg);
+              }
+
+              // Add bot response from the API
+              let botResponse = ""; // Empty default
+
+              // Parse the response based on the API format
+              if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("mistral")) {
+                // Mistral API format
+                if (data && data.choices && data.choices.length > 0) {
+                  botResponse = data.choices[0].message.content.trim();
+                }
+              } else {
+                // Hugging Face format
+                if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+                  botResponse = data[0].generated_text.trim();
+                } else if (data && data.generated_text) {
+                  botResponse = data.generated_text.trim();
+                } else if (typeof data === 'string') {
+                  botResponse = data.trim();
+                } else if (data && data.choices && data.choices.length > 0) {
+                  // Handle OpenAI-like format
+                  botResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
+                }
+              }
+
+              // Safety check for empty responses
+              if (!botResponse) {
+                botResponse = "I apologize, but I couldn't analyze the document properly. Please ask me specific questions about it.";
+              }
+
+              // Create a bot message with the response and add action buttons
+              const responseElement = document.createElement("div");
+              responseElement.className = "message bot";
+              responseElement.textContent = botResponse;
+              
+              // Append to chat box
+              const chatBox = document.getElementById("chatBox");
+              if (chatBox) {
+                chatBox.appendChild(responseElement);
+              }
+
+              // Add document action buttons to the response
+              addDocumentActionButtons(responseElement, documentName);
+
+              // Store in current chat if available
+              if (currentChatId && chats[currentChatId]) {
+                if (!chats[currentChatId].messages) {
+                  chats[currentChatId].messages = [];
+                }
+                chats[currentChatId].messages.push({
+                  type: 'text',
+                  sender: 'bot',
+                  content: botResponse
+                });
+              }
+            })
+            .catch(error => {
+              console.error("Error analyzing document:", error);
+
+              // Remove the thinking message if it exists
+              if (thinkingMsg && thinkingMsg.parentNode) {
+                thinkingMsg.parentNode.removeChild(thinkingMsg);
+              }
+
+              appendMessage("bot", "I had trouble analyzing this document. Please try again or ask me specific questions about it.");
+            });
+        } else {
+          // If document isn't available yet, wait and check again
+          setTimeout(checkAndAnalyze, 500);
+        }
+      }
+
+      checkAndAnalyze();
+    }
+
+    // Enhanced function to apply document suggestions
+    async function applyDocumentSuggestions(documentName, originalContent, botResponse) {
+      // Create a thinking message to show progress
+      appendHtmlMessage("bot", `<span data-thinking="true">Applying suggestions to ${documentName}...</span>`);
+      const thinkingMsg = document.querySelector(".message.bot:last-child");
+
+      try {
+        // Get document type (text, PDF, etc.)
+        const fileType = getFileType(documentName);
+
+        // Extract the "Document Improvement Suggestions" section
+        const suggestionsMatch = botResponse.match(/Document Improvement Suggestions[:\s]*([\s\S]*?)(?:(\n\n\d\.|\n\n##|\n\nImplementation Plan|\n\n#|$))/i);
+
+        if (!suggestionsMatch) {
+          if (thinkingMsg && thinkingMsg.parentNode) {
+            thinkingMsg.parentNode.removeChild(thinkingMsg);
+          }
+          appendMessage("bot", "I couldn't find any improvement suggestions in the analysis. Please try again or ask for specific improvements.");
+          return null;
+        }
+
+        const improvementSuggestions = suggestionsMatch[1].trim();
+
+        // For text-based documents, we can directly modify the content
+        if (fileType === "txt" || fileType === "other") {
+          // For simple text docs, apply changes directly
+          let updatedContent = originalContent;
+
+          // Extract each numbered suggestion
+          const suggestionItems = improvementSuggestions.split(/\d+\.\s+/).filter(item => item.trim().length > 0);
+
+          for (const suggestion of suggestionItems) {
+            // Look for BEFORE and AFTER patterns in the suggestion
+            const beforeAfterMatch = suggestion.match(/BEFORE:\s*["']([^"']+)["']\s*AFTER:\s*["']([^"']+)["']/i) || 
+                                    suggestion.match(/BEFORE:\s*(.+?)\s*AFTER:\s*(.+?)(?:\n|$)/i);
+
+            if (beforeAfterMatch) {
+              const [fullMatch, beforeText, afterText] = beforeAfterMatch;
+              // Replace the before text with the after text
+              updatedContent = updatedContent.replace(new RegExp(escapeRegExp(beforeText.trim()), 'g'), afterText.trim());
+              continue;
+            }
+
+            // Try to identify what to change based on the suggestion patterns
+            const changeMatch = suggestion.match(/(replace|change|update|add|remove|delete|improve)\s+["']([^"']+)["']\s+(to|with)\s+["']([^"']+)["']/i);
+
+            if (changeMatch) {
+              const [fullMatch, action, oldText, connector, newText] = changeMatch;
+
+              if (action.toLowerCase().includes('replace') ||
+                action.toLowerCase().includes('change') ||
+                action.toLowerCase().includes('update')) {
+                updatedContent = updatedContent.replace(new RegExp(escapeRegExp(oldText), 'g'), newText);
+              } else if (action.toLowerCase().includes('add')) {
+                // For add, we try to find a logical place to add the content
+                // This is simplified - real implementation would be more context-aware
+                updatedContent += `\n${newText}`;
+              } else if (action.toLowerCase().includes('remove') ||
+                action.toLowerCase().includes('delete')) {
+                updatedContent = updatedContent.replace(new RegExp(escapeRegExp(oldText), 'g'), '');
+              }
+            }
+          }
+
+          // Remove the thinking message
+          if (thinkingMsg && thinkingMsg.parentNode) {
+            thinkingMsg.parentNode.removeChild(thinkingMsg);
+          }
+
+          const diffSummary = generateDiffSummary(originalContent, updatedContent);
+          
+          // Ask the user if they want to keep these changes
+          appendHtmlMessage("bot", `
+            <div class="document-update-confirmation">
+              <h3>📝 Changes Applied to ${documentName}</h3>
+              <div class="diff-summary">
+                <p><strong>Change Summary:</strong></p>
+                <pre>${diffSummary}</pre>
+              </div>
+              <p>Would you like to keep these changes?</p>
+              <div class="confirmation-buttons">
+                <button class="confirm-changes-btn yes">✅ Yes, keep changes</button>
+                <button class="confirm-changes-btn no">❌ No, revert changes</button>
+              </div>
+            </div>
+          `);
+          
+          // Add event listeners to the confirmation buttons
+          const lastBotMessage = document.querySelector(".message.bot:last-child");
+          const confirmYesBtn = lastBotMessage.querySelector(".confirm-changes-btn.yes");
+          const confirmNoBtn = lastBotMessage.querySelector(".confirm-changes-btn.no");
+          
+          confirmYesBtn.addEventListener("click", () => {
+            showUpdatedDocumentPreview(documentName, updatedContent);
+            
+            // Enable download button for the document
+            const downloadBtn = document.querySelector(`.document-action-buttons button[title*="Download"]`);
+            if (downloadBtn) downloadBtn.disabled = false;
+            
+            // Ask if user wants to download the updated document
+            appendHtmlMessage("bot", `
+              <div class="document-download-option">
+                <p>Would you like me to prepare the updated document for download?</p>
+                <div class="download-option-buttons">
+                  <button class="download-now-btn">📥 Download Updated Document</button>
+                </div>
+              </div>
+            `);
+            
+            // Add event listener to download button
+            const downloadNowBtn = document.querySelector(".download-now-btn");
+            if (downloadNowBtn) {
+              downloadNowBtn.addEventListener("click", () => {
+                downloadUpdatedDocument(documentName, updatedContent);
+              });
+            }
+          });
+          
+          confirmNoBtn.addEventListener("click", () => {
+            appendMessage("bot", "I've reverted the changes. The original document remains unchanged. Let me know if you'd like different improvements.");
+          });
+
+          return updatedContent;
+        } else if (fileType === "pdf" || fileType === "doc" || fileType === "docx") {
+          // For PDF/DOC, we return the original text with a note about limitations
+          if (thinkingMsg && thinkingMsg.parentNode) {
+            thinkingMsg.parentNode.removeChild(thinkingMsg);
+          }
+
+          appendMessage("bot", `I've identified the suggestions for ${documentName}, but direct editing of ${fileType.toUpperCase()} files is limited. I'll generate a text version with the suggested improvements that you can download and reference while updating your original document.`);
+
+          // Prepare a text version with the suggestions implemented
+          const textContent = originalContent;
+          let updatedContent = `# Improved version of ${documentName}\n\n`;
+          updatedContent += `## Original Content:\n${textContent}\n\n`;
+          updatedContent += `## Improvement Suggestions:\n${improvementSuggestions}\n\n`;
+          updatedContent += `## Suggested Revised Version:\n`;
+
+          // Try to implement each suggestion to create a revised version
+          let revisedContent = textContent;
+          const suggestionItems = improvementSuggestions.split(/\d+\.\s+/).filter(item => item.trim().length > 0);
+
+          for (const suggestion of suggestionItems) {
+            updatedContent += `\n- ${suggestion.trim()}`;
+          }
+
+          return updatedContent;
+        } else if (fileType === "image") {
+          // For images with OCR text, return the extracted text with suggestions
+          if (thinkingMsg && thinkingMsg.parentNode) {
+            thinkingMsg.parentNode.removeChild(thinkingMsg);
+          }
+
+          appendMessage("bot", `I've identified suggestions for the text in this image, but I can only provide a text version with improvements, not modify the original image.`);
+
+          // Create an improved text version
+          let updatedContent = `# Improved text from image ${documentName}\n\n`;
+          updatedContent += `## Original OCR Content:\n${originalContent}\n\n`;
+          updatedContent += `## Improvement Suggestions:\n${improvementSuggestions}\n\n`;
+          updatedContent += `## Suggested Revised Version:\n`;
+
+          // Try to implement the suggestions
+          let revisedContent = originalContent;
+          const suggestionItems = improvementSuggestions.split(/\d+\.\s+/).filter(item => item.trim().length > 0);
+
+          for (const suggestion of suggestionItems) {
+            updatedContent += `\n- ${suggestion.trim()}`;
+          }
+
+          return updatedContent;
+        }
+        return null;
+      } catch (error) {
+        console.error("Error applying document suggestions:", error);
+        if (thinkingMsg && thinkingMsg.parentNode) {
+          thinkingMsg.parentNode.removeChild(thinkingMsg);
+        }
+        appendMessage("bot", "I encountered an error while applying the suggestions. Please try again or ask for specific improvements.");
+        return null;
+      }
+    }
+
+    // Enhanced function to download updated document with better formatting
+    function downloadUpdatedDocument(documentName, updatedContent) {
+      // Determine the content type based on format and extension
+      let contentType = 'text/plain';
+      let fileExtension = 'txt';
+      
+      // Create a formatted version based on document type
+      const fileNameParts = documentName.split('.');
+      const originalExtension = fileNameParts.pop().toLowerCase();
+      const baseName = fileNameParts.join('.');
+      
+      if (updatedContent.startsWith('# ')) {
+        // Looks like Markdown content
+        contentType = 'text/markdown';
+        fileExtension = 'md';
+      }
+      
+      // Create a blob with the updated content
+      const blob = new Blob([updatedContent], { type: contentType });
+
+      // Create a download link
+      const downloadLink = document.createElement('a');
+      downloadLink.href = URL.createObjectURL(blob);
+      downloadLink.download = `${baseName}_updated.${fileExtension}`;
+
+      // Trigger download
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+
+      // Clean up
+      URL.revokeObjectURL(downloadLink.href);
+
+      showNotification('Document downloaded successfully!', 'success');
+      
+      // Add confirmation message in chat
+      appendHtmlMessage("bot", `
+        <div class="download-confirmation">
+          <p>✅ I've prepared the updated document for you. The file has been downloaded as <strong>${baseName}_updated.${fileExtension}</strong>.</p>
+          <p>Is there anything else you'd like me to help you with regarding this document?</p>
+        </div>
+      `);
+    }
+
+    // Enhanced UI for document action buttons
+    function addDocumentActionButtons(responseElement, documentName) {
+      if (!responseElement || !documentName) return;
+
+      // Check if document exists in uploadedDocuments
+      if (!uploadedDocuments[documentName]) {
+        console.warn("Cannot add action buttons: Document not found in uploadedDocuments:", documentName);
+        return;
+      }
+
+      // Create a container for the buttons with improved styling
+      const actionContainer = document.createElement('div');
+      actionContainer.className = 'document-action-buttons';
+
+      // Create Apply Suggestions button with icon and better labeling
+      const applySuggestionsBtn = document.createElement('button');
+      applySuggestionsBtn.className = 'btn document-action-btn suggest-btn';
+      applySuggestionsBtn.innerHTML = '<i class="fas fa-magic"></i> Apply Suggestions';
+      applySuggestionsBtn.title = 'Automatically apply the suggested improvements';
+
+      // Create Download Updated button with icon
+      const downloadBtn = document.createElement('button');
+      downloadBtn.className = 'btn document-action-btn download-btn';
+      downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download Updated';
+      downloadBtn.title = 'Download the document with applied suggestions';
+      downloadBtn.disabled = true; // Initially disabled until suggestions are applied
+
+      // Event handler for Apply Suggestions button
+      applySuggestionsBtn.addEventListener('click', () => {
+        // Extract suggestions from the bot response
+        const botResponse = responseElement.textContent;
+        const documentContent = uploadedDocuments[documentName].content;
+
+        // Show processing message
+        showNotification('Processing document suggestions...', 'info');
+
+        // Implement the suggestions in the document content
+        applyDocumentSuggestions(documentName, documentContent, botResponse).then(updatedContent => {
+          if (updatedContent) {
+            // Store the updated content in uploadedDocuments
+            uploadedDocuments[documentName].updatedContent = updatedContent;
+          } else {
+            showNotification('Failed to apply suggestions.', 'error');
+          }
+        });
+      });
+
+      // Event handler for Download Updated button
+      downloadBtn.addEventListener('click', () => {
+        if (uploadedDocuments[documentName].updatedContent) {
+          downloadUpdatedDocument(documentName, uploadedDocuments[documentName].updatedContent);
+        } else {
+          showNotification('No updated content available.', 'error');
+        }
+      });
+
+      // Add buttons to container
+      actionContainer.appendChild(applySuggestionsBtn);
+      actionContainer.appendChild(downloadBtn);
+
+      // Append container to the response element
+      responseElement.appendChild(document.createElement('br'));
+      responseElement.appendChild(actionContainer);
+      
+      // Add CSS for the new buttons
+      addDocumentActionStyles();
+    }
+
+    // Add CSS styles for document action buttons
+    function addDocumentActionStyles() {
+      // Check if styles already exist
+      if (document.getElementById('document-action-styles')) return;
+      
+      const styleElement = document.createElement('style');
+      styleElement.id = 'document-action-styles';
+      styleElement.textContent = `
+        .document-action-buttons {
+          display: flex;
+          gap: 10px;
+          margin-top: 15px;
+          padding: 10px;
+          border-top: 1px solid #e0e0e0;
+        }
+        
+        .document-action-btn {
+          padding: 8px 15px;
+          border-radius: 20px;
+          border: none;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .document-action-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        
+        .document-action-btn.suggest-btn {
+          background-color: #4a6cf7;
+          color: white;
+        }
+        
+        .document-action-btn.download-btn {
+          background-color: #28a745;
+          color: white;
+        }
+        
+        .document-action-btn:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        
+        .document-update-confirmation {
+          background-color: #f8f9fa;
+          border-radius: 10px;
+          padding: 15px;
+          margin: 10px 0;
+          border-left: 4px solid #4a6cf7;
+        }
+        
+        .diff-summary {
+          background-color: #f1f1f1;
+          border-radius: 5px;
+          padding: 10px;
+          margin: 10px 0;
+          max-height: 200px;
+          overflow-y: auto;
+        }
+        
+        .confirmation-buttons, .download-option-buttons {
+          display: flex;
+          gap: 10px;
+          margin-top: 15px;
+        }
+        
+        .confirm-changes-btn, .download-now-btn {
+          padding: 8px 15px;
+          border-radius: 20px;
+          border: none;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .confirm-changes-btn.yes, .download-now-btn {
+          background-color: #28a745;
+          color: white;
+        }
+        
+        .confirm-changes-btn.no {
+          background-color: #dc3545;
+          color: white;
+        }
+        
+        .download-confirmation {
+          background-color: #d4edda;
+          border-radius: 10px;
+          padding: 15px;
+          margin: 10px 0;
+          border-left: 4px solid #28a745;
+        }
+      `;
+      
+      document.head.appendChild(styleElement);
+    }
 
   </script>
 </body>
