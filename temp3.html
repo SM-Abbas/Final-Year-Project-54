@@ -3804,20 +3804,49 @@
           });
 
           // Race between the fetch request and the timeout
-          Promise.race([
-            fetch(modelConfig[selectedModel].endpoints[modelConfig[selectedModel].currentEndpointIndex], {
+          let apiRequest;
+          
+          // Check if we're using the Mistral API (different format)
+          if (selectedModel === "mistralModel") {
+            // Prepare Mistral API parameters
+            const mistralParams = {
+              model: modelConfig[selectedModel].modelId,
+              messages: [
+                {
+                  role: "user",
+                  content: finalPrompt
+                }
+              ],
+              temperature: 0.7,
+              max_tokens: 1500
+            };
+            
+            // Mistral API request
+            apiRequest = fetch(modelConfig[selectedModel].endpoint, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${modelConfig[selectedModel].authTokens[modelConfig[selectedModel].currentTokenIndex]}`
+                "Authorization": `Bearer ${modelConfig[selectedModel].readToken}`
+              },
+              body: JSON.stringify(mistralParams)
+            });
+          } else {
+            // Hugging Face API request
+            apiRequest = fetch(currentEndpointInfo.endpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${currentEndpointInfo.token}`
               },
               body: JSON.stringify({
                 inputs: finalPrompt,
                 parameters: requestParams
               })
-            }),
-            timeoutPromise
-          ])
+            });
+          }
+          
+          // Race between the API request and the timeout
+          Promise.race([apiRequest, timeoutPromise])
             .then(response => {
               console.log("API Response Status:", response.status);
               console.log("API Response Headers:", [...response.headers.entries()]);
@@ -3848,7 +3877,13 @@
               let botResponse = ""; // Empty default
 
               // Specific handling for Mistral model
-              if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+              if (selectedModel === "mistralModel") {
+                // Handle Mistral API response format
+                if (data && data.choices && data.choices.length > 0) {
+                  botResponse = data.choices[0].message.content.trim();
+                  console.log("Using Mistral API response format");
+                }
+              } else if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
                 botResponse = data[0].generated_text.trim();
                 console.log("Using array[0].generated_text format");
               } else if (data && data.generated_text) {
