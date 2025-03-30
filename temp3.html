@@ -62,6 +62,29 @@
     .file-preview-container.ocr-preview::-webkit-scrollbar-thumb:hover {
       background-color: var(--scrollbar-thumb-hover);
     }
+    
+    /* Animated thinking indicator styles */
+    @keyframes ellipsis {
+      0% { content: '.'; }
+      33% { content: '..'; }
+      66% { content: '...'; }
+      100% { content: ''; }
+    }
+    
+    .message.bot:last-child:has(span[data-thinking="true"]) {
+      position: relative;
+    }
+    
+    .message.bot:last-child:has(span[data-thinking="true"])::after {
+      content: '';
+      position: absolute;
+      display: inline-block;
+      animation: ellipsis 1.5s infinite steps(4);
+      width: 1.5em;
+      overflow: hidden;
+      vertical-align: bottom;
+      margin-left: 0.2em;
+    }
   </style>
   <style>
     /* CSS Variables for theming */
@@ -2643,12 +2666,12 @@
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
-        // Reordered endpoints to prioritize DeepSeek and put the original endpoint last
+        // Reordered endpoints to prioritize fastest models first, with LegalMind model second
         endpoints: [
-          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324", // Now first priority
-          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
-          "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind",
-          "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud" // Moved to last position
+          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", // Fastest model first
+          "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind", // Legal mind second
+          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324", // Moved to third position
+          "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud" // Keep as last position
         ],
         // Multiple API tokens to try as alternatives
         authTokens: [
@@ -2659,8 +2682,8 @@
         // Track which endpoint and token is currently being used
         currentEndpointIndex: 0,
         currentTokenIndex: 0,
-        // Flag to indicate we're using the DeepSeek model
-        usingFallbackModel: true // Set to true since DeepSeek is now the first endpoint
+        // Set this to false as we're now using Mistral as default
+        usingFallbackModel: false
       },
       // Add more models here if needed
     };
@@ -3236,7 +3259,23 @@
         
         // Show typing indicator with a slight delay
         const typingIndicator = setTimeout(() => {
-          appendMessage("bot", "Thinking...");
+          // Get current model name
+          const currentModel = modelConfig[activeModel].name;
+          const currentEndpoint = modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex];
+          let modelName = currentModel;
+          
+          // Add model variant based on endpoint
+          if (currentEndpoint.includes("mistral")) {
+            modelName += " (Mistral)";
+          } else if (currentEndpoint.includes("Abbasgamer1")) {
+            modelName += " (Legal)";
+          } else if (currentEndpoint.includes("deepseek")) {
+            modelName += " (DeepSeek)";
+          }
+          
+          // Create thinking message with model info and data attribute for animation
+          const thinkingMessage = `<span data-thinking="true">Thinking (using ${modelName})</span>`;
+          appendHtmlMessage("bot", thinkingMessage);
           
           // Reference to the thinking message to remove it later
           const thinkingMsg = document.querySelector(".message.bot:last-child");
@@ -3271,7 +3310,7 @@
           
           // If we're using the DeepSeek model, use its recommended format
           const currentEndpointInfo = getCurrentEndpointInfo(activeModel);
-          if (modelConfig[activeModel].usingFallbackModel) {
+          if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
             // DeepSeek format with current date
             const today = new Date();
             const formattedDate = today.toLocaleDateString('en-US', { 
@@ -3297,7 +3336,7 @@
           
           // Always include document context if available, regardless of the query
           if (hasDocuments) {
-            if (modelConfig[activeModel].usingFallbackModel) {
+            if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
               finalPrompt = 
                 `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
                 "Document(s) uploaded by user:" + 
@@ -3333,7 +3372,7 @@
           };
           
           // Use DeepSeek's recommended parameters if using the DeepSeek model
-          if (modelConfig[activeModel].usingFallbackModel) {
+          if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
             requestParams = {
               max_new_tokens: 1024,
               temperature: 0.3,  // DeepSeek recommends 0.3
@@ -3413,7 +3452,7 @@
             }
             
             // If we are using the DeepSeek model, check response for any non-English part and format
-            if (modelConfig[activeModel].usingFallbackModel && botResponse) {
+            if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek") && botResponse) {
               // Remove any "Assistant:" prefix that might be in the response
               botResponse = botResponse.replace(/^Assistant:\s*/i, '');
               
@@ -3451,7 +3490,12 @@
                 const endpointInfo = getCurrentEndpointInfo(activeModel);
                 console.log(`Switching to endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) after timeout`);
                 
-                // Retry with new endpoint/token (message indicator stays)
+                // Remove the thinking message if it exists
+                if (thinkingMsg && thinkingMsg.parentNode) {
+                  thinkingMsg.parentNode.removeChild(thinkingMsg);
+                }
+                
+                // Retry with new endpoint/token (after a short delay)
                 setTimeout(() => sendMessage(), 1000);
                 return;
               }
@@ -3460,12 +3504,14 @@
             // Try alternative endpoint or token for other errors
             if (tryNextEndpointOrToken(activeModel)) {
               const endpointInfo = getCurrentEndpointInfo(activeModel);
-              console.log(`Retrying with endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) and token ${endpointInfo.tokenIndex}`);
+              console.log(`Switching to endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) after error`);
               
-              // Show retry notification
-              showNotification("Trying alternative API endpoint...", "info");
+              // Remove the thinking message if it exists
+              if (thinkingMsg && thinkingMsg.parentNode) {
+                thinkingMsg.parentNode.removeChild(thinkingMsg);
+              }
               
-              // Retry with new endpoint/token (message indicator stays)
+              // Retry with new endpoint/token (after a short delay)
               setTimeout(() => sendMessage(), 1000);
               return;
             }
@@ -4142,7 +4188,7 @@
           };
           
           // Use DeepSeek's recommended parameters if using the DeepSeek model
-          if (modelConfig[activeModel].usingFallbackModel) {
+          if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
             requestParams = {
               max_new_tokens: 1024,
               temperature: 0.3,  // DeepSeek recommends 0.3
@@ -4205,7 +4251,7 @@
             }
             
             // If we are using the DeepSeek model, check response for any non-English part and format
-            if (modelConfig[activeModel].usingFallbackModel && botResponse) {
+            if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek") && botResponse) {
               // Remove any "Assistant:" prefix that might be in the response
               botResponse = botResponse.replace(/^Assistant:\s*/i, '');
               
@@ -4547,59 +4593,60 @@
       return context;
     }
 
-    // Function to try the next endpoint or token
-    function tryNextEndpointOrToken(activeModelKey) {
-      const model = modelConfig[activeModelKey];
+    // Helper function to get current endpoint info
+    function getCurrentEndpointInfo(modelKey) {
+      if (!modelConfig[modelKey]) return null;
       
-      // Try the next token with the same endpoint
-      if (model.currentTokenIndex < model.authTokens.length - 1) {
-        model.currentTokenIndex++;
-        console.log(`Switching to alternative token ${model.currentTokenIndex} for endpoint ${model.currentEndpointIndex}`);
-        return true;
-      } 
-      // If we've tried all tokens, try the next endpoint with the first token
-      else if (model.currentEndpointIndex < model.endpoints.length - 1) {
-        model.currentEndpointIndex++;
-        model.currentTokenIndex = 0;
-        
-        // Set the flag based on which endpoint we're now using
-        const newEndpoint = model.endpoints[model.currentEndpointIndex];
-        
-        if (newEndpoint.includes("deepseek")) {
-          // Using DeepSeek model
-          model.usingFallbackModel = true;
-          console.log("Switching to DeepSeek V3 model");
-        } else if (newEndpoint.includes("aws.endpoints")) {
-          // Using original LegalMind AWS endpoint
-          model.usingFallbackModel = false;
-          console.log("Trying original LegalMind AWS endpoint (may be scaled to zero)");
-        } else {
-          // Using other HuggingFace endpoints
-          model.usingFallbackModel = false;
-          console.log(`Switching to alternative endpoint: ${newEndpoint}`);
-        }
-        
-        showNotification("Trying alternative model endpoint...", "info");
-        return true;
-      }
-      
-      // If we've tried all endpoints and tokens, reset to the first combination for next time
-      console.log("All endpoints and tokens attempted without success");
-      model.currentEndpointIndex = 0;
-      model.currentTokenIndex = 0;
-      model.usingFallbackModel = true; // Reset to true because DeepSeek is now first
-      return false;
+      const config = modelConfig[modelKey];
+      return {
+        endpoint: config.endpoints[config.currentEndpointIndex],
+        endpointIndex: config.currentEndpointIndex,
+        token: config.authTokens[config.currentTokenIndex],
+        tokenIndex: config.currentTokenIndex
+      };
     }
     
-    // Function to get current endpoint and token info
-    function getCurrentEndpointInfo(activeModelKey) {
-      const model = modelConfig[activeModelKey];
-      return {
-        endpoint: model.endpoints[model.currentEndpointIndex],
-        token: model.authTokens[model.currentTokenIndex],
-        endpointIndex: model.currentEndpointIndex,
-        tokenIndex: model.currentTokenIndex
-      };
+    // Function to try the next endpoint or token
+    function tryNextEndpointOrToken(modelKey) {
+      if (!modelConfig[modelKey]) return false;
+      
+      const config = modelConfig[modelKey];
+      const currentEndpoint = config.endpoints[config.currentEndpointIndex];
+      const currentToken = config.authTokens[config.currentTokenIndex];
+      
+      // Try next endpoint first
+      config.currentEndpointIndex = (config.currentEndpointIndex + 1) % config.endpoints.length;
+      const newEndpoint = config.endpoints[config.currentEndpointIndex];
+      
+      console.log(`Switching from endpoint ${currentEndpoint} to ${newEndpoint}`);
+      
+      // Show appropriate notification based on which endpoint we're switching to
+      if (newEndpoint.includes("mistral")) {
+        showNotification("Switching to Mistral 7B model for faster response", "info");
+      } else if (newEndpoint.includes("legalmind") || newEndpoint.includes("Abbasgamer1")) {
+        showNotification("Switching to LegalMind specialized model", "info");
+      } else if (newEndpoint.includes("deepseek")) {
+        showNotification("Switching to DeepSeek general model", "info");
+      } else {
+        showNotification("Trying alternative model endpoint...", "info");
+      }
+      
+      // If we've cycled through all endpoints, try the next token
+      if (config.currentEndpointIndex === 0) {
+        const prevToken = config.authTokens[config.currentTokenIndex];
+        config.currentTokenIndex = (config.currentTokenIndex + 1) % config.authTokens.length;
+        console.log(`Switching from token ${prevToken} to ${config.authTokens[config.currentTokenIndex]}`);
+        
+        showNotification("Trying alternative API token...", "info");
+        
+        // If we've cycled through all tokens, return false to indicate we've tried everything
+        if (config.currentTokenIndex === 0) {
+          showNotification("All models and tokens attempted without success. Please try again later.", "error");
+          return false;
+        }
+      }
+      
+      return true;
     }
 
     // Function to wake up a scaled-to-zero endpoint
