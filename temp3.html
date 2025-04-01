@@ -2806,104 +2806,43 @@
       }
     }
     
-    // Model configuration with encrypted tokens
-    const encryptedModelConfig = {
-      mistralModel: {
-        name: "Mistral",
-        requestTimeInSeconds: 60,
-        endpoint: encryptString("https://api.mistral.ai/v1/chat/completions", encryptionKey),
-        modelId: "mistral-large-latest",
-        readToken: encryptString("6GyO7F96S3WnBbzHItx5nC5mCFyVvxB0", encryptionKey),
-        writeToken: encryptString("6GyO7F96S3WnBbzHItx5nC5mCFyVvxB0", encryptionKey),
-        timeout: 120000,
-        showIdInNotifications: false
-      },
-      legalMind: {
-        name: "LegalMind",
-        requestTimeInSeconds: 20,
-        endpoint: encryptString("https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-70B-Instruct", encryptionKey),
-        readToken: encryptString("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", encryptionKey),
-        writeToken: encryptString("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", encryptionKey),
-        timeout: 120000,
-        showIdInNotifications: false
-      },
-      deepseekModel: {
-        name: "DeepSeek",
-        requestTimeInSeconds: 60,
-        endpoint: encryptString("https://api-inference.huggingface.co/models/deepseek-ai/deepseek-v2", encryptionKey),
-        readToken: encryptString("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", encryptionKey),
-        writeToken: encryptString("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", encryptionKey),
-        timeout: 60000,
-        showIdInNotifications: false
-      },
-      mathModel: {
-        name: "DeepSeek Math",
-        requestTimeInSeconds: 60,
-        endpoint: encryptString("https://api-inference.huggingface.co/models/deepseek-ai/deepseek-math-7b-instruct", encryptionKey),
-        readToken: encryptString("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", encryptionKey),
-        writeToken: encryptString("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", encryptionKey),
-        timeout: 60000,
-        showIdInNotifications: false
-      }
-    };
-    
-    // Actual model config to use (reference the encrypted version)
+    // Model Configuration - Updated with larger max tokens and parallel model loading
     const modelConfig = {
-      mistralModel: {
+      mistral: {
         name: "Mistral",
-        requestTimeInSeconds: 60,
-        get endpoint() { return decryptString(encryptedModelConfig.mistralModel.endpoint, encryptionKey); },
-        modelId: "mistral-large-latest",
-        get readToken() { return decryptString(encryptedModelConfig.mistralModel.readToken, encryptionKey); },
-        get writeToken() { return decryptString(encryptedModelConfig.mistralModel.writeToken, encryptionKey); },
-        timeout: 120000,
-        showIdInNotifications: false
+        endpoints: ["https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"],
+        authTokens: ["hf_abcdefghijklmnopqrstuvwxyz"],
+        currentEndpointIndex: 0,
+        currentTokenIndex: 0,
+        responseTime: null,
+        timeout: 21000, // Increased to 21 seconds as requested
+        isAwake: false, // Track if model is awake
+      },
+      deepseek: {
+        name: "DeepSeek Math",
+        endpoints: ["https://api-inference.huggingface.co/models/deepseek-ai/deepseek-math-7b-instruct"],
+        authTokens: ["hf_abcdefghijklmnopqrstuvwxyz"],
+        currentEndpointIndex: 0,
+        currentTokenIndex: 0,
+        responseTime: null,
+        timeout: 21000, // Increased to 21 seconds as requested
+        isAwake: false, // Track if model is awake
       },
       legalMind: {
         name: "LegalMind",
-        requestTimeInSeconds: 20,
-        get endpoint() { return decryptString(encryptedModelConfig.legalMind.endpoint, encryptionKey); },
-        get readToken() { return decryptString(encryptedModelConfig.legalMind.readToken, encryptionKey); },
-        get writeToken() { return decryptString(encryptedModelConfig.legalMind.writeToken, encryptionKey); },
-        timeout: 120000,
-        showIdInNotifications: false
-      },
-      deepseekModel: {
-        name: "DeepSeek",
-        requestTimeInSeconds: 60,
-        get endpoint() { return decryptString(encryptedModelConfig.deepseekModel.endpoint, encryptionKey); },
-        get readToken() { return decryptString(encryptedModelConfig.deepseekModel.readToken, encryptionKey); },
-        get writeToken() { return decryptString(encryptedModelConfig.deepseekModel.writeToken, encryptionKey); },
-        timeout: 60000,
-        showIdInNotifications: false
-      },
-      mathModel: {
-        name: "DeepSeek Math",
-        requestTimeInSeconds: 60,
-        get endpoint() { return decryptString(encryptedModelConfig.mathModel.endpoint, encryptionKey); },
-        get readToken() { return decryptString(encryptedModelConfig.mathModel.readToken, encryptionKey); },
-        get writeToken() { return decryptString(encryptedModelConfig.mathModel.writeToken, encryptionKey); },
-        timeout: 60000,
-        showIdInNotifications: false
+        endpoints: ["https://api-inference.huggingface.co/models/abbasgamer1/legalMind"],
+        authTokens: ["hf_abcdefghijklmnopqrstuvwxyz"],
+        currentEndpointIndex: 0,
+        currentTokenIndex: 0,
+        responseTime: null,
+        timeout: 21000, // Increased to 21 seconds as requested
+        isAwake: false,
       }
     };
-    
-    // Obscure the encryption key in memory after use
-    setTimeout(() => {
-      const keyLength = encryptionKey.length;
-      for (let i = 0; i < keyLength; i++) {
-        encryptionKey.replace(encryptionKey[i], '*');
-      }
-    }, 5000);
 
-    // Set the active model (prioritize Mistral)
-    let activeModel = "mistralModel";
-    // Flag to track if endpoints are being connected
-    let connectingEndpoints = false;
-    // Store conversation context for continuity
-    let conversationHistory = {};
-    // Track if document is a legal document
-    let isLegalDocument = false;
+    // Set initial model to Mistral
+    let selectedModel = "mistral";
+    let activeModel = "mistral"; // Track the model actually being used
 
     // Function to show a notification
     function showNotification(message, type = 'info') {
@@ -2931,39 +2870,41 @@
     // Function to set the active model
     function setActiveModel(modelKey) {
       if (modelConfig[modelKey]) {
+        // Store the actual model for backend use
         const previousModel = activeModel;
         activeModel = modelKey;
-
-        // Update UI to indicate the active model
+        
+        // But always show LegalMind in the UI regardless of actual model
+        // Update UI to indicate LegalMind as the active model
         const modelDropdown = document.getElementById("modelsDropdown");
         if (modelDropdown) {
           const menuItems = modelDropdown.querySelectorAll('a');
           menuItems.forEach(item => {
-            if (item.getAttribute('data-model') === modelKey) {
+            if (item.getAttribute('data-model') === 'legalMind') {
               item.classList.add('active-model');
             } else {
               item.classList.remove('active-model');
             }
           });
         }
-
-        // Update the model name in the dropdown header
+        
+        // Update the model name in the dropdown header to always show LegalMind
         const currentModelDisplay = document.getElementById("currentModelDisplay");
         if (currentModelDisplay) {
-          currentModelDisplay.textContent = modelConfig[modelKey].name;
+          currentModelDisplay.textContent = modelConfig.legalMind.name;
         }
-
+        
         // Update the welcome message model name
         const welcomeModelName = document.getElementById("welcomeModelName");
         if (welcomeModelName) {
-          welcomeModelName.textContent = modelConfig[modelKey].name;
+          welcomeModelName.textContent = modelConfig.legalMind.name;
         }
-
-        // Show notification if the model actually changed
+        
+        // Show notification if the model actually changed (but still say LegalMind)
         if (previousModel !== modelKey) {
-          showNotification(`Model changed to ${modelConfig[modelKey].name}`, 'success');
+          showNotification(`Model ready to use`, 'success');
         }
-
+        
         return true;
       }
       return false;
@@ -2971,1846 +2912,78 @@
 
     // Initialize dark mode from preferences
     document.addEventListener('DOMContentLoaded', function() {
-      // Check for saved dark mode preference
-      if (localStorage.getItem('darkMode') === 'enabled') {
-        document.body.classList.add('dark-mode');
-        document.getElementById('darkModeToggle').checked = true;
-        if (document.getElementById('darkModeIcon')) {
-          document.getElementById('darkModeIcon').classList.remove('fa-moon');
-          document.getElementById('darkModeIcon').classList.add('fa-sun');
-          document.getElementById('darkModeText').textContent = 'Light Mode';
-        }
-      }
+      // Initialize UI components
+      initComponents();
       
-      // Connect to all endpoints as soon as the website loads
-      connectToAllEndpoints();
+      // Set Mistral as default model and wake it up immediately
+      document.getElementById('model-selector').value = 'mistral';
+      selectedModel = 'mistral';
       
-      // Create a new chat if none exists
-      if (!currentChatId) {
-        // Check if there are any existing chats in the list
-        const chatList = document.getElementById("chatList");
-        if (chatList && chatList.children.length === 0) {
-          // If no chats exist, create a new one
-          addNewChat();
-        } else if (chatList && chatList.children.length > 0) {
-          // If chats exist but none is selected, select the first one
-          const firstChat = chatList.children[0];
-          const chatId = firstChat.getAttribute("data-chat-id");
-          if (chatId) {
-            firstChat.classList.add('active');
-            loadChat(chatId);
-            
-            // Add a default "Hi" message if this is a page reload but the chat exists
-            setTimeout(() => {
-              // Only add if this chat doesn't have any messages yet
-              if (currentChatId && (!chats[currentChatId].messages || chats[currentChatId].messages.length === 0)) {
-                // Add the message to the UI
-                appendMessage("user", "Hi");
-                
-                // Add to conversation history for continuity
-                if (!conversationHistory[currentChatId]) {
-                  conversationHistory[currentChatId] = [];
-                }
-                conversationHistory[currentChatId].push({
-                  role: "user",
-                  content: "Hi"
-                });
-                
-                // Automatically trigger a response
-                setTimeout(() => {
-                  const greetingResponse = getGreetingResponse();
-                  appendMessage("bot", greetingResponse);
-                  
-                  // Store in conversation history
-                  conversationHistory[currentChatId].push({
-                    role: "assistant",
-                    content: greetingResponse
-                  });
-                }, 500);
-              }
-            }, 300);
-          }
-        }
-      }
-      
-      // Mobile menu handlers
-      document.getElementById('mobileMenuToggle').addEventListener('click', function () {
-        document.getElementById('mobileMenu').classList.add('active');
-        document.getElementById('mobileMenuOverlay').classList.add('active');
-        updateMobileChats();
+      // Wake up Mistral model immediately on page load
+      console.log("Waking up Mistral model on page load...");
+      wakeUpModel('mistral').then(() => {
+        console.log("Mistral model is ready for use");
       });
-
-      document.getElementById('mobileMenuOverlay').addEventListener('click', closeMobileMenu);
-
-      // Check screen width and adapt layout
-      function checkScreenWidth() {
-        const sidebar = document.querySelector('.sidebar');
-        if (window.innerWidth <= 992 && sidebar) {
-          if (!sidebar.classList.contains('collapsed')) {
-            sidebar.classList.add('collapsed');
-          }
-        }
-      }
-
-      // Initial check
-      checkScreenWidth();
-
-      // Listen for window resize
-      window.addEventListener('resize', checkScreenWidth);
-
-      // Fix mobile scrolling issues for chat box
-      const chatBox = document.getElementById('chatBox');
-      if (chatBox) {
-        window.addEventListener('resize', function () {
-          if (window.innerWidth <= 992) {
-            chatBox.scrollTop = chatBox.scrollHeight;
-          }
-        });
-
-        // Handle welcome message visibility on scroll
-        const welcomeMessage = document.querySelector('.welcome-message');
-
-        if (welcomeMessage) {
-          // Show welcome message initially
-          welcomeMessage.classList.remove('hidden');
-
-          // Check on scroll
-          chatBox.addEventListener('scroll', function () {
-            if (chatBox.scrollTop > 10) {
-              welcomeMessage.classList.add('hidden');
-            } else {
-              welcomeMessage.classList.remove('hidden');
-            }
-          });
-        }
-      }
-
-      // Make document preview fully visible on page load with enhanced visibility
-      const previewSection = document.querySelector('.documents-preview');
-      if (previewSection) {
-        previewSection.style.display = 'block';
-        previewSection.style.visibility = 'visible';
-        previewSection.style.opacity = '1';
-        previewSection.style.zIndex = '5';
-
-        // Initialize preview area
-        const documentPreviews = document.getElementById('documentPreviews');
-        if (documentPreviews && documentPreviews.children.length === 0) {
-          const welcomeText = document.createElement('p');
-          welcomeText.className = 'empty-preview-message';
-          welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
-          documentPreviews.appendChild(welcomeText);
-        }
-      }
-
-      // Simplified documents toggle functionality with forced visibility
-      const documentsToggle = document.getElementById('documentsToggle');
-      const documentPreviews = document.getElementById('documentPreviews');
-
-      if (documentsToggle && documentPreviews) {
-        // Make sure it starts visible
-        documentPreviews.style.display = 'block';
-
-        documentsToggle.addEventListener('click', function () {
-          if (documentPreviews.style.display === 'none') {
-            documentPreviews.style.display = 'block';
-            this.querySelector('i').classList.remove('fa-chevron-down');
-            this.querySelector('i').classList.add('fa-chevron-up');
-          } else {
-            documentPreviews.style.display = 'none';
-            this.querySelector('i').classList.remove('fa-chevron-up');
-            this.querySelector('i').classList.add('fa-chevron-down');
-          }
-        });
-      }
-
-      // Add mobile menu button to toggle document visibility
-      document.getElementById('toggleSidebarBtn').addEventListener('click', function () {
-        toggleSidebar();
-        document.getElementById('mobileMenu').classList.remove('active');
+      
+      // Wake up DeepSeek math model in parallel
+      console.log("Waking up DeepSeek math model in parallel...");
+      wakeUpModel('deepseek').then(() => {
+        console.log("DeepSeek math model is ready for use");
+        // Set a flag that DeepSeek is available
+        modelConfig.deepseek.isAwake = true;
       });
     });
 
-    function addNewChat() {
-      const chatList = document.getElementById("chatList");
-      const chatId = "chat_" + Date.now();
-      const chatName = "Chat " + (chatList.children.length + 1);
-
-      const chatItem = document.createElement("li");
-      chatItem.setAttribute("data-chat-id", chatId);
-      chatItem.innerHTML = `
-        <span>${chatName}</span>
-        <button class="delete-chat" onclick="deleteChat(event, this)" aria-label="Delete chat">
-          <i class="fas fa-times"></i>
-        </button>
-      `;
-      
-      chatItem.addEventListener("click", function(e) {
-        if (e.target.classList.contains("delete-chat") || e.target.closest('.delete-chat')) return;
-        
-        document.querySelectorAll('#chatList li').forEach(item => {
-          item.classList.remove('active');
-        });
-        
-        this.classList.add('active');
-        loadChat(chatId, chatName);
-        
-        // On mobile, collapse sidebar after selecting chat
-        if (window.innerWidth <= 992) {
-          document.querySelector('.sidebar').classList.add('collapsed');
-        }
-      });
-      
-      chatList.appendChild(chatItem);
-      chats[chatId] = [];
-      loadChat(chatId, chatName);
-      
-      // Show the chat list after creating new chat
-      const sidebar = document.querySelector('.sidebar');
-      if (sidebar.classList.contains('collapsed')) {
-        sidebar.classList.remove('collapsed');
-      }
-      
-      // Update mobile menu after adding new chat
-      setTimeout(updateMobileChats, 100);
-      
-      // Add a default "Hi" message from the user with slight delay to ensure chat is loaded
-      setTimeout(() => {
-        if (currentChatId === chatId) {
-          // Add the message to the UI
-          appendMessage("user", "Hi");
-          
-          // Add to conversation history for continuity
-          if (!conversationHistory[chatId]) {
-            conversationHistory[chatId] = [];
-          }
-          conversationHistory[chatId].push({
-            role: "user",
-            content: "Hi"
-          });
-          
-          // Automatically trigger a response to the greeting after a short delay
-          setTimeout(() => {
-            const greetingResponse = getGreetingResponse();
-            appendMessage("bot", greetingResponse);
-            
-            // Store in conversation history
-            conversationHistory[chatId].push({
-              role: "assistant",
-              content: greetingResponse
-            });
-          }, 500);
-        }
-      }, 300);
-    }
-
-    function loadChat(chatId, chatName) {
-      currentChatId = chatId;
-      const chatBox = document.getElementById("chatBox");
-      // Clear chat box
-      chatBox.innerHTML = '';
-
-      // Add welcome message at the top
-      const welcomeMessage = document.createElement("div");
-      welcomeMessage.className = "welcome-message";
-      welcomeMessage.innerHTML = `
-        <h2>Welcome to LegalMind</h2>
-        <p>Your AI-powered legal document assistant</p>
-        <div class="model-info">
-          <i class="fas fa-check-circle"></i> Model: <span id="activeModelName">LegalMind</span>
-          <br><span class="model-id">Powered by advanced AI models</span>
-        </div>
-      `;
-      chatBox.appendChild(welcomeMessage);
-
-      // Add scroll to bottom button
-      const scrollBtn = document.createElement("button");
-      scrollBtn.className = "scroll-bottom-btn";
-      scrollBtn.id = "scrollBottomBtn";
-      scrollBtn.setAttribute("aria-label", "Scroll to bottom");
-      scrollBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
-      
-      // Add event listener to scroll button
-      scrollBtn.addEventListener('click', function() {
-        chatBox.scrollTo({
-          top: chatBox.scrollHeight,
-          behavior: 'smooth'
-        });
-        this.classList.remove('visible');
-      });
-      
-      chatBox.appendChild(scrollBtn);
-
-      // Update current chat name
-      document.getElementById("currentChatName").textContent = chats[chatId]?.name || "New Chat";
-
-      // Load messages for this chat and append them
-      if (chats[chatId] && chats[chatId].messages) {
-        // Temporarily disable auto-scrolling during bulk message loading
-        const tempAppendMessage = (sender, content, type) => {
-          const msgDiv = document.createElement("div");
-          if (type === 'html') {
-            msgDiv.innerHTML = content;
-          } else {
-            msgDiv.textContent = content;
-          }
-          msgDiv.classList.add("message", sender);
-          chatBox.appendChild(msgDiv);
-        };
-
-        chats[chatId].messages.forEach(msg => {
-          if (msg.type === "text") {
-            tempAppendMessage(msg.sender, msg.content, 'text');
-          } else if (msg.type === "html") {
-            tempAppendMessage(msg.sender, msg.content, 'html');
-          }
-        });
-        
-        // After loading all messages, scroll to bottom smoothly
-        requestAnimationFrame(() => {
-          chatBox.scrollTo({
-            top: chatBox.scrollHeight,
-            behavior: 'auto'
-          });
-        });
-      }
-
-      // Set active class for chat items
-      const chatItems = document.querySelectorAll(".chat-item, .mobile-chat-item");
-      chatItems.forEach(item => {
-        item.classList.remove("active");
-        if (item.getAttribute("data-chat-id") === chatId) {
-          item.classList.add("active");
-        }
-      });
-
-      // Setup scroll event for scroll button visibility
-      chatBox.addEventListener('scroll', function() {
-        const scrollBtn = document.getElementById('scrollBottomBtn');
-        if (!scrollBtn) return;
-        
-        const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 100;
-        if (isAtBottom) {
-          scrollBtn.classList.remove('visible');
-        } else {
-          scrollBtn.classList.add('visible');
-        }
-      });
-
-      // Focus input field without forced scrolling
-      setTimeout(() => {
-        const messageInput = document.getElementById("messageInput");
-        if (messageInput) {
-          messageInput.focus({ preventScroll: true });
-        }
-      }, 100);
-    }
-
-    function deleteChat(event, button) {
-      event.stopPropagation();
-      const chatItem = button.closest('li');
-      const chatId = chatItem.getAttribute("data-chat-id");
-
-      if (chats[chatId]) {
-        delete chats[chatId];
-      }
-      chatItem.remove();
-
-      if (currentChatId === chatId) {
-        currentChatId = null;
-        const chatBox = document.getElementById("chatBox");
-        const welcomeMessage = document.querySelector('.welcome-message');
-
-        // Clear chat and ensure welcome message is preserved
-        if (welcomeMessage) {
-          chatBox.innerHTML = '';
-          welcomeMessage.classList.remove('hidden');
-          chatBox.appendChild(welcomeMessage);
-        } else {
-          chatBox.innerHTML = '';
-        }
-
-        document.getElementById("currentChatName").textContent = "None";
-      }
-
-      // Update mobile menu after deleting chat
-      setTimeout(updateMobileChats, 100);
-    }
-
-    // Updated appendMessage function with smoother scrolling
-    window.appendMessage = function (sender, text) {
-      const chatBox = document.getElementById('chatBox');
-      if (!chatBox) return;
-
-      const msgDiv = document.createElement("div");
-      msgDiv.textContent = text;
-      msgDiv.classList.add("message", sender);
-
-      // Check if we're at the bottom before adding the message
-      const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 100;
-
-      // Append the message
-      chatBox.appendChild(msgDiv);
-
-      // Only auto-scroll if we were already at the bottom
-      if (wasAtBottom) {
-        // Use requestAnimationFrame for smoother scrolling
-        requestAnimationFrame(() => {
-          chatBox.scrollTo({
-            top: chatBox.scrollHeight,
-            behavior: 'smooth'
-          });
-        });
-      } else {
-        // Show scroll button if we're not at the bottom
-        const scrollButton = document.getElementById('scrollBottomBtn');
-        if (scrollButton) {
-          scrollButton.classList.add('visible');
-        }
-      }
-
-      // Store in current chat if available
-      if (currentChatId && chats[currentChatId]) {
-        if (!chats[currentChatId].messages) {
-          chats[currentChatId].messages = [];
-        }
-        chats[currentChatId].messages.push({
-          type: 'text',
-          sender: sender,
-          content: text
-        });
-      }
-    };
-
-    // Updated appendHtmlMessage function with smoother scrolling
-    window.appendHtmlMessage = function (sender, htmlContent) {
-      const chatBox = document.getElementById('chatBox');
-      if (!chatBox) return;
-
-      const msgDiv = document.createElement("div");
-      msgDiv.innerHTML = htmlContent;
-      msgDiv.classList.add("message", sender);
-
-      // Special handling for thinking messages
-      if (htmlContent.includes('data-thinking="true"')) {
-        // Replace with new thinking animation
-        const thinkingContainer = document.createElement("div");
-        thinkingContainer.className = "thinking-container";
-
-        // Add brain icon and thinking text
-        thinkingContainer.innerHTML = `
-                <span class="thinking-brain"><i class="fas fa-brain"></i></span>
-                <span>Thinking</span>
-                <div class="thinking-dots">
-                    <span class="thinking-dot"></span>
-                    <span class="thinking-dot"></span>
-                    <span class="thinking-dot"></span>
-                </div>
-            `;
-
-        // Add some context about what the model is doing
-        const thinkingContext = document.createElement("span");
-        thinkingContext.className = "thinking-context";
-
-        // Rotate through different thinking messages
-        const thinkingMessages = [
-          "Analyzing your question...",
-          "Retrieving relevant information...",
-          "Formulating a response...",
-          "Checking context from previous messages...",
-          "Organizing thoughts..."
-        ];
-
-        // Start the thinking context animation
-        let messageIndex = 0;
-        const thinkingInterval = setInterval(() => {
-          thinkingContext.textContent = thinkingMessages[messageIndex];
-          messageIndex = (messageIndex + 1) % thinkingMessages.length;
-        }, 4000);
-
-        // Store the interval ID on the element to clear it later
-        thinkingContainer.dataset.intervalId = thinkingInterval;
-
-        thinkingContainer.appendChild(thinkingContext);
-        msgDiv.innerHTML = '';
-        msgDiv.appendChild(thinkingContainer);
-      }
-
-      // Check if we're at the bottom before adding the message
-      const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 100;
-
-      // Append the message
-      chatBox.appendChild(msgDiv);
-
-      // Only auto-scroll if we were already at the bottom
-      if (wasAtBottom) {
-        // Use requestAnimationFrame for smoother scrolling
-        requestAnimationFrame(() => {
-          chatBox.scrollTo({
-            top: chatBox.scrollHeight,
-            behavior: 'smooth'
-          });
-        });
-      } else {
-        // Show scroll button if we're not at the bottom
-        const scrollButton = document.getElementById('scrollBottomBtn');
-        if (scrollButton) {
-          scrollButton.classList.add('visible');
-        }
-      }
-
-      // Store in current chat if available
-      if (currentChatId && chats[currentChatId]) {
-        if (!chats[currentChatId].messages) {
-          chats[currentChatId].messages = [];
-        }
-        chats[currentChatId].messages.push({
-          type: 'html',
-          sender: sender,
-          content: htmlContent
-        });
-      }
-    };
-
-    // Function to check if the message is asking about chatbot identity
-    function isIdentityQuestion(text) {
-      const lowerText = text.toLowerCase().trim();
-
-      // Check for common identity questions
-      const identityPatterns = [
-        /^who are you/,
-        /^what are you/,
-        /tell me about yourself/,
-        /^who is legal ?mind/,
-        /^what is legal ?mind/,
-        /introduce yourself/,
-        /your name/,
-        /^who created you/,
-        /^who made you/,
-        /^who is your owner/,
-        /^what do you do/,
-        /^what can you do/
-      ];
-
-      return identityPatterns.some(pattern => pattern.test(lowerText));
-    }
-
-    // Function to handle identity questions
-    function getIdentityResponse(text) {
-      const lowerText = text.toLowerCase().trim();
-
-      // Check if asking about creator/owner
-      if (lowerText.includes("who made you") ||
-        lowerText.includes("who created you") ||
-        lowerText.includes("who is your owner") ||
-        lowerText.includes("who developed you")) {
-        return "I was created by Mohammad Suheb Abbas. You can find the project repository at https://github.com/SM-Abbas/Final-Year-Project-54";
-      }
-
-      // Default identity response
-      return "I am LegalMind, an AI legal assistant that specializes in analyzing legal documents. I can help review contracts, legal agreements, and other documents, providing insights and suggestions for improvements. If you have a document you'd like me to analyze, please upload it using the paperclip icon in the chat input.";
-    }
-
-    // Function to determine if a question is a continuation of previous conversation
-    function isContinuationQuestion(text, messages) {
-      if (!text || !messages || messages.length < 2) return false;
-
-      const lowerText = text.toLowerCase().trim();
-
-      // Very short questions are often continuations
-      if (lowerText.split(' ').length <= 5) {
-        return true;
-      }
-
-      // Check for pronouns and continuation phrases
-      const continuationPatterns = [
-        /\b(it|this|that|they|them|these|those)\b/i,
-        /\b(its|their|theirs)\b/i,
-        /\b(why|how|what|when|where|who)\b.*\?$/i,
-        /^(and|but|so|also|besides|additionally)\b/i,
-        /\b(more|elaboration|clarify|explain|details)\b/i,
-        /\bcan you/i,
-        /\b(the|your|previous) (answer|response|explanation)\b/i
-      ];
-
-      return continuationPatterns.some(pattern => pattern.test(lowerText));
-    }
-
-    // Function to detect and filter inappropriate content related to intimacy
-    function containsInappropriateContent(text) {
-      if (!text) return false;
-
-      const lowerText = text.toLowerCase().trim();
-
-      // Define patterns for inappropriate content related to intimacy
-      const inappropriatePatterns = [
-        /\b(sex|sexual|sexuality|nude|naked|porn|explicit|adult content)\b/i,
-        /\b(intercourse|foreplay|orgasm|climax|ejacul|penetrat)\w*\b/i,
-        /\b(masturbat|genital|privates|private parts)\w*\b/i,
-        /\b(erotic|erotica|69|bdsm|fetish|kink)\b/i,
-        /\b(nsfw|xxx|x-rated|arousal|aroused)\b/i,
-        /\b(boob|breast|tit|ass|butt|penis|vagina|dick|cock|pussy)\w*\b/i,
-        /\b(fuck|fucking|fucked|anal|oral sex|blow job|hand job)\b/i,
-        /\b(intimate|intimacy)\b.*\b(physical|detail|guide|how|instruct)/i,
-        /\b(dirty talk|obscen|lewd|lust|horny|sensual pleasure)\b/i
-      ];
-
-      return inappropriatePatterns.some(pattern => pattern.test(lowerText));
-    }
-
-    // Send message function
-    function sendMessage() {
-      const messageInput = document.getElementById("messageInput");
-      const userMessageText = messageInput.value.trim();
-      messageInput.value = "";
-
-      // Don't send empty messages
-      if (!userMessageText) return;
-
-      if (currentChatId) {
-        // Check for inappropriate content before proceeding
-        if (containsInappropriateContent(userMessageText)) {
-          // Display user message but mark it as flagged
-          appendMessage("user", userMessageText);
-
-          // Send censored response
-          setTimeout(() => {
-            const moderationResponse = "I'm designed to provide legal and professional assistance only. I cannot discuss topics related to intimate or adult content. Please keep our conversation professional and focused on legal document analysis and advice. How else can I assist you today?";
-            appendMessage("bot", moderationResponse);
-
-            // Add to chat history
-            if (!chats[currentChatId].messages) {
-              chats[currentChatId].messages = [];
-            }
-            chats[currentChatId].messages.push({
-              sender: "user",
-              content: userMessageText
-            });
-            chats[currentChatId].messages.push({
-              sender: "bot",
-              content: moderationResponse
-            });
-
-            // Store in conversation history for continuity
-            if (!conversationHistory[currentChatId]) {
-              conversationHistory[currentChatId] = [];
-            }
-            conversationHistory[currentChatId].push({
-              role: "user",
-              content: userMessageText
-            });
-            conversationHistory[currentChatId].push({
-              role: "assistant",
-              content: moderationResponse
-            });
-          }, 300);
+    // Function to wake up a specific model
+    function wakeUpModel(modelName) {
+      return new Promise((resolve, reject) => {
+        if (!modelConfig[modelName]) {
+          console.error(`Model ${modelName} not found in configuration`);
+          reject(new Error(`Model ${modelName} not found in configuration`));
           return;
         }
-
-        // Append user message to chat
-        appendMessage("user", userMessageText);
-
-        // Add message to chat history
-        if (!chats[currentChatId].messages) {
-          chats[currentChatId].messages = [];
-        }
-        chats[currentChatId].messages.push({
-          sender: "user",
-          content: userMessageText
-        });
-
-        // Add to conversation history for continuity
-        if (!conversationHistory[currentChatId]) {
-          conversationHistory[currentChatId] = [];
-        }
-        conversationHistory[currentChatId].push({
-          role: "user",
-          content: userMessageText
-        });
-
-        // Check for identity questions and provide canned response
-        if (isIdentityQuestion(userMessageText)) {
-          // Provide standard identity response
-          const identityResponse = getIdentityResponse(userMessageText);
-          setTimeout(() => {
-            console.log("Responding with identity response:", identityResponse);
-            appendMessage("bot", identityResponse);
-
-            // Store in conversation history
-            conversationHistory[currentChatId].push({
-              role: "assistant",
-              content: identityResponse
-            });
-          }, 300);
+        
+        const currentEndpointInfo = getCurrentEndpointInfo(modelName);
+        
+        if (!currentEndpointInfo || !currentEndpointInfo.endpoint) {
+          console.error(`No valid endpoint found for ${modelName}`);
+          reject(new Error(`No valid endpoint found for ${modelName}`));
           return;
-        }
-
-        // Check for greeting messages
-        if (isGreeting(userMessageText)) {
-          // Provide greeting response
-          const greetingResponse = getGreetingResponse();
-          setTimeout(() => {
-            console.log("Responding with greeting response:", greetingResponse);
-            appendMessage("bot", greetingResponse);
-
-            // Store in conversation history
-            conversationHistory[currentChatId].push({
-              role: "assistant",
-              content: greetingResponse
-            });
-          }, 300);
-          return;
-        }
-
-        // Detect if this is a math question and use the math model
-        let selectedModel = activeModel;
-        if (isMathQuestion(userMessageText)) {
-          console.log("Detected math question, using DeepSeek Math model");
-          selectedModel = "mathModel";
-        } else if (isLegalDocument) {
-          console.log("Using LegalMind model for legal document analysis");
-          selectedModel = "legalMind";
         }
         
-        // Show typing indicator with a slight delay
-        const typingIndicator = setTimeout(() => {
-          // Get current model name - always show LegalMind in UI regardless of actual model
-          const displayModelName = "LegalMind";
-          let modelName = displayModelName;
-          
-          // Create thinking message with model info and data attribute for animation
-          const thinkingMessage = `<span data-thinking="true">Thinking...</span>`;
-          appendHtmlMessage("bot", thinkingMessage);
-          
-          // Reference to the thinking message to remove it later
-          const thinkingMsg = document.querySelector(".message.bot:last-child");
-
-          // Prepare conversation history for context
-          let conversationContext = "";
-          if (conversationHistory[currentChatId] && conversationHistory[currentChatId].length > 0) {
-            // Check if this appears to be a continuation question
-            const isContinuation = isContinuationQuestion(userMessageText, chats[currentChatId].messages);
-
-            // Get more context for continuations, otherwise use standard context length
-            const contextLength = isContinuation ? 15 : 10;
-
-            // Get recent messages for context, more if it's a continuation
-            const recentMessages = conversationHistory[currentChatId].slice(-contextLength);
-
-            for (const msg of recentMessages) {
-              if (msg.role === "user") {
-                conversationContext += "User: " + msg.content + "\n";
-              } else if (msg.role === "assistant") {
-                conversationContext += "Assistant: " + msg.content + "\n";
-              }
+        // Send a minimal request to wake up the model
+        fetch(currentEndpointInfo.endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentEndpointInfo.token}`
+          },
+          body: JSON.stringify({
+            inputs: "Hello",
+            parameters: {
+              max_new_tokens: 5,
+              temperature: 0.1,
+              return_full_text: false
             }
-
-            console.log("Is continuation question:", isContinuation);
+          })
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to wake up ${modelName} model: ${response.status} ${response.statusText}`);
           }
-
-          // Add the current query
-          let fullPrompt = "You are LegalMind, a helpful assistant. Please respond to this query:\n" +
-            conversationContext +
-            "User: " + userMessageText + "\nAssistant:";
-
-          // If using the math model, use a specialized prompt
-          if (selectedModel === "mathModel") {
-            fullPrompt = "You are LegalMind, a helpful assistant specialized in solving mathematical problems. Focus on providing clear, step-by-step solutions for math questions. For other questions, respond normally.\n" +
-              conversationContext +
-              "User: " + userMessageText + "\nAssistant:";
-          }
-
-          // If we're using the DeepSeek model, use its recommended format
-          const currentEndpointInfo = getCurrentEndpointInfo(selectedModel);
-          if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
-            // DeepSeek format with current date
-            const today = new Date();
-            const formattedDate = today.toLocaleDateString('en-US', {
-              month: 'long',
-              day: 'numeric',
-              weekday: 'long'
-            });
-
-            fullPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
-              conversationContext +
-              "User: " + userMessageText + "\nAssistant:";
-            console.log("Using DeepSeek model with specialized prompt format");
-          }
-
-          console.log("Sending prompt:", fullPrompt);
-
-          // Get document context if applicable
-          const documentContext = getDocumentContext(userMessageText);
-          let finalPrompt = fullPrompt;
-
-          // Check if there are uploaded documents
-          const hasDocuments = Object.keys(uploadedDocuments).length > 0;
-
-          // Always include document context if available, regardless of the query
-          if (hasDocuments) {
-            if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
-              finalPrompt =
-                `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
-                "Document(s) uploaded by user:" +
-                documentContext +
-                "\n\n" + conversationContext +
-                "User: " + userMessageText + "\n" +
-                "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
-                "Assistant:";
-            } else {
-              finalPrompt =
-                "You are LegalMind, a legal assistant that specializes in document analysis.\n\n" +
-                "User has uploaded the following document(s):" +
-                documentContext +
-                "\n\n" + conversationContext +
-                "User: " + userMessageText + "\n" +
-                "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
-                "Assistant:";
-            }
-
-            console.log("Sending prompt with document context (length: " + finalPrompt.length + " chars)");
-          }
-
-          // Connect to the Hugging Face endpoint
-          console.log("Making API request to:", modelConfig[selectedModel].endpoints[modelConfig[selectedModel].currentEndpointIndex]);
-
-          // Prepare API request parameters
-          let requestParams = {
-            max_new_tokens: 1024,
-            temperature: 0.7,
-            top_p: 0.95,
-            do_sample: true,
-            return_full_text: false
-          };
-
-          // Use DeepSeek's recommended parameters if using the DeepSeek model
-          if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
-            requestParams = {
-              max_new_tokens: 1024,
-              temperature: 0.3,  // DeepSeek recommends 0.3
-              top_p: 0.8,
-              do_sample: true
-            };
-          }
-
-          // Use dynamic timeout based on measured response time (default to 15s if not measured)
-          const timeoutDuration = modelConfig[selectedModel].timeout || 15000;
-
-          // Create a timeout promise that will reject after the configured timeout
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => {
-              reject(new Error(`API request timed out after ${timeoutDuration / 1000} seconds`));
-            }, timeoutDuration);
-          });
-
-          // Race between the fetch request and the timeout
-          let apiRequest;
-          
-          // Check if we're using the Mistral API (different format)
-          if (selectedModel === "mistralModel") {
-            // Prepare Mistral API parameters
-            const mistralParams = {
-              model: modelConfig[selectedModel].modelId,
-              messages: [
-                {
-                  role: "user",
-                  content: finalPrompt
-                }
-              ],
-              temperature: 0.7,
-              max_tokens: 1500
-            };
-            
-            // Mistral API request
-            apiRequest = fetch(modelConfig[selectedModel].endpoint, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${modelConfig[selectedModel].readToken}`
-              },
-              body: JSON.stringify(mistralParams)
-            });
-          } else {
-            // Hugging Face API request
-            apiRequest = fetch(currentEndpointInfo.endpoint, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${currentEndpointInfo.token}`
-              },
-              body: JSON.stringify({
-                inputs: finalPrompt,
-                parameters: requestParams
-              })
-            });
-          }
-          
-          // Race between the API request and the timeout
-          Promise.race([apiRequest, timeoutPromise])
-            .then(response => {
-              console.log("API Response Status:", response.status);
-              console.log("API Response Headers:", [...response.headers.entries()]);
-
-              // Add a verification message to the console
-              console.log("API REQUEST SENT SUCCESSFULLY - Waiting for response from: " + modelConfig[selectedModel].endpoints[modelConfig[selectedModel].currentEndpointIndex]);
-
-              if (!response.ok) {
-                console.error("API Error:", response.status, response.statusText);
-                // Try to get more error details
-                return response.text().then(text => {
-                  console.error("API Error Details:", text);
-                  throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
-                });
-              }
-              return response.json();
-            })
-            .then(data => {
-              // Remove the thinking message if it exists
-              if (thinkingMsg && thinkingMsg.parentNode) {
-                thinkingMsg.parentNode.removeChild(thinkingMsg);
-              }
-
-              // Log complete response data for debugging
-              console.log("Complete API Response:", JSON.stringify(data));
-
-              // Add bot response from the API
-              let botResponse = ""; // Empty default
-
-              // Specific handling for Mistral model
-              if (selectedModel === "mistralModel") {
-                // Handle Mistral API response format
-                if (data && data.choices && data.choices.length > 0) {
-                  botResponse = data.choices[0].message.content.trim();
-                  console.log("Using Mistral API response format");
-                }
-              } else if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-                botResponse = data[0].generated_text.trim();
-                console.log("Using array[0].generated_text format");
-              } else if (data && data.generated_text) {
-                botResponse = data.generated_text.trim();
-                console.log("Using data.generated_text format");
-              } else if (typeof data === 'string') {
-                botResponse = data.trim();
-                console.log("Using string format");
-              } else if (data && data.choices && data.choices.length > 0) {
-                // Handle OpenAI-like format
-                botResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
-                console.log("Using OpenAI-like format");
-              } else {
-                console.warn("Unexpected API response format:", data);
-                botResponse = "I apologize, but I received an unexpected response format. Please try again with your question.";
-              }
-
-              // If we are using the DeepSeek model, check response for any non-English part and format
-              if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek") && botResponse) {
-                // Remove any "Assistant:" prefix that might be in the response
-                botResponse = botResponse.replace(/^Assistant:\s*/i, '');
-
-                // If response starts with Chinese characters, try to find the first English part
-                if (/^[\u4e00-\u9fa5]/.test(botResponse)) {
-                  const englishPart = botResponse.match(/[a-zA-Z]/);
-                  if (englishPart && englishPart.index > 0) {
-                    botResponse = botResponse.substring(englishPart.index);
-                  }
-                }
-              }
-
-              // Safety check for empty responses
-              if (!botResponse) {
-                botResponse = "I apologize, but I received an empty response. Please try asking your question again.";
-              }
-
-              // Add to chat history
-              chats[currentChatId].messages.push({
-                sender: "bot",
-                content: botResponse
-              });
-
-              // Store in conversation history for continuity
-              conversationHistory[currentChatId].push({
-                role: "assistant",
-                content: botResponse
-              });
-
-              // Detect if this is a document analysis response
-              const isDocumentAnalysis = botResponse.includes('Document Summary') &&
-                botResponse.includes('Document Improvement Suggestions');
-
-              appendMessage("bot", botResponse);
-
-              // For document analysis responses, add action buttons
-              if (isDocumentAnalysis && Object.keys(uploadedDocuments).length > 0) {
-                // Get the most recently uploaded document
-                const documentNames = Object.keys(uploadedDocuments);
-                const latestDocument = documentNames[documentNames.length - 1];
-
-                if (latestDocument) {
-                  // Find the last bot message element
-                  const chatBox = document.getElementById('chatBox');
-                  const botMessages = chatBox.querySelectorAll('.message.bot');
-                  if (botMessages.length > 0) {
-                    const lastBotMessage = botMessages[botMessages.length - 1];
-
-                    // Add action buttons to the message
-                    addDocumentActionButtons(lastBotMessage, latestDocument);
-                  }
-                }
-              }
-            })
-            .catch(error => {
-              console.error("Error connecting to LegalMind API:", error);
-              console.error("Full error details:", {
-                message: error.message,
-                stack: error.stack,
-                endpoint: modelConfig[selectedModel].endpoints[modelConfig[selectedModel].currentEndpointIndex]
-              });
-
-              // Specific handling for timeout errors
-              if (error.message.includes('timed out')) {
-                console.log("API request timed out - automatically trying next endpoint");
-                showNotification("Getting response, please wait...", "warning");
-
-                // Automatically try the next endpoint or token
-                if (tryNextEndpointOrToken(selectedModel)) {
-                  const endpointInfo = getCurrentEndpointInfo(selectedModel);
-                  console.log(`Switching to endpoint ${endpointInfo.endpointIndex} after timeout`);
-
-                  // Remove the thinking message if it exists
-                  if (thinkingMsg && thinkingMsg.parentNode) {
-                    thinkingMsg.parentNode.removeChild(thinkingMsg);
-                  }
-
-                  // Retry with new endpoint/token (after a short delay)
-                  setTimeout(() => sendMessage(), 1000);
-                  return;
-                }
-              }
-
-              // Try alternative endpoint or token for other errors
-              if (tryNextEndpointOrToken(selectedModel)) {
-                const endpointInfo = getCurrentEndpointInfo(selectedModel);
-                console.log(`Switching to endpoint ${endpointInfo.endpointIndex} after error`);
-
-                // Remove the thinking message if it exists
-                if (thinkingMsg && thinkingMsg.parentNode) {
-                  thinkingMsg.parentNode.removeChild(thinkingMsg);
-                }
-
-                // Retry with new endpoint/token (after a short delay)
-                setTimeout(() => sendMessage(), 1000);
-                return;
-              }
-
-              // Remove the thinking message if it exists
-              if (thinkingMsg && thinkingMsg.parentNode) {
-                thinkingMsg.parentNode.removeChild(thinkingMsg);
-              }
-
-              // Check if it's an authorization error
-              let errorMessage;
-              if (error.message.includes("401") || error.message.includes("unauthorized")) {
-                errorMessage = "Authentication error: Please check your API token.";
-                showNotification("API Token error. Please update your authentication token.", "error");
-              } else if (error.message.includes("429")) {
-                errorMessage = "Rate limit exceeded. Please try again later.";
-                showNotification("Too many requests. Please wait a moment.", "warning");
-              } else if (error.message.includes("CORS") || error.message.includes("Failed to fetch")) {
-                errorMessage = "Network error: CORS or connectivity issue. Please check your network settings or try the Test API Connection button.";
-                showNotification("Network connectivity issue. Try the Test API Connection button.", "error");
-              } else if (error.message.includes('timed out')) {
-                errorMessage = "The model took too long to respond. I've tried all available models but none responded in time.";
-                showNotification("All models timed out. Please try again later.", "error");
-              } else {
-                errorMessage = "I'm having trouble connecting to my knowledge base right now. Please try again later.";
-                showNotification("Connection error to LegalMind API", "error");
-              }
-
-              // Fallback response in case of error
-              appendMessage("bot", errorMessage);
-            });
-
-        }, 300);
-      } else if (!currentChatId) {
-        // If no chat is active, create one and then send
-        addNewChat();
-        // Delay sending to ensure chat is created
-        setTimeout(() => sendMessage(), 100);
-      }
-    }
-
-    // Add bot message
-    function addBotMessage(text) {
-      const botMsg = { sender: "bot", text: text };
-      chats[currentChatId].push(botMsg);
-      appendMessage("bot", text);
-    }
-
-    // Toggle dark mode
-    function toggleDarkMode() {
-      const isDarkMode = document.body.classList.toggle("dark-mode");
-      const darkModeIcon = document.getElementById('darkModeIcon');
-      const darkModeText = document.getElementById('darkModeText');
-
-      if (isDarkMode) {
-        localStorage.setItem('darkMode', 'enabled');
-        if (darkModeIcon) {
-          darkModeIcon.classList.remove('fa-moon');
-          darkModeIcon.classList.add('fa-sun');
-          darkModeText.textContent = 'Light Mode';
-        }
-      } else {
-        localStorage.setItem('darkMode', 'disabled');
-        if (darkModeIcon) {
-          darkModeIcon.classList.remove('fa-sun');
-          darkModeIcon.classList.add('fa-moon');
-          darkModeText.textContent = 'Dark Mode';
-        }
-      }
-    }
-
-    function togglePlansDropdown(event) {
-      event.preventDefault();
-      const dropdown = document.getElementById("plansDropdown");
-      dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
-
-      // Close other dropdowns
-      document.getElementById("modelsDropdown").style.display = "none";
-    }
-
-    function toggleModelsDropdown(event) {
-      event.preventDefault();
-      const dropdown = document.getElementById("modelsDropdown");
-      dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
-
-      // Close other dropdowns
-      document.getElementById("plansDropdown").style.display = "none";
-    }
-
-    // Profile menu toggle and settings functionality
-    document.addEventListener('DOMContentLoaded', function () {
-      // Check for saved dark mode preference
-      if (localStorage.getItem('darkMode') === 'enabled') {
-        document.body.classList.add('dark-mode');
-        document.getElementById('darkModeToggle').checked = true;
-      }
-
-      // Profile menu toggle - fix for both mobile and desktop
-      const profilePic = document.getElementById('profilePicNav');
-      const profileMenu = document.getElementById('profileMenu');
-
-      if (profilePic && profileMenu) {
-        profilePic.addEventListener('click', function (e) {
-          e.stopPropagation();
-          profileMenu.classList.toggle('active');
-        });
-      }
-
-      // Settings button
-      const settingsButton = document.getElementById('settingsButton');
-      const profileMainMenu = document.getElementById('profileMainMenu');
-      const settingsPanel = document.getElementById('settingsPanel');
-
-      if (settingsButton && profileMainMenu && settingsPanel) {
-        settingsButton.addEventListener('click', function () {
-          profileMainMenu.style.display = 'none';
-          settingsPanel.classList.add('active');
-        });
-      }
-
-      // Back to menu button
-      const backToMenu = document.getElementById('backToMenu');
-      if (backToMenu && profileMainMenu && settingsPanel) {
-        backToMenu.addEventListener('click', function () {
-          profileMainMenu.style.display = 'flex';
-          settingsPanel.classList.remove('active');
-        });
-      }
-
-      // Close profile menu when clicking outside
-      document.addEventListener('click', function (event) {
-        if (profileMenu && profileMenu.classList.contains('active')) {
-          if (!event.target.closest('.nav-profile') && !event.target.closest('.profile-menu')) {
-            profileMenu.classList.remove('active');
-            // Reset to main menu view when closing
-            if (profileMainMenu && settingsPanel) {
-              profileMainMenu.style.display = 'flex';
-              settingsPanel.classList.remove('active');
-            }
-          }
-        }
-      });
-    });
-
-    // Update the toggleSidebar function to properly handle document preview visibility
-    function toggleSidebar() {
-      const sidebar = document.querySelector('.sidebar');
-      const documentsPreview = document.querySelector('.documents-preview');
-
-      if (sidebar) {
-        sidebar.classList.toggle('collapsed');
-
-        if (sidebar.classList.contains('collapsed')) {
-          if (documentsPreview) {
-            documentsPreview.style.display = 'none';
-          }
-        } else {
-          if (documentsPreview) {
-            documentsPreview.style.display = 'flex';
-            const documentPreviews = document.getElementById('documentPreviews');
-            if (documentPreviews) {
-              documentPreviews.style.display = 'block';
-            }
-          }
-        }
-      }
-    }
-
-    function closeMobileMenu() {
-      document.getElementById('mobileMenu').classList.remove('active');
-      document.getElementById('mobileMenuOverlay').classList.remove('active');
-    }
-
-    function toggleDocumentPreview() {
-      // For simplicity in mobile version, just toggle sidebar visibility
-      const sidebar = document.querySelector('.sidebar');
-
-      if (window.innerWidth <= 992) {
-        // On mobile, show the sidebar which contains document preview
-        if (sidebar.style.display === 'none' || sidebar.style.display === '') {
-          sidebar.style.display = 'flex';
-          sidebar.classList.remove('collapsed');
-
-          // Make sure documents preview is visible
-          const documentsPreview = document.querySelector('.documents-preview');
-          if (documentsPreview) {
-            documentsPreview.style.display = 'flex';
-            const documentPreviews = document.getElementById('documentPreviews');
-            if (documentPreviews) {
-              documentPreviews.style.display = 'block';
-            }
-          }
-        } else {
-          sidebar.style.display = 'none';
-        }
-      } else {
-        // On desktop, toggle collapsed state
-        sidebar.classList.toggle('collapsed');
-
-        if (sidebar.classList.contains('collapsed')) {
-          const documentsPreview = document.querySelector('.documents-preview');
-          if (documentsPreview) {
-            documentsPreview.style.display = 'none';
-          }
-        } else {
-          const documentsPreview = document.querySelector('.documents-preview');
-          if (documentsPreview) {
-            documentsPreview.style.display = 'flex';
-            const documentPreviews = document.getElementById('documentPreviews');
-            if (documentPreviews) {
-              documentPreviews.style.display = 'block';
-            }
-          }
-        }
-      }
-
-      closeMobileMenu();
-    }
-
-    // Function to update mobile chats list
-    function updateMobileChats() {
-      const todayContainer = document.getElementById('mobileTodayChats');
-      const previousContainer = document.getElementById('mobilePreviousChats');
-
-      // Clear containers
-      todayContainer.innerHTML = '';
-      previousContainer.innerHTML = '';
-
-      // Get all chats from the sidebar chat list
-      const chatList = document.getElementById('chatList');
-      const chatItems = chatList.querySelectorAll('li');
-
-      if (chatItems.length === 0) {
-        // Add empty state message
-        todayContainer.innerHTML = '<div class="mobile-chat-item">No recent chats</div>';
-        return;
-      }
-
-      // For demo, we'll add all chats to "Today" section
-      // In a real app, you would separate by date
-      chatItems.forEach((item, index) => {
-        const chatId = item.getAttribute('data-chat-id');
-        const chatName = item.querySelector('span').textContent;
-        const isActive = item.classList.contains('active');
-
-        const mobileItem = document.createElement('div');
-        mobileItem.className = 'mobile-chat-item' + (isActive ? ' active' : '');
-        mobileItem.setAttribute('data-chat-id', chatId);
-
-        // Create chat info and delete button
-        mobileItem.innerHTML = `
-          <div class="chat-info">
-            <i class="fas fa-message"></i>
-            <span>${chatName}</span>
-          </div>
-          <button class="delete-chat" aria-label="Delete chat">
-            <i class="fas fa-times"></i>
-          </button>
-        `;
-
-        // Add click event handler for the chat item
-        const chatInfo = mobileItem.querySelector('.chat-info');
-        chatInfo.addEventListener('click', function () {
-          // Remove active class from all mobile chat items
-          document.querySelectorAll('.mobile-chat-item').forEach(item => {
-            item.classList.remove('active');
-          });
-
-          // Add active class to clicked item
-          mobileItem.classList.add('active');
-
-          // Update main chat list
-          const chatItem = document.querySelector(`#chatList li[data-chat-id="${chatId}"]`);
-          if (chatItem) {
-            document.querySelectorAll('#chatList li').forEach(item => {
-              item.classList.remove('active');
-            });
-            chatItem.classList.add('active');
-          }
-
-          // Load the chat
-          loadChat(chatId, chatName);
-
-          // Close mobile menu
-          closeMobileMenu();
-        });
-
-        // Add delete button functionality
-        const deleteBtn = mobileItem.querySelector('.delete-chat');
-        deleteBtn.addEventListener('click', function (event) {
-          event.stopPropagation();
-
-          // Delete from main chat list
-          const chatItem = document.querySelector(`#chatList li[data-chat-id="${chatId}"]`);
-          if (chatItem) {
-            const deleteEvent = new MouseEvent('click', {
-              bubbles: true,
-              cancelable: true,
-              view: window
-            });
-
-            const mainDeleteButton = chatItem.querySelector('.delete-chat');
-            if (mainDeleteButton) {
-              mainDeleteButton.dispatchEvent(deleteEvent);
-            }
-          }
-        });
-
-        // Add to appropriate container based on index (just for demo)
-        if (index < 2) {
-          todayContainer.appendChild(mobileItem);
-        } else {
-          previousContainer.appendChild(mobileItem);
-        }
-      });
-
-      // If no previous chats, add empty state
-      if (previousContainer.children.length === 0) {
-        previousContainer.innerHTML = '<div class="mobile-chat-item" style="opacity:0.6">No previous chats</div>';
-      }
-    }
-
-    // Add event listener to close sidebar
-    document.addEventListener('DOMContentLoaded', function () {
-      const sidebarHeader = document.querySelector('.sidebar .chat-header');
-
-      if (sidebarHeader) {
-        sidebarHeader.addEventListener('click', function (e) {
-          // Check if clicked on the X icon (after pseudo-element)
-          const rect = sidebarHeader.getBoundingClientRect();
-          const isClickAfter = e.clientX > rect.x + rect.width - 30;
-
-          if (isClickAfter && window.innerWidth <= 992) {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar.style.display = 'none';
-          }
-        });
-      }
-    });
-
-    // Mobile menu interaction improvements
-    document.addEventListener('DOMContentLoaded', function () {
-      const menuToggle = document.getElementById('mobileMenuToggle');
-      const mobileMenu = document.getElementById('mobileMenu');
-      const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
-
-      // Improved touch handling for mobile menu
-      if (menuToggle && mobileMenu && mobileMenuOverlay) {
-        // Add touch ripple effect
-        menuToggle.addEventListener('touchstart', function () {
-          this.classList.add('touch-active');
-        });
-
-        menuToggle.addEventListener('touchend', function () {
-          this.classList.remove('touch-active');
-          setTimeout(() => {
-            mobileMenu.classList.add('active');
-            mobileMenuOverlay.classList.add('active');
-            updateMobileChats();
-          }, 50);
-        });
-
-        // Add swipe to close functionality
-        let startX = 0;
-        mobileMenu.addEventListener('touchstart', function (e) {
-          startX = e.touches[0].clientX;
-        }, { passive: true });
-
-        mobileMenu.addEventListener('touchmove', function (e) {
-          if (startX > 20) { // Only if started from left edge area
-            let diffX = e.touches[0].clientX - startX;
-            if (diffX < 0) {
-              mobileMenu.style.transform = `translateX(${diffX}px)`;
-            }
-          }
-        }, { passive: true });
-
-        mobileMenu.addEventListener('touchend', function (e) {
-          let diffX = e.changedTouches[0].clientX - startX;
-          if (diffX < -50) { // Swipe threshold
-            closeMobileMenu();
-          }
-          mobileMenu.style.transform = '';
-        }, { passive: true });
-
-        // Add vibration feedback on menu interactions
-        function vibrateIfAvailable(duration) {
-          if ('vibrate' in navigator) {
-            navigator.vibrate(duration);
-          }
-        }
-
-        const allButtons = mobileMenu.querySelectorAll('.mobile-menu-btn, .mobile-chat-item');
-        allButtons.forEach(btn => {
-          btn.addEventListener('touchstart', () => vibrateIfAvailable(20), { passive: true });
-        });
-      }
-    });
-
-    // Updated previewFile function to auto-analyze uploaded documents
-    function previewFile(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      // Process document content for analysis
-      processDocumentContent(file);
-
-      // For mobile devices, just show the file in the chat as a message
-      if (window.innerWidth <= 992) {
-        if (currentChatId) {
-          // Add a file upload message with icon based on file type
-          let fileIcon = 'fa-file';
-          if (file.name.endsWith('.pdf')) fileIcon = 'fa-file-pdf';
-          else if (file.name.endsWith('.txt')) fileIcon = 'fa-file-alt';
-          else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) fileIcon = 'fa-file-word';
-          else if (file.type.startsWith('image/')) fileIcon = 'fa-file-image';
-
-          const fileMessage = `
-            <div class="file-upload">
-              <i class="fas ${fileIcon}"></i>
-              <span>${file.name}</span>
-            </div>
-          `;
-
-          // Create and append the HTML message
-          appendHtmlMessage("user", fileMessage);
-
-          // Add a notification message about the automatic analysis
-          const analysisNotification = `
-            <div style="padding: 10px; background-color: var(--light-bg); border-left: 4px solid var(--accent-color); border-radius: 4px; margin-top: 10px; margin-bottom: 10px;">
-              <strong>📄 Document uploaded:</strong> ${file.name}
-              <div style="margin-top: 5px;">Automatically analyzing content to provide a summary...</div>
-              <div class="typing-indicator" style="margin-top: 8px;"><span></span><span></span><span></span></div>
-            </div>
-          `;
-          appendHtmlMessage("bot", analysisNotification);
-
-          // Auto-analyze the document after a short delay
-          setTimeout(() => {
-            autoAnalyzeDocument(file.name);
-          }, 1500);
-        }
-        return;
-      }
-
-      // Original desktop behavior below...
-      const filePreview = document.getElementById("documentPreviews");
-
-      // Clear welcome message if it exists
-      const welcomeMessage = filePreview.querySelector('.empty-preview-message');
-      if (welcomeMessage) {
-        filePreview.removeChild(welcomeMessage);
-      }
-
-      // Make sure the document previews container is visible
-      filePreview.style.display = 'block';
-
-      // Update toggle button icon if needed
-      const toggleBtn = document.getElementById('documentsToggle');
-      if (toggleBtn && toggleBtn.querySelector('i').classList.contains('fa-chevron-down')) {
-        toggleBtn.querySelector('i').classList.remove('fa-chevron-down');
-        toggleBtn.querySelector('i').classList.add('fa-chevron-up');
-      }
-
-      // Create file item element
-      const fileItem = document.createElement('div');
-      fileItem.classList.add('file-item');
-      fileItem.setAttribute('data-filename', file.name);
-
-      // Create file header
-      const fileHeader = document.createElement('div');
-      fileHeader.className = 'file-header';
-
-      // Create file name container
-      const fileNameContainer = document.createElement('div');
-      fileNameContainer.className = 'file-name';
-
-      // Create file icon
-      const fileIcon = document.createElement('i');
-      fileIcon.classList.add('fas');
-
-      // Set appropriate icon based on file type
-      if (file.name.endsWith('.pdf')) {
-        fileIcon.classList.add('fa-file-pdf');
-        fileIcon.classList.add('pdf-icon');
-      } else if (file.name.endsWith('.txt')) {
-        fileIcon.classList.add('fa-file-alt');
-      } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
-        fileIcon.classList.add('fa-file-word');
-      } else {
-        fileIcon.classList.add('fa-file');
-      }
-
-      // Create filename span
-      const fileName = document.createElement('span');
-      fileName.textContent = file.name;
-
-      // Add icon and filename to the name container
-      fileNameContainer.appendChild(fileIcon);
-      fileNameContainer.appendChild(fileName);
-
-      // Create delete button
-      const closeBtn = document.createElement("button");
-      closeBtn.innerHTML = '<i class="fas fa-times"></i>';
-      closeBtn.classList.add("delete-file");
-      closeBtn.setAttribute('aria-label', 'Remove file');
-
-      closeBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        filePreview.removeChild(fileItem);
-
-        // If no more files, show welcome message
-        if (filePreview.children.length === 0) {
-          const welcomeText = document.createElement('p');
-          welcomeText.className = 'empty-preview-message';
-          welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
-          filePreview.appendChild(welcomeText);
-        }
-      });
-
-      // Add name container and delete button to header
-      fileHeader.appendChild(fileNameContainer);
-      fileHeader.appendChild(closeBtn);
-
-      // Add header to file item
-      fileItem.appendChild(fileHeader);
-
-      // Add file preview for images and PDFs
-      const fileType = file.type.split('/')[0];
-
-      if (fileType === 'image' || file.name.endsWith('.pdf')) {
-        const reader = new FileReader();
-        reader.onload = function () {
-          const previewContainer = document.createElement('div');
-          previewContainer.className = 'file-preview-container';
-
-          if (fileType === 'image') {
-            const img = document.createElement('img');
-            img.src = reader.result;
-            img.alt = file.name;
-            previewContainer.appendChild(img);
-          } else if (file.name.endsWith('.pdf')) {
-            previewContainer.classList.add('pdf-preview');
-            const obj = document.createElement('object');
-            obj.data = reader.result;
-            obj.type = 'application/pdf';
-            obj.width = '100%';
-            obj.height = '200px';
-            previewContainer.appendChild(obj);
-          }
-
-          fileItem.appendChild(previewContainer);
-        };
-        reader.readAsDataURL(file);
-      }
-
-      filePreview.appendChild(fileItem);
-
-      // Force document preview section visible
-      const previewSection = document.querySelector('.documents-preview');
-      previewSection.style.display = 'block';
-      previewSection.style.visibility = 'visible';
-      previewSection.style.opacity = '1';
-
-      // If it's a chat context, add a message about the upload
-      if (currentChatId) {
-        // Add a file upload message with icon based on file type
-        let fileIcon = 'fa-file';
-        if (file.name.endsWith('.pdf')) fileIcon = 'fa-file-pdf';
-        else if (file.name.endsWith('.txt')) fileIcon = 'fa-file-alt';
-        else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) fileIcon = 'fa-file-word';
-        else if (file.type.startsWith('image/')) fileIcon = 'fa-file-image';
-
-        const fileMessage = `
-          <div class="file-upload">
-            <i class="fas ${fileIcon}"></i>
-            <span>${file.name}</span>
-          </div>
-        `;
-
-        appendHtmlMessage("user", fileMessage);
-
-        // Auto-analyze the document after a short delay
-        setTimeout(() => {
-          autoAnalyzeDocument(file.name);
-        }, 1500);
-      }
-    }
-
-    // Function to automatically analyze a document after upload
-    function autoAnalyzeDocument(filename) {
-      if (!currentChatId) return;
-
-      // Wait until the document is processed and available
-      function checkAndAnalyze() {
-        if (uploadedDocuments[filename]) {
-          // Determine document type for customized analysis
-          const fileType = getFileType(filename);
-
-          // Customize analysis message based on file type
-          let analysisMessage = `Please analyze the document ${filename} I just uploaded. Provide a summary and suggestions for improvement.`;
-
-          // Add the message to chat history
-          if (!chats[currentChatId].messages) {
-            chats[currentChatId].messages = [];
-          }
-
-          chats[currentChatId].messages.push({
-            sender: "user",
-            content: analysisMessage
-          });
-
-          // Append a message saying the document is being analyzed
-          appendMessage("bot", `I'm analyzing ${filename}. Here's what I found:`);
-
-          // Create a thinking message
-          const thinkingMsg = document.querySelector(".message.bot:last-child");
-
-          // Get document context
-          const documentContext = getDocumentContext(analysisMessage);
-
-          // Prepare the prompt based on which model is active and file type
-          let analysisPrompt;
-          const today = new Date();
-          const formattedDate = today.toLocaleDateString('en-US', {
-            month: 'long',
-            day: 'numeric',
-            weekday: 'long'
-          });
-
-          // Customize prompt based on file type
-          let fileTypePrompt = "";
-          if (fileType === "pdf" || fileType === "docx" || fileType === "doc") {
-            fileTypePrompt = "For this legal document: Evaluate its legal soundness, identify potential loopholes, suggest stronger legal language, and note any missing clauses that should be included.";
-          } else if (fileType === "txt") {
-            fileTypePrompt = "For this text document: Focus on organization, clarity, and structural improvements. Check for inconsistent terminology and logical flow.";
-          } else if (fileType === "image") {
-            fileTypePrompt = "For this OCR-extracted text: Note any potential errors in text recognition, evaluate the document structure, and suggest improvements to both content and formatting.";
-          }
-
-          if (modelConfig[activeModel].usingFallbackModel) {
-            analysisPrompt =
-              `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
-              "Document(s) uploaded by user:" +
-              documentContext +
-              "\n\nUser: Please analyze this document in detail and provide feedback.\n" +
-              `${fileTypePrompt}\n` +
-              "Always include these sections in your response:\n" +
-              "1. 'Document Summary' with key points\n" +
-              "2. 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness\n" +
-              "3. 'Next Steps' with 2-3 recommendations on what the user should do next with this document\n" +
-              "Assistant:";
-          } else {
-            analysisPrompt =
-              "You are LegalMind, a legal assistant that specializes in document analysis.\n\n" +
-              "User has uploaded the following document(s):" +
-              documentContext +
-              "\n\nUser: Please analyze this document in detail and provide feedback.\n" +
-              `${fileTypePrompt}\n` +
-              "Always include these sections in your response:\n" +
-              "1. 'Document Summary' with key points\n" +
-              "2. 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness\n" +
-              "3. 'Next Steps' with 2-3 recommendations on what the user should do next with this document\n" +
-              "Assistant:";
-          }
-
-          // Prepare API request parameters
-          let requestParams = {
-            max_new_tokens: 1024,
-            temperature: 0.7,
-            top_p: 0.95,
-            do_sample: true,
-            return_full_text: false
-          };
-
-          // Use DeepSeek's recommended parameters if using the DeepSeek model
-          if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
-            requestParams = {
-              max_new_tokens: 1024,
-              temperature: 0.3,  // DeepSeek recommends 0.3
-              top_p: 0.8,
-              do_sample: true
-            };
-          }
-
-          // Create a timeout promise that will reject after 15 seconds
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => {
-              reject(new Error('API request timed out after 15 seconds'));
-            }, 15000); // 15 seconds timeout
-          });
-
-          // Race between the fetch request and the timeout
-          Promise.race([
-            fetch(modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex], {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${modelConfig[activeModel].authTokens[modelConfig[activeModel].currentTokenIndex]}`
-              },
-              body: JSON.stringify({
-                inputs: analysisPrompt,
-                parameters: requestParams
-              })
-            }),
-            timeoutPromise
-          ])
-            .then(response => {
-              if (!response.ok) {
-                return response.text().then(text => {
-                  throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
-                });
-              }
-              return response.json();
-            })
-            .then(data => {
-              // Remove the thinking message if it exists
-              if (thinkingMsg && thinkingMsg.parentNode) {
-                thinkingMsg.parentNode.removeChild(thinkingMsg);
-              }
-
-              // Add bot response from the API
-              let botResponse = ""; // Empty default
-
-              // Specific handling for Mistral model
-              if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-                botResponse = data[0].generated_text.trim();
-              } else if (data && data.generated_text) {
-                botResponse = data.generated_text.trim();
-              } else if (typeof data === 'string') {
-                botResponse = data.trim();
-              } else if (data && data.choices && data.choices.length > 0) {
-                // Handle OpenAI-like format
-                botResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
-              } else {
-                botResponse = "I apologize, but I received an unexpected response format. Please try asking directly about the document.";
-              }
-
-              // If we are using the DeepSeek model, check response for any non-English part and format
-              if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek") && botResponse) {
-                // Remove any "Assistant:" prefix that might be in the response
-                botResponse = botResponse.replace(/^Assistant:\s*/i, '');
-
-                // If response starts with Chinese characters, try to find the first English part
-                if (/^[\u4e00-\u9fa5]/.test(botResponse)) {
-                  const englishPart = botResponse.match(/[a-zA-Z]/);
-                  if (englishPart && englishPart.index > 0) {
-                    botResponse = botResponse.substring(englishPart.index);
-                  }
-                }
-              }
-
-              // Safety check for empty responses
-              if (!botResponse) {
-                botResponse = "I apologize, but I couldn't analyze the document properly. Please ask me specific questions about it.";
-              }
-
-              appendMessage("bot", botResponse);
-            })
-            .catch(error => {
-              console.error("Error analyzing document:", error);
-
-              // Remove the thinking message if it exists
-              if (thinkingMsg && thinkingMsg.parentNode) {
-                thinkingMsg.parentNode.removeChild(thinkingMsg);
-              }
-
-              appendMessage("bot", "I had trouble analyzing this document. Please ask me specific questions about it, and I'll do my best to answer.");
-            });
-        } else {
-          // If document isn't available yet, wait and check again
-          setTimeout(checkAndAnalyze, 500);
-        }
-      }
-
-      checkAndAnalyze();
-    }
-
-    // Helper function to determine file type for customized analysis
-    function getFileType(filename) {
-      if (filename.endsWith('.pdf')) return "pdf";
-      if (filename.endsWith('.docx') || filename.endsWith('.doc')) return "doc";
-      if (filename.endsWith('.txt')) return "txt";
-      if (filename.match(/\.(jpg|jpeg|png|gif)$/i)) return "image";
-      return "other";
-    }
-
-    // Simple scroll-to-bottom button handler
-    document.addEventListener('DOMContentLoaded', function () {
-      const chatBox = document.getElementById('chatBox');
-      const scrollBottomBtn = document.getElementById('scrollBottomBtn');
-
-      if (!chatBox || !scrollBottomBtn) return;
-
-      // Simple scroll position check
-      chatBox.addEventListener('scroll', function () {
-        // Show button when not at bottom (with small threshold)
-        const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
-
-        if (isAtBottom) {
-          scrollBottomBtn.classList.remove('visible');
-        } else {
-          scrollBottomBtn.classList.add('visible');
-        }
-      });
-
-      // Simple click handler for scroll button
-      scrollBottomBtn.addEventListener('click', function () {
-        chatBox.scrollTo({
-          top: chatBox.scrollHeight,
-          behavior: 'smooth'
+          return response.json();
+        })
+        .then(data => {
+          console.log(`${modelName} model wake-up response:`, data);
+          modelConfig[modelName].isAwake = true;
+          resolve(data);
+        })
+        .catch(error => {
+          console.error(`Error waking up ${modelName} model:`, error);
+          reject(error);
         });
       });
-    });
+    }
 
     // Function to test API connection
     function testAPIConnection() {
@@ -6205,11 +4378,9 @@
 
       // Force document preview section visible
       const previewSection = document.querySelector('.documents-preview');
-      if (previewSection) {
-        previewSection.style.display = 'block';
-        previewSection.style.visibility = 'visible';
-        previewSection.style.opacity = '1';
-      }
+      previewSection.style.display = 'block';
+      previewSection.style.visibility = 'visible';
+      previewSection.style.opacity = '1';
 
       // If it's a chat context, add a message about the upload
       if (currentChatId) {
@@ -6366,25 +4537,29 @@
 
           // Enhanced prompt for all models to focus on summarization and specific change suggestions
           analysisPrompt =
-            "You are a document analysis assistant specializing in improving documents.\n\n" +
-            "User has uploaded the following document(s):" +
+            "You are a professional document analysis assistant. Respond ONLY with factual information based on the provided content. If you are unsure about something, explicitly say so.\n\n" +
+            "IMPORTANT GUIDELINES:\n" +
+            "1. Only make statements that are directly supported by the document content\n" +
+            "2. If asked about something not in the document, say 'I cannot find information about that in the document'\n" +
+            "3. Do not make assumptions or creative interpretations\n" +
+            "4. For legal documents, only provide objective analysis of the content\n\n" +
+            "Document to analyze:" +
             documentContext +
-            "\n\nUser: Please analyze this document in detail, summarize its content, and suggest specific changes that would improve it.\n" +
-            `${fileTypePrompt}\n` +
-            "Always include these sections in your response:\n" +
-            "1. 'Document Summary' with key points and main content overview\n" +
-            "2. 'Document Improvement Suggestions' with 3-5 specific, actionable changes with BEFORE and AFTER examples\n" +
-            "3. 'Implementation Plan' with step-by-step instructions on how to implement each suggested change\n" +
-            "Format your suggestions so they can be automatically applied to the document.\n" +
+            "\n\nUser query: " + messageText + "\n\n" +
+            "Provide your analysis in this structure:\n" +
+            "1. FACTS: List only factual information found in the document\n" +
+            "2. ANALYSIS: Objective analysis based solely on the document content\n" +
+            "3. SUGGESTIONS: Only if specifically requested and based on clear document issues\n" +
             "Assistant:";
 
           // Prepare API request parameters
           let requestParams = {
-            max_new_tokens: 1024,
-            temperature: 0.7,
-            top_p: 0.95,
+            max_new_tokens: 1500,
+            temperature: 0.3,
+            top_p: 0.85,
             do_sample: true,
-            return_full_text: false
+            return_full_text: false,
+            repetition_penalty: 1.2
           };
 
           // Use DeepSeek's recommended parameters if using the DeepSeek model
@@ -6531,10 +4706,10 @@
           // If document isn't available yet, wait and check again
           setTimeout(checkAndAnalyze, 500);
         }
-      }
+      }  // Close checkAndAnalyze function
 
       checkAndAnalyze();
-    }
+    }  // Close autoAnalyzeDocument function
 
     // Enhanced function to apply document suggestions
     async function applyDocumentSuggestions(documentName, originalContent, botResponse) {
@@ -6931,6 +5106,414 @@
       `;
       
       document.head.appendChild(styleElement);
+    }
+
+    // Add validation function for model responses
+    function validateModelResponse(response, documentContent) {
+      // Check if response is too generic
+      const genericPhrases = [
+        "I'd be happy to help",
+        "I can assist you",
+        "Let me analyze",
+        "I understand",
+        "Based on my analysis"
+      ];
+      
+      const hasGenericStart = genericPhrases.some(phrase => 
+        response.toLowerCase().startsWith(phrase.toLowerCase())
+      );
+      
+      if (hasGenericStart) {
+        return {
+          isValid: false,
+          message: "Response appears too generic. Requesting more specific analysis..."
+        };
+      }
+      
+      // Check if response follows required structure
+      const hasRequiredSections = 
+        response.includes("FACTS:") &&
+        response.includes("ANALYSIS:");
+      
+      if (!hasRequiredSections) {
+        return {
+          isValid: false,
+          message: "Response missing required sections. Retrying with structured format..."
+        };
+      }
+      
+      // Check for potential hallucination by comparing with document content
+      const facts = response.split("FACTS:")[1]?.split("ANALYSIS:")[0] || "";
+      const factStatements = facts.split("\n").filter(line => line.trim().length > 0);
+      
+      let potentialHallucination = false;
+      for (const fact of factStatements) {
+        // If a fact is stated but cannot be found in document content
+        if (fact.length > 20 && !documentContent.includes(fact.substring(0, 20))) {
+          potentialHallucination = true;
+          break;
+        }
+      }
+      
+      if (potentialHallucination) {
+        return {
+          isValid: false,
+          message: "Detected potential hallucination in response. Requesting verification..."
+        };
+      }
+      
+      return { isValid: true };
+    }
+
+    // Update the API response handling to use validation
+    function handleModelResponse(data, documentContent, currentEndpointInfo, requestParams) {
+      let botResponse = "";
+      
+      // Parse the response based on the API format
+      if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+        botResponse = data[0].generated_text.trim();
+      } else if (data && data.generated_text) {
+        botResponse = data.generated_text.trim();
+      } else if (typeof data === 'string') {
+        botResponse = data.trim();
+      } else if (data && data.choices && data.choices.length > 0) {
+        botResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
+      }
+
+      // Validate the response
+      const validation = validateModelResponse(botResponse, documentContent);
+      if (!validation.isValid) {
+        console.log("Response validation failed:", validation.message);
+        // Retry the request with more strict parameters
+        const newParams = {
+          ...requestParams,
+          temperature: Math.max(0.1, requestParams.temperature - 0.1),
+          top_p: Math.max(0.7, requestParams.top_p - 0.1)
+        };
+        
+        // Show validation message to user
+        appendMessage("bot", validation.message);
+        
+        // Retry the request
+        return fetch(currentEndpointInfo.endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentEndpointInfo.token}`
+          },
+          body: JSON.stringify({
+            inputs: analysisPrompt,
+            parameters: newParams
+          })
+        })
+        .then(response => response.json())
+        .then(retryData => {
+          let retryResponse = "";
+          if (retryData && Array.isArray(retryData) && retryData.length > 0) {
+            retryResponse = retryData[0].generated_text.trim();
+          } else if (retryData && retryData.generated_text) {
+            retryResponse = retryData.generated_text.trim();
+          }
+          appendMessage("bot", retryResponse);
+          return retryResponse;
+        });
+      }
+      
+      // Continue with valid response handling
+      appendMessage("bot", botResponse);
+      return botResponse;
+    }
+
+    // Add initialization code to wake up models on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize components and the rest of the UI
+      initUI();
+      
+      // Set Mistral as default model for actual use
+      selectedModel = "mistral";
+      activeModel = "mistral";
+      
+      // But show LegalMind in UI
+      const currentModelDisplay = document.getElementById("currentModelDisplay");
+      if (currentModelDisplay) {
+        currentModelDisplay.textContent = modelConfig.legalMind.name;
+      }
+      
+      // Add to the existing chatMessages div
+      const chatMessages = document.getElementById('chatMessages');
+      if (chatMessages) {
+        // Add a system message indicating model initialization
+        const initMessage = document.createElement('div');
+        initMessage.className = 'system-message';
+        initMessage.innerHTML = '<i class="fas fa-info-circle"></i> Initializing LegalMind, please wait...';
+        chatMessages.appendChild(initMessage);
+      }
+      
+      // Wake up models on page load (Mistral in background, show LegalMind in UI)
+      wakeUpModels();
+    });
+
+    // Function to wake up models on start
+    function wakeUpModels() {
+      console.log("Initializing models...");
+      
+      // First wake up Mistral as primary model
+      wakeUpModel('mistral')
+        .then(() => {
+          console.log("Mistral model ready");
+          // Update the init message
+          updateSystemMessage("Mistral model ready. Now initializing DeepSeek math model...");
+          
+          // Then wake up DeepSeek for math operations
+          return wakeUpModel('deepseek');
+        })
+        .then(() => {
+          console.log("DeepSeek math model ready");
+          updateSystemMessage("All models ready. You can start chatting!");
+          
+          // Both models are ready
+          modelConfig.mistral.isAwake = true;
+          modelConfig.deepseek.isAwake = true;
+        })
+        .catch(error => {
+          console.error("Error initializing models:", error);
+          updateSystemMessage("Warning: Some models failed to initialize. Falling back to Mistral only.");
+          
+          // Make sure we at least have Mistral ready
+          wakeUpModel('mistral').catch(() => {
+            updateSystemMessage("Error: Unable to connect to any models. Please try refreshing the page.");
+          });
+        });
+    }
+
+    // Function to update system message
+    function updateSystemMessage(message) {
+      const chatMessages = document.getElementById('chatMessages');
+      if (chatMessages) {
+        const systemMessages = chatMessages.querySelectorAll('.system-message');
+        if (systemMessages.length > 0) {
+          // Update the last system message
+          systemMessages[systemMessages.length - 1].innerHTML = '<i class="fas fa-info-circle"></i> ' + message;
+        } else {
+          // Create a new system message
+          const systemMessage = document.createElement('div');
+          systemMessage.className = 'system-message';
+          systemMessage.innerHTML = '<i class="fas fa-info-circle"></i> ' + message;
+          chatMessages.appendChild(systemMessage);
+        }
+      }
+    }
+
+    // Function to wake up a specific model
+    function wakeUpModel(modelName) {
+      return new Promise((resolve, reject) => {
+        if (!modelConfig[modelName]) {
+          console.error(`Model ${modelName} not found in configuration`);
+          reject(new Error(`Model ${modelName} not found in configuration`));
+          return;
+        }
+        
+        const endpointUrl = modelConfig[modelName].endpoints[modelConfig[modelName].currentEndpointIndex];
+        const token = modelConfig[modelName].authTokens[modelConfig[modelName].currentTokenIndex];
+        
+        if (!endpointUrl || !token) {
+          console.error(`No valid endpoint or token found for ${modelName}`);
+          reject(new Error(`No valid endpoint or token found for ${modelName}`));
+          return;
+        }
+        
+        // Send a minimal request to wake up the model
+        fetch(endpointUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            inputs: "Hello",
+            parameters: {
+              max_new_tokens: 5,
+              temperature: 0.1,
+              return_full_text: false
+            }
+          })
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to wake up ${modelName} model: ${response.status} ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log(`${modelName} model wake-up response:`, data);
+          modelConfig[modelName].isAwake = true;
+          resolve(data);
+        })
+        .catch(error => {
+          console.error(`Error waking up ${modelName} model:`, error);
+          reject(error);
+        });
+      });
+    }
+
+    // Remove the "Test API" feature from model settings
+    function displayModelSettings() {
+      const modelSettingsDiv = document.getElementById('modelSettings');
+      if (!modelSettingsDiv) return;
+      
+      // Clear existing content
+      modelSettingsDiv.innerHTML = '';
+      
+      // Function to create settings for each model
+      const createModelSettings = (modelKey, config) => {
+        const modelSection = document.createElement('div');
+        modelSection.className = 'model-settings-section';
+        
+        // Model title
+        const modelTitle = document.createElement('h3');
+        modelTitle.textContent = config.name;
+        modelSection.appendChild(modelTitle);
+        
+        // Endpoints - only allow viewing
+        const endpointSection = document.createElement('div');
+        endpointSection.className = 'endpoints-section';
+        
+        const endpointLabel = document.createElement('label');
+        endpointLabel.textContent = 'Endpoint';
+        endpointSection.appendChild(endpointLabel);
+        
+        const endpointValue = document.createElement('div');
+        endpointValue.className = 'endpoint-value';
+        endpointValue.textContent = config.endpoints[config.currentEndpointIndex] || 'Not configured';
+        endpointSection.appendChild(endpointValue);
+        
+        modelSection.appendChild(endpointSection);
+        
+        // Remove test connection button (as requested)
+        
+        // Add section to settings
+        modelSettingsDiv.appendChild(modelSection);
+      };
+      
+      // Create settings for each model
+      for (const modelKey in modelConfig) {
+        createModelSettings(modelKey, modelConfig[modelKey]);
+      }
+    }
+
+    // Update model response handling with DeepSeek fallback functionality
+    function sendMessageToAPI(messageText, modelKey = activeModel) {
+      // Get current endpoint info
+      let currentEndpointInfo = getCurrentEndpointInfo(modelKey);
+      
+      // Check if we have a proper configuration
+      if (!currentEndpointInfo || !currentEndpointInfo.endpoint) {
+        appendMessage("bot", "Sorry, I'm having trouble connecting to the language model service. Please try again later.");
+        console.error(`Cannot connect to model ${modelKey}: Missing endpoint or token configuration`);
+        return;
+      }
+      
+      // Always show thinking indicator with LegalMind name
+      appendHtmlMessage("bot", `<span data-thinking="true">LegalMind is thinking about your question...</span>`);
+      const thinkingMsg = document.querySelector(".message.bot:last-child");
+      
+      // Handle mathematical content - use DeepSeek by default if available
+      const hasMathContent = /(\d+[\+\-\*\/]\d+|equation|solve|calculate|compute|math problem|derivative|integral|trigonometric|logarithm|exponent|\$\$.+\$\$|\$.+\$)/i.test(messageText);
+      
+      if (hasMathContent && modelConfig.deepseek && modelConfig.deepseek.isAwake) {
+        console.log("Detected math content, switching to DeepSeek Math model in background");
+        modelKey = "deepseek";
+        currentEndpointInfo = getCurrentEndpointInfo("deepseek");
+      }
+
+      // Prepare headers with authentication
+      const headers = {
+        "Content-Type": "application/json"
+      };
+      
+      if (currentEndpointInfo.token) {
+        headers["Authorization"] = `Bearer ${currentEndpointInfo.token}`;
+      }
+      
+      // Prepare API request parameters
+      let requestParams = {
+        max_new_tokens: 1500,
+        temperature: 0.3,
+        top_p: 0.85,
+        do_sample: true,
+        return_full_text: false,
+        repetition_penalty: 1.2
+      };
+      
+      // Use even more conservative parameters for legal document analysis
+      if (isLegalDocument) {
+        requestParams.temperature = 0.2;
+        requestParams.top_p = 0.8;
+      }
+      
+      // Send the API request
+      fetch(currentEndpointInfo.endpoint, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          inputs: "User: " + messageText + "\nAssistant:",
+          parameters: requestParams
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Remove thinking message
+        if (thinkingMsg && thinkingMsg.parentNode) {
+          thinkingMsg.parentNode.removeChild(thinkingMsg);
+        }
+        
+        // Process response
+        let botResponse = "";
+        if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+          botResponse = data[0].generated_text.trim();
+        } else if (data && data.generated_text) {
+          botResponse = data.generated_text.trim();
+        } else if (typeof data === 'string') {
+          botResponse = data.trim();
+        } else if (data && data.choices && data.choices.length > 0) {
+          botResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
+        }
+        
+        // Add bot response to chat
+        appendMessage("bot", botResponse);
+      })
+      .catch(error => {
+        console.error("Error in API request:", error);
+        
+        // Try fallback to another model when current one fails
+        if (modelKey === "deepseek") {
+          // DeepSeek failed, try Mistral
+          if (thinkingMsg) {
+            // Keep showing LegalMind name but switch model in background
+            thinkingMsg.innerHTML = "<span data-thinking='true'>LegalMind is thinking...</span>";
+          }
+          sendMessageToAPI(messageText, "mistral");
+        } 
+        else if (modelKey === "mistral") {
+          // Mistral failed, try LegalMind
+          if (thinkingMsg) {
+            thinkingMsg.innerHTML = "<span data-thinking='true'>LegalMind is thinking...</span>";
+          }
+          sendMessageToAPI(messageText, "legalMind");
+        }
+        else {
+          // All models failed
+          if (thinkingMsg && thinkingMsg.parentNode) {
+            thinkingMsg.parentNode.removeChild(thinkingMsg);
+          }
+          appendMessage("bot", "I encountered an error processing your request. Please try again with a different question.");
+        }
+      });
     }
 
   </script>
