@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="LegalMind - AI-powered legal document assistant">
   <title>LegalMind Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <!-- Add PDF.js library for PDF processing -->
@@ -2757,7 +2758,7 @@
           <input type="file" id="fileInput" accept=".pdf,.txt,.docx" style="display:none;"
             onchange="previewFile(event)">
 
-          <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
+          <button id="sendBtn" onclick="sendChatMessage()" aria-label="Send message">
             <i class="fas fa-paper-plane"></i>
           </button>
         </div>
@@ -6237,6 +6238,389 @@
       
       document.head.appendChild(styleElement);
     });
+
+    // Define the missing initComponents function
+    function initComponents() {
+      console.log("Initializing all components...");
+      
+      // Initialize dark mode
+      initDarkMode();
+      
+      // Initialize profile popup
+      initProfilePopup();
+      
+      // Initialize the chat UI
+      initChatUI();
+      
+      // Initialize document processing
+      initDocumentProcessing();
+      
+      // Initialize event listeners for message sending
+      attachEventListeners();
+    }
+
+    // Function to toggle dark mode
+    function toggleDarkMode() {
+      document.body.classList.toggle('dark-mode');
+      const isDarkMode = document.body.classList.contains('dark-mode');
+      localStorage.setItem('darkMode', isDarkMode);
+      
+      // Update the toggle checkbox state
+      const darkModeToggle = document.getElementById('darkModeToggle');
+      if (darkModeToggle) {
+        darkModeToggle.checked = isDarkMode;
+      }
+    }
+
+    // Initialize dark mode from saved preferences
+    function initDarkMode() {
+      const darkModeToggle = document.getElementById('darkModeToggle');
+      if (darkModeToggle) {
+        // Check if user prefers dark mode
+        const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+        
+        // Apply dark mode if either is true
+        if (savedDarkMode || prefersDarkMode) {
+          document.body.classList.add('dark-mode');
+          darkModeToggle.checked = true;
+        }
+        
+        // Add event listener for dark mode toggle
+        darkModeToggle.addEventListener('change', toggleDarkMode);
+      }
+    }
+
+    // Initialize profile popup functionality
+    function initProfilePopup() {
+      const profilePicNav = document.getElementById('profilePicNav');
+      const profileMenu = document.getElementById('profileMenu');
+      const settingsButton = document.getElementById('settingsButton');
+      const backToMenu = document.getElementById('backToMenu');
+      const profileMainMenu = document.getElementById('profileMainMenu');
+      const settingsPanel = document.getElementById('settingsPanel');
+      
+      // Toggle profile menu on profile picture click
+      if (profilePicNav && profileMenu) {
+        profilePicNav.addEventListener('click', function(e) {
+          e.stopPropagation();
+          profileMenu.classList.toggle('active');
+        });
+        
+        // Close profile menu when clicking outside
+        document.addEventListener('click', function(e) {
+          if (profileMenu.classList.contains('active') && !profileMenu.contains(e.target) && e.target !== profilePicNav) {
+            profileMenu.classList.remove('active');
+          }
+        });
+      }
+      
+      // Toggle between settings and main menu
+      if (settingsButton && backToMenu && profileMainMenu && settingsPanel) {
+        settingsButton.addEventListener('click', function() {
+          profileMainMenu.style.display = 'none';
+          settingsPanel.style.display = 'block';
+        });
+        
+        backToMenu.addEventListener('click', function() {
+          settingsPanel.style.display = 'none';
+          profileMainMenu.style.display = 'block';
+        });
+      }
+    }
+
+    // Initialize chat UI components
+    function initChatUI() {
+      // Initialize chat list toggle
+      const chatListToggle = document.querySelector('.chat-list-toggle');
+      const chatList = document.querySelector('.chat-list');
+      
+      if (chatListToggle && chatList) {
+        chatListToggle.addEventListener('click', function() {
+          chatList.classList.toggle('expanded');
+          this.classList.toggle('active');
+        });
+      }
+      
+      // Initialize documents toggle
+      const documentsToggle = document.getElementById('documentsToggle');
+      const documentsPreview = document.querySelector('.documents-preview');
+      
+      if (documentsToggle && documentsPreview) {
+        documentsToggle.addEventListener('click', function() {
+          if (documentsPreview.classList.contains('collapsed')) {
+            documentsPreview.classList.remove('collapsed');
+            this.innerHTML = '<i class="fas fa-chevron-up"></i>';
+          } else {
+            documentsPreview.classList.add('collapsed');
+            this.innerHTML = '<i class="fas fa-chevron-down"></i>';
+          }
+        });
+      }
+      
+      // Initialize dropdown toggling
+      document.addEventListener('click', function(e) {
+        // Close all dropdowns when clicking elsewhere
+        const dropdowns = document.querySelectorAll('.dropdown-content');
+        dropdowns.forEach(dropdown => {
+          if (!e.target.closest('.dropdown')) {
+            dropdown.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    // Initialize document processing
+    function initDocumentProcessing() {
+      // Define the uploadedDocuments object if it doesn't exist
+      if (typeof uploadedDocuments === 'undefined') {
+        window.uploadedDocuments = {};
+      }
+      
+      // Set up the documents section
+      const fileInput = document.getElementById('file-input');
+      const attachBtn = document.querySelector('.attach-btn');
+      
+      if (fileInput && attachBtn) {
+        attachBtn.addEventListener('click', function() {
+          fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', function(e) {
+          const files = e.target.files;
+          if (files.length > 0) {
+            // Process each uploaded file
+            for (let i = 0; i < files.length; i++) {
+              processUploadedFile(files[i]);
+            }
+          }
+        });
+      }
+    }
+
+    // Function to handle sending a message with the UI
+    function sendChatMessage() {
+      const messageInput = document.getElementById('messageInput');
+      if (!messageInput) return;
+      
+      const messageText = messageInput.value.trim();
+      if (messageText) {
+        // Add the user message to the chat
+        appendMessage("user", messageText);
+        
+        // Clear the input
+        messageInput.value = '';
+        
+        // Reset input height
+        messageInput.style.height = 'auto';
+        
+        // Process the message with the appropriate model
+        sendMessageToAPI(messageText);
+        
+        // Save to chat history if in a chat
+        if (typeof currentChatId !== 'undefined' && typeof chats !== 'undefined' && chats[currentChatId]) {
+          if (!chats[currentChatId].messages) {
+            chats[currentChatId].messages = [];
+          }
+          chats[currentChatId].messages.push({
+            type: 'text',
+            sender: 'user',
+            content: messageText
+          });
+          
+          // Save to localStorage if function exists
+          if (typeof saveChatsToStorage === 'function') {
+            saveChatsToStorage();
+          }
+        }
+      }
+    }
+
+    // Enhanced add new chat function
+    function addNewChat() {
+      // Generate a unique ID for the new chat
+      const chatId = 'chat_' + Date.now();
+      
+      // Create a new chat in the chats object
+      if (typeof chats === 'undefined') {
+        window.chats = {};
+      }
+      
+      chats[chatId] = {
+        id: chatId,
+        name: 'New Chat ' + (Object.keys(chats).length + 1),
+        messages: [],
+        createdAt: new Date().toISOString()
+      };
+      
+      // Save chats to storage
+      if (typeof saveChatsToStorage === 'function') {
+        saveChatsToStorage();
+      }
+      
+      // Select the new chat
+      if (typeof selectChat === 'function') {
+        selectChat(chatId);
+      } else {
+        // Simple fallback if selectChat doesn't exist
+        const chatList = document.getElementById('chatList');
+        if (chatList) {
+          // Create chat item
+          const chatItem = document.createElement('li');
+          chatItem.className = 'chat-item';
+          chatItem.setAttribute('data-chat-id', chatId);
+          chatItem.innerHTML = `
+            <span class="chat-name">${chats[chatId].name}</span>
+            <button class="delete-chat"><i class="fas fa-trash-alt"></i></button>
+          `;
+          chatList.appendChild(chatItem);
+        }
+        
+        // Update current chat display
+        const currentChatName = document.getElementById('currentChatName');
+        if (currentChatName) {
+          currentChatName.textContent = chats[chatId].name;
+        }
+        
+        window.currentChatId = chatId;
+      }
+    }
+
+    // Basic function to save chats to local storage
+    function saveChatsToStorage() {
+      try {
+        if (typeof chats !== 'undefined') {
+          localStorage.setItem('legalMind_chats', JSON.stringify(chats));
+        }
+      } catch (error) {
+        console.error('Error saving chats to storage:', error);
+      }
+    }
+
+    // Basic function to load chats from local storage
+    function loadChatsFromStorage() {
+      try {
+        const savedChats = localStorage.getItem('legalMind_chats');
+        if (savedChats) {
+          window.chats = JSON.parse(savedChats);
+          return true;
+        }
+      } catch (error) {
+        console.error('Error loading chats from storage:', error);
+      }
+      window.chats = {};
+      return false;
+    }
+
+    // Dropdown toggle functions
+    function togglePlansDropdown(event) {
+      event.preventDefault();
+      const dropdown = document.getElementById('plansDropdown');
+      if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      }
+    }
+
+    function toggleModelsDropdown(event) {
+      event.preventDefault();
+      const dropdown = document.getElementById('modelsDropdown');
+      if (dropdown) {
+        dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+      }
+    }
+
+    // Make sure to properly attach event listeners for the send button
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize all components
+      initComponents();
+      
+      // Add a welcome message from the assistant
+      setTimeout(function() {
+        const chatBox = document.getElementById('chatBox');
+        if (chatBox) {
+          const messageDiv = document.createElement('div');
+          messageDiv.className = 'message assistant';
+          messageDiv.innerHTML = '<p>Hello! I\'m LegalMind, your legal assistant. How can I help you today?</p>';
+          chatBox.appendChild(messageDiv);
+        }
+      }, 1500);
+      
+      // Explicitly set up the send button
+      const sendBtn = document.getElementById('sendBtn');
+      if (sendBtn) {
+        sendBtn.onclick = sendChatMessage;
+        console.log("Send button click handler attached");
+      }
+      
+      // Set up the message input
+      const messageInput = document.getElementById('messageInput');
+      if (messageInput) {
+        messageInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+          }
+        });
+      }
+      
+      // Load chats from storage
+      loadChatsFromStorage();
+      
+      // Set Mistral as default model for actual use 
+      selectedModel = "mistral";
+      activeModel = "mistral";
+      
+      // But show LegalMind in UI
+      const currentModelDisplay = document.getElementById("currentModelDisplay");
+      if (currentModelDisplay) {
+        currentModelDisplay.textContent = modelConfig.legalMind.name;
+      }
+      
+      // Add to the existing chatMessages div
+      const chatMessages = document.getElementById('chatMessages');
+      if (chatMessages) {
+        // Add a system message indicating model initialization
+        const initMessage = document.createElement('div');
+        initMessage.className = 'system-message';
+        initMessage.innerHTML = '<i class="fas fa-info-circle"></i> Initializing models, please wait...';
+        chatMessages.appendChild(initMessage);
+      }
+      
+      // Immediately start loading models
+      if (typeof initializeModels === 'function') {
+        initializeModels();
+      }
+    });
+
+    // Fix the message append function if needed
+    function appendMessage(sender, text) {
+      const chatBox = document.getElementById('chatBox');
+      if (!chatBox) return;
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}`;
+      messageDiv.textContent = text;
+      
+      chatBox.appendChild(messageDiv);
+      
+      // Scroll to bottom
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Fix HTML message append function if needed
+    function appendHtmlMessage(sender, htmlContent) {
+      const chatBox = document.getElementById('chatBox');
+      if (!chatBox) return;
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}`;
+      messageDiv.innerHTML = htmlContent;
+      
+      chatBox.appendChild(messageDiv);
+      
+      // Scroll to bottom
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
   </script>
 </body>
 
