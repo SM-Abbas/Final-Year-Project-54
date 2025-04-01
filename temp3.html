@@ -2744,7 +2744,7 @@
       <div class="chat-input">
         <div class="input-container">
           <input type="text" id="messageInput" placeholder="Type your message..." aria-label="Type your message"
-            onkeypress="if(event.key === 'Enter') sendMessage()">
+            onkeypress="if(event.key === 'Enter') sendChatMessage()">
 
           <span class="image-btn" onclick="document.getElementById('imageInput').click()">
             <i class="fas fa-camera"></i>
@@ -2831,7 +2831,7 @@
       },
       legalMind: {
         name: "LegalMind",
-        endpoints: ["https://api-inference.huggingface.co/models/abbasgamer1/legalMind"],
+        endpoints: ["https://api-inference.huggingface.co/models/Abbasgamer1/legalMind"],
         authTokens: ["hf_abcdefghijklmnopqrstuvwxyz"],
         currentEndpointIndex: 0,
         currentTokenIndex: 0,
@@ -2917,7 +2917,7 @@
       initComponents();
       
       // Set Mistral as default model and wake it up immediately
-      document.getElementById('model-selector').value = 'mistral';
+      document.getElementById('modelsDropdown').querySelector('[data-model="legalMind"]').classList.add('active-model');
       selectedModel = 'mistral';
       
       // Wake up Mistral model immediately on page load
@@ -5630,17 +5630,44 @@
       const hasMathContent = /(\d+[\+\-\*\/]\d+|equation|solve|calculate|compute|math problem|derivative|integral|trigonometric|logarithm|exponent|\$\$.+\$\$|\$.+\$)/i.test(messageText);
       const hasReasoningContent = /(reason|logic|deduce|infer|analyze|implication|conclusion|premise|argument|syllogism|fallacy)/i.test(messageText);
       
-      if ((hasMathContent || hasReasoningContent) && modelConfig.deepseek && modelConfig.deepseek.isAwake) {
-        console.log("Detected math/reasoning content, using DeepSeek model");
-        selectedModelForRequest = "deepseek";
-        currentEndpointInfo = getCurrentEndpointInfo("deepseek");
+      // New prioritization logic:
+      // 1. Use Mistral for regular queries (default)
+      // 2. Use Deepseek for math/reasoning queries
+      // 3. Use LegalMind as fallback or for legal documents
+      
+      if (hasMathContent || hasReasoningContent) {
+        // For math/reasoning content, prioritize Deepseek if available
+        if (modelConfig.deepseek && modelConfig.deepseek.isAwake) {
+          console.log("Detected math/reasoning content, using DeepSeek model");
+          selectedModelForRequest = "deepseek";
+          currentEndpointInfo = getCurrentEndpointInfo("deepseek");
+        } 
+        // If Deepseek is not available, use Mistral
+        else if (modelConfig.mistral && modelConfig.mistral.isAwake) {
+          console.log("DeepSeek not available, using Mistral for math/reasoning");
+          selectedModelForRequest = "mistral";
+          currentEndpointInfo = getCurrentEndpointInfo("mistral");
+        }
       } else {
-        // Use Mistral for regular queries if it's available
+        // For regular queries, prioritize Mistral
         if (modelConfig.mistral && modelConfig.mistral.isAwake) {
           console.log("Using Mistral model for general query");
           selectedModelForRequest = "mistral";
           currentEndpointInfo = getCurrentEndpointInfo("mistral");
         }
+        // If Mistral is not available, try Deepseek
+        else if (modelConfig.deepseek && modelConfig.deepseek.isAwake) {
+          console.log("Mistral not available, using DeepSeek as fallback");
+          selectedModelForRequest = "deepseek";
+          currentEndpointInfo = getCurrentEndpointInfo("deepseek");
+        }
+      }
+      
+      // Override model selection for legal documents - always use LegalMind
+      if (isLegalDocument) {
+        console.log("Document detected as legal content, using LegalMind model");
+        selectedModelForRequest = "legalMind";
+        currentEndpointInfo = getCurrentEndpointInfo("legalMind");
       }
 
       // Prepare headers with authentication
@@ -5714,29 +5741,31 @@
       .catch(error => {
         console.error(`Error in API request with ${selectedModelForRequest}:`, error);
         
-        // Implement fallback logic in order of preference
-        if (selectedModelForRequest === "deepseek") {
-          // DeepSeek failed, try Mistral
+        // Implement fallback logic according to priority
+        if (selectedModelForRequest === "mistral") {
+          // Mistral failed, try DeepSeek next
           if (thinkingMsg) {
             thinkingMsg.innerHTML = "<span data-thinking='true'>LegalMind is thinking...</span>";
           }
-          // Try Mistral next
-          if (modelConfig.mistral.isAwake) {
-            sendMessageToAPI(messageText, "mistral");
+          if (modelConfig.deepseek && modelConfig.deepseek.isAwake) {
+            console.log("Mistral failed, trying DeepSeek...");
+            sendMessageToAPI(messageText, "deepseek");
           } else {
-            // If Mistral isn't available, go directly to LegalMind
+            // If DeepSeek isn't available, go to LegalMind
+            console.log("Mistral failed, DeepSeek not available, trying LegalMind...");
             sendMessageToAPI(messageText, "legalMind");
           }
         } 
-        else if (selectedModelForRequest === "mistral") {
-          // Mistral failed, try LegalMind as final fallback
+        else if (selectedModelForRequest === "deepseek") {
+          // DeepSeek failed, try LegalMind as final fallback
           if (thinkingMsg) {
             thinkingMsg.innerHTML = "<span data-thinking='true'>LegalMind is thinking...</span>";
           }
+          console.log("DeepSeek failed, trying LegalMind as final fallback...");
           sendMessageToAPI(messageText, "legalMind");
         }
         else {
-          // All models failed
+          // All models failed or LegalMind failed
           if (thinkingMsg && thinkingMsg.parentNode) {
             thinkingMsg.parentNode.removeChild(thinkingMsg);
           }
@@ -6535,15 +6564,11 @@
       initComponents();
       
       // Add a welcome message from the assistant
-      setTimeout(function() {
-        const chatBox = document.getElementById('chatBox');
-        if (chatBox) {
-          const messageDiv = document.createElement('div');
-          messageDiv.className = 'message assistant';
-          messageDiv.innerHTML = '<p>Hello! I\'m LegalMind, your legal assistant. How can I help you today?</p>';
-          chatBox.appendChild(messageDiv);
-        }
-      }, 1500);
+      // Keep the existing welcome message from the HTML structure
+      const welcomeMessage = document.querySelector('.welcome-message');
+      if (welcomeMessage) {
+        console.log("Using existing welcome message");
+      }
       
       // Explicitly set up the send button
       const sendBtn = document.getElementById('sendBtn');
@@ -6566,30 +6591,43 @@
       // Load chats from storage
       loadChatsFromStorage();
       
-      // Set Mistral as default model for actual use 
+      // Set Mistral as default model for actual use and start it immediately
       selectedModel = "mistral";
       activeModel = "mistral";
       
-      // But show LegalMind in UI
+      // Display LegalMind in UI
       const currentModelDisplay = document.getElementById("currentModelDisplay");
       if (currentModelDisplay) {
         currentModelDisplay.textContent = modelConfig.legalMind.name;
       }
       
-      // Add to the existing chatMessages div
-      const chatMessages = document.getElementById('chatMessages');
-      if (chatMessages) {
-        // Add a system message indicating model initialization
-        const initMessage = document.createElement('div');
-        initMessage.className = 'system-message';
-        initMessage.innerHTML = '<i class="fas fa-info-circle"></i> Initializing models, please wait...';
-        chatMessages.appendChild(initMessage);
-      }
+      // Wake up models
+      console.log("Waking up Mistral model on page load...");
+      wakeUpModel('mistral').then(() => {
+        console.log("Mistral model is ready for use");
+        
+        // Start a chat automatically with mistral when ready
+        if (!currentChatId) {
+          addNewChat();
+          
+          // Allow the DOM to update with the new chat
+          setTimeout(() => {
+            // Simulate a "Hi" message from the user
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+              messageInput.value = "Hi";
+              sendChatMessage();
+            }
+          }, 500);
+        }
+      });
       
-      // Immediately start loading models
-      if (typeof initializeModels === 'function') {
-        initializeModels();
-      }
+      // Wake up DeepSeek math model in parallel
+      console.log("Waking up DeepSeek math model in parallel...");
+      wakeUpModel('deepseek').then(() => {
+        console.log("DeepSeek math model is ready for use");
+        modelConfig.deepseek.isAwake = true;
+      });
     });
 
     // Fix the message append function if needed
