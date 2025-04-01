@@ -5516,6 +5516,234 @@
       });
     }
 
+    // Modify DOMContentLoaded to start Mistral immediately and load DeepSeek in parallel
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize components and the rest of the UI
+      initUI();
+      
+      // Set Mistral as default model for actual use 
+      selectedModel = "mistral";
+      activeModel = "mistral";
+      
+      // But show LegalMind in UI
+      const currentModelDisplay = document.getElementById("currentModelDisplay");
+      if (currentModelDisplay) {
+        currentModelDisplay.textContent = modelConfig.legalMind.name;
+      }
+      
+      // Add to the existing chatMessages div
+      const chatMessages = document.getElementById('chatMessages');
+      if (chatMessages) {
+        // Add a system message indicating model initialization
+        const initMessage = document.createElement('div');
+        initMessage.className = 'system-message';
+        initMessage.innerHTML = '<i class="fas fa-info-circle"></i> Initializing models, please wait...';
+        chatMessages.appendChild(initMessage);
+      }
+      
+      // Immediately start loading models
+      initializeModels();
+    });
+
+    // Enhance model initialization to start immediately after login
+    function initializeModels() {
+      console.log("Starting model initialization...");
+      
+      // Start Mistral model immediately (primary model)
+      wakeUpModel('mistral')
+        .then(() => {
+          console.log("Mistral model ready");
+          updateSystemMessage("Mistral model ready. You can start chatting while other models initialize.");
+          modelConfig.mistral.isAwake = true;
+          
+          // In parallel, start DeepSeek math model
+          wakeUpModel('deepseek')
+            .then(() => {
+              console.log("DeepSeek math model ready");
+              updateSystemMessage("DeepSeek math model also ready. All models initialized!");
+              modelConfig.deepseek.isAwake = true;
+            })
+            .catch(error => {
+              console.error("Error initializing DeepSeek:", error);
+              updateSystemMessage("Note: DeepSeek math model couldn't be initialized, but you can still use the other models.");
+            });
+          
+          // Also try to wake up LegalMind as fallback
+          wakeUpModel('legalMind')
+            .then(() => {
+              console.log("LegalMind model ready");
+              modelConfig.legalMind.isAwake = true;
+            })
+            .catch(error => {
+              console.error("Error initializing LegalMind:", error);
+            });
+        })
+        .catch(error => {
+          console.error("Error initializing primary Mistral model:", error);
+          updateSystemMessage("Warning: Primary model initialization failed. Trying alternatives...");
+          
+          // If Mistral fails, try DeepSeek
+          wakeUpModel('deepseek')
+            .then(() => {
+              console.log("Using DeepSeek as primary model");
+              updateSystemMessage("DeepSeek model ready. You can start chatting!");
+              activeModel = "deepseek";
+              modelConfig.deepseek.isAwake = true;
+            })
+            .catch(() => {
+              // If DeepSeek also fails, try LegalMind
+              wakeUpModel('legalMind')
+                .then(() => {
+                  console.log("Using LegalMind as primary model");
+                  updateSystemMessage("LegalMind model ready. You can start chatting!");
+                  activeModel = "legalMind";
+                  modelConfig.legalMind.isAwake = true;
+                })
+                .catch(() => {
+                  updateSystemMessage("Error: Unable to connect to any models. Please try refreshing the page.");
+                });
+            });
+        });
+    }
+
+    // Update the sendMessageToAPI function to prioritize DeepSeek for math/reasoning
+    function sendMessageToAPI(messageText, modelKey = activeModel) {
+      // Get current endpoint info
+      let currentEndpointInfo = getCurrentEndpointInfo(modelKey);
+      
+      // Check if we have a proper configuration
+      if (!currentEndpointInfo || !currentEndpointInfo.endpoint) {
+        appendMessage("bot", "Sorry, I'm having trouble connecting to the language model service. Please try again later.");
+        console.error(`Cannot connect to model ${modelKey}: Missing endpoint or token configuration`);
+        return;
+      }
+      
+      // Always show thinking indicator with LegalMind name
+      appendHtmlMessage("bot", `<span data-thinking="true">LegalMind is thinking about your question...</span>`);
+      const thinkingMsg = document.querySelector(".message.bot:last-child");
+      
+      // Determine the best model to use for this request
+      let selectedModelForRequest = modelKey;
+      
+      // Check if this is a math/reasoning question and DeepSeek is available
+      const hasMathContent = /(\d+[\+\-\*\/]\d+|equation|solve|calculate|compute|math problem|derivative|integral|trigonometric|logarithm|exponent|\$\$.+\$\$|\$.+\$)/i.test(messageText);
+      const hasReasoningContent = /(reason|logic|deduce|infer|analyze|implication|conclusion|premise|argument|syllogism|fallacy)/i.test(messageText);
+      
+      if ((hasMathContent || hasReasoningContent) && modelConfig.deepseek && modelConfig.deepseek.isAwake) {
+        console.log("Detected math/reasoning content, using DeepSeek model");
+        selectedModelForRequest = "deepseek";
+        currentEndpointInfo = getCurrentEndpointInfo("deepseek");
+      } else {
+        // Use Mistral for regular queries if it's available
+        if (modelConfig.mistral && modelConfig.mistral.isAwake) {
+          console.log("Using Mistral model for general query");
+          selectedModelForRequest = "mistral";
+          currentEndpointInfo = getCurrentEndpointInfo("mistral");
+        }
+      }
+
+      // Prepare headers with authentication
+      const headers = {
+        "Content-Type": "application/json"
+      };
+      
+      if (currentEndpointInfo.token) {
+        headers["Authorization"] = `Bearer ${currentEndpointInfo.token}`;
+      }
+      
+      // Prepare API request parameters
+      let requestParams = {
+        max_new_tokens: 1500,
+        temperature: 0.3,
+        top_p: 0.85,
+        do_sample: true,
+        return_full_text: false,
+        repetition_penalty: 1.2
+      };
+      
+      // Use even more conservative parameters for legal document analysis
+      if (isLegalDocument) {
+        requestParams.temperature = 0.2;
+        requestParams.top_p = 0.8;
+      }
+      
+      // Modify parameters based on the selected model
+      if (selectedModelForRequest === "deepseek") {
+        // DeepSeek works better with these parameters for math
+        requestParams.temperature = 0.2;
+        requestParams.repetition_penalty = 1.1;
+      }
+      
+      // Send the API request
+      fetch(currentEndpointInfo.endpoint, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          inputs: "User: " + messageText + "\nAssistant:",
+          parameters: requestParams
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        // Remove thinking message
+        if (thinkingMsg && thinkingMsg.parentNode) {
+          thinkingMsg.parentNode.removeChild(thinkingMsg);
+        }
+        
+        // Process response
+        let botResponse = "";
+        if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+          botResponse = data[0].generated_text.trim();
+        } else if (data && data.generated_text) {
+          botResponse = data.generated_text.trim();
+        } else if (typeof data === 'string') {
+          botResponse = data.trim();
+        } else if (data && data.choices && data.choices.length > 0) {
+          botResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
+        }
+        
+        // Add bot response to chat
+        appendMessage("bot", botResponse);
+      })
+      .catch(error => {
+        console.error(`Error in API request with ${selectedModelForRequest}:`, error);
+        
+        // Implement fallback logic in order of preference
+        if (selectedModelForRequest === "deepseek") {
+          // DeepSeek failed, try Mistral
+          if (thinkingMsg) {
+            thinkingMsg.innerHTML = "<span data-thinking='true'>LegalMind is thinking...</span>";
+          }
+          // Try Mistral next
+          if (modelConfig.mistral.isAwake) {
+            sendMessageToAPI(messageText, "mistral");
+          } else {
+            // If Mistral isn't available, go directly to LegalMind
+            sendMessageToAPI(messageText, "legalMind");
+          }
+        } 
+        else if (selectedModelForRequest === "mistral") {
+          // Mistral failed, try LegalMind as final fallback
+          if (thinkingMsg) {
+            thinkingMsg.innerHTML = "<span data-thinking='true'>LegalMind is thinking...</span>";
+          }
+          sendMessageToAPI(messageText, "legalMind");
+        }
+        else {
+          // All models failed
+          if (thinkingMsg && thinkingMsg.parentNode) {
+            thinkingMsg.parentNode.removeChild(thinkingMsg);
+          }
+          appendMessage("bot", "I encountered an error processing your request. Please try again with a different question.");
+        }
+      });
+    }
+
   </script>
 </body>
 
