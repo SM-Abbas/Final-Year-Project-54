@@ -5744,6 +5744,499 @@
       });
     }
 
+    // Add function to send a message via button or Enter key
+    function attachEventListeners() {
+      console.log("Attaching event listeners for messaging...");
+      const sendBtn = document.getElementById('sendBtn');
+      const messageInput = document.getElementById('messageInput');
+      
+      if (sendBtn && messageInput) {
+        // Function to handle sending a message
+        const sendMessage = () => {
+          const messageText = messageInput.value.trim();
+          if (messageText) {
+            // Add the user message to the chat
+            appendMessage("user", messageText);
+            
+            // Clear the input
+            messageInput.value = '';
+            
+            // Reset input height
+            messageInput.style.height = 'auto';
+            
+            // Process the message with the appropriate model
+            sendMessageToAPI(messageText);
+            
+            // Save to chat history if in a chat
+            if (currentChatId && chats[currentChatId]) {
+              if (!chats[currentChatId].messages) {
+                chats[currentChatId].messages = [];
+              }
+              chats[currentChatId].messages.push({
+                type: 'text',
+                sender: 'user',
+                content: messageText
+              });
+              
+              // Save to localStorage
+              saveChatsToStorage();
+            }
+          }
+        };
+        
+        // Add click event listener for send button
+        sendBtn.addEventListener('click', sendMessage);
+        
+        // Add Enter key event listener for message input
+        messageInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+          }
+        });
+        
+        console.log("Event listeners attached successfully");
+      } else {
+        console.error("Could not find send button or message input elements");
+      }
+    }
+
+    // Enhance the initUI function to set up all required components
+    function initUI() {
+      console.log("Initializing UI components...");
+      
+      // Initialize dark mode toggle
+      const darkModeToggle = document.getElementById('darkModeToggle');
+      if (darkModeToggle) {
+        // Check if user prefers dark mode
+        const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+        
+        // Apply dark mode if either is true
+        if (savedDarkMode || prefersDarkMode) {
+          document.body.classList.add('dark-mode');
+          darkModeToggle.checked = true;
+        }
+        
+        // Add event listener for dark mode toggle
+        darkModeToggle.addEventListener('change', toggleDarkMode);
+      }
+      
+      // Set up UI behaviors like scrolling, mobile menu, etc.
+      setupScrollBehavior();
+      setupMobileMenu();
+      
+      // Add event listeners for document processing
+      setupDocumentProcessing();
+      
+      // Attach event listeners for sending messages
+      attachEventListeners();
+      
+      console.log("UI initialization complete");
+    }
+
+    // Function to scroll to the latest message
+    function scrollToLatestMessage() {
+      const chatBox = document.getElementById('chatBox');
+      if (chatBox) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    // Setup scroll behavior for the chat box
+    function setupScrollBehavior() {
+      const chatBox = document.getElementById('chatBox');
+      if (chatBox) {
+        // Auto-scroll to bottom when new messages appear
+        const observer = new MutationObserver(() => {
+          scrollToLatestMessage();
+        });
+        
+        observer.observe(chatBox, { childList: true });
+      }
+    }
+
+    // Setup mobile menu functionality
+    function setupMobileMenu() {
+      const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+      const mobileMenu = document.getElementById('mobileMenu');
+      const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+      
+      if (mobileMenuToggle && mobileMenu && mobileMenuOverlay) {
+        mobileMenuToggle.addEventListener('click', () => {
+          mobileMenu.classList.toggle('active');
+          mobileMenuOverlay.classList.toggle('active');
+        });
+        
+        mobileMenuOverlay.addEventListener('click', () => {
+          mobileMenu.classList.remove('active');
+          mobileMenuOverlay.classList.remove('active');
+        });
+      }
+    }
+
+    // Setup document processing features
+    function setupDocumentProcessing() {
+      // Attach document file input to upload handler
+      const fileInput = document.getElementById('file-input');
+      if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+          const files = e.target.files;
+          if (files.length > 0) {
+            // Process each uploaded file
+            for (let i = 0; i < files.length; i++) {
+              processUploadedFile(files[i]);
+            }
+          }
+        });
+      }
+      
+      // Setup document suggestion buttons
+      document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('suggest-btn')) {
+          const documentName = e.target.getAttribute('data-document');
+          const botResponse = e.target.closest('.message.bot').textContent;
+          const documentContent = uploadedDocuments[documentName]?.content || '';
+          
+          if (documentName && documentContent) {
+            applyDocumentSuggestions(documentName, documentContent, botResponse);
+          }
+        }
+      });
+    }
+
+    // Enhance the initialization to send a default "Hi" message
+    function sendDefaultGreeting() {
+      setTimeout(() => {
+        // Only send default greeting if the chat is empty
+        const chatBox = document.getElementById('chatBox');
+        if (chatBox && (!chatBox.children.length || chatBox.children.length <= 1)) {
+          console.log("Sending default greeting...");
+          // Add system welcome message first
+          appendHtmlMessage("bot", 
+            `<div class="welcome-message">
+              <h3>👋 Welcome to LegalMind!</h3>
+              <p>I'm your AI assistant for document analysis and legal support. Upload documents or ask me questions.</p>
+            </div>`
+          );
+          
+          // Send a default "Hi" message after a short delay
+          setTimeout(() => {
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+              messageInput.value = "Hi";
+              const sendBtn = document.getElementById('sendBtn');
+              if (sendBtn) {
+                sendBtn.click();
+              }
+            }
+          }, 1000);
+        }
+      }, 2500); // Wait for models to initialize first
+    }
+
+    // Enhance model initialization to send default greeting after initialization
+    function initializeModels() {
+      console.log("Starting model initialization...");
+      
+      // Start Mistral model immediately (primary model)
+      wakeUpModel('mistral')
+        .then(() => {
+          console.log("Mistral model ready");
+          updateSystemMessage("Mistral model ready. You can start chatting while other models initialize.");
+          modelConfig.mistral.isAwake = true;
+          
+          // Send default greeting after primary model is ready
+          sendDefaultGreeting();
+          
+          // In parallel, start DeepSeek math model
+          wakeUpModel('deepseek')
+            .then(() => {
+              console.log("DeepSeek math model ready");
+              updateSystemMessage("DeepSeek math model also ready. All models initialized!");
+              modelConfig.deepseek.isAwake = true;
+            })
+            .catch(error => {
+              console.error("Error initializing DeepSeek:", error);
+              updateSystemMessage("Note: DeepSeek math model couldn't be initialized, but you can still use the other models.");
+            });
+          
+          // Also try to wake up LegalMind as fallback
+          wakeUpModel('legalMind')
+            .then(() => {
+              console.log("LegalMind model ready");
+              modelConfig.legalMind.isAwake = true;
+            })
+            .catch(error => {
+              console.error("Error initializing LegalMind:", error);
+            });
+        })
+        .catch(error => {
+          console.error("Error initializing primary Mistral model:", error);
+          updateSystemMessage("Warning: Primary model initialization failed. Trying alternatives...");
+          
+          // If Mistral fails, try DeepSeek
+          wakeUpModel('deepseek')
+            .then(() => {
+              console.log("Using DeepSeek as primary model");
+              updateSystemMessage("DeepSeek model ready. You can start chatting!");
+              activeModel = "deepseek";
+              modelConfig.deepseek.isAwake = true;
+              
+              // Send default greeting even with fallback model
+              sendDefaultGreeting();
+            })
+            .catch(() => {
+              // If DeepSeek also fails, try LegalMind
+              wakeUpModel('legalMind')
+                .then(() => {
+                  console.log("Using LegalMind as primary model");
+                  updateSystemMessage("LegalMind model ready. You can start chatting!");
+                  activeModel = "legalMind";
+                  modelConfig.legalMind.isAwake = true;
+                  
+                  // Send default greeting with LegalMind as last resort
+                  sendDefaultGreeting();
+                })
+                .catch(() => {
+                  updateSystemMessage("Error: Unable to connect to any models. Please try refreshing the page.");
+                });
+            });
+        });
+    }
+
+    // Fix the document download functionality
+    function downloadUpdatedDocument(documentName, updatedContent) {
+      try {
+        // Get file extension from original document
+        const fileExtension = documentName.split('.').pop().toLowerCase();
+        let mimeType = 'text/plain';
+        let outputExtension = 'txt';
+        
+        // Set appropriate mime type based on original document type
+        if (fileExtension === 'pdf') {
+          mimeType = 'application/pdf';
+          outputExtension = 'txt';  // Can't generate PDF, so output as text
+        } else if (fileExtension === 'docx' || fileExtension === 'doc') {
+          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          outputExtension = 'txt';  // Can't generate Word doc, so output as text
+        } else if (fileExtension === 'txt') {
+          mimeType = 'text/plain';
+          outputExtension = 'txt';
+        }
+        
+        // Create updated file name
+        const baseName = documentName.substring(0, documentName.lastIndexOf('.'));
+        const updatedName = `${baseName}_updated.${outputExtension}`;
+        
+        // Create blob and download link
+        const blob = new Blob([updatedContent], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        
+        // Create download link and trigger click
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        downloadLink.download = updatedName;
+        downloadLink.style.display = 'none';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        
+        // Clean up
+        setTimeout(() => {
+          document.body.removeChild(downloadLink);
+          URL.revokeObjectURL(url);
+        }, 100);
+        
+        // Notify the user
+        appendMessage("bot", `✅ Document "${updatedName}" has been downloaded successfully.`);
+      } catch (error) {
+        console.error("Error downloading document:", error);
+        appendMessage("bot", "I encountered an error while preparing the document for download. Please try again.");
+      }
+    }
+
+    // Fix any missing functions
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Generate a visual diff summary between original and updated content
+    function generateDiffSummary(originalContent, updatedContent) {
+      const originalLines = originalContent.split('\n');
+      const updatedLines = updatedContent.split('\n');
+      let diffSummary = '';
+      
+      // Simple diff algorithm focusing on added/removed/changed lines
+      let changesCount = 0;
+      let additionsCount = 0;
+      let removalsCount = 0;
+      
+      // Track changes for each line
+      for (let i = 0; i < Math.max(originalLines.length, updatedLines.length); i++) {
+        const originalLine = i < originalLines.length ? originalLines[i] : null;
+        const updatedLine = i < updatedLines.length ? updatedLines[i] : null;
+        
+        if (originalLine === null) {
+          // Line added
+          additionsCount++;
+          if (diffSummary.length < 500) {
+            diffSummary += `+ ${updatedLine}\n`;
+          }
+        } else if (updatedLine === null) {
+          // Line removed
+          removalsCount++;
+          if (diffSummary.length < 500) {
+            diffSummary += `- ${originalLine}\n`;
+          }
+        } else if (originalLine !== updatedLine) {
+          // Line modified
+          changesCount++;
+          if (diffSummary.length < 500) {
+            diffSummary += `- ${originalLine}\n+ ${updatedLine}\n`;
+          }
+        }
+      }
+      
+      // Add summary at the top
+      const summaryHeader = `${changesCount} lines changed, ${additionsCount} insertions(+), ${removalsCount} deletions(-)\n\n`;
+      
+      // If the diff is too long, add truncation notice
+      if (diffSummary.length > 500) {
+        diffSummary = diffSummary.substring(0, 500) + '\n... [diff truncated for readability] ...';
+      }
+      
+      return summaryHeader + diffSummary;
+    }
+
+    // Helper function to determine file type
+    function getFileType(fileName) {
+      const extension = fileName.split('.').pop().toLowerCase();
+      
+      if (extension === 'pdf') {
+        return 'pdf';
+      } else if (extension === 'doc' || extension === 'docx') {
+        return extension;
+      } else if (extension === 'txt') {
+        return 'txt';
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp'].includes(extension)) {
+        return 'image';
+      } else {
+        return 'other';
+      }
+    }
+
+    // Fix the showUpdatedDocumentPreview function
+    function showUpdatedDocumentPreview(documentName, updatedContent) {
+      // Get document container
+      const documentPreviews = document.getElementById('documentPreviews');
+      if (!documentPreviews) return;
+      
+      // Look for existing preview
+      let fileItem = null;
+      for (const item of documentPreviews.children) {
+        if (item.getAttribute('data-filename') === documentName) {
+          fileItem = item;
+          break;
+        }
+      }
+      
+      if (!fileItem) {
+        // Create new preview if not found
+        fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.setAttribute('data-filename', documentName);
+        
+        const fileHeader = document.createElement('div');
+        fileHeader.className = 'file-header';
+        
+        const fileNameContainer = document.createElement('div');
+        fileNameContainer.className = 'file-name';
+        fileNameContainer.innerHTML = `<i class="fas fa-file-alt"></i> ${documentName} <span class="updated-badge">UPDATED</span>`;
+        
+        fileHeader.appendChild(fileNameContainer);
+        fileItem.appendChild(fileHeader);
+        documentPreviews.appendChild(fileItem);
+      } else {
+        // Update existing preview
+        const fileNameEl = fileItem.querySelector('.file-name');
+        if (fileNameEl && !fileNameEl.querySelector('.updated-badge')) {
+          fileNameEl.innerHTML += ' <span class="updated-badge">UPDATED</span>';
+        }
+      }
+      
+      // Add/update content preview
+      let previewContainer = fileItem.querySelector('.file-preview-container');
+      if (!previewContainer) {
+        previewContainer = document.createElement('div');
+        previewContainer.className = 'file-preview-container';
+        fileItem.appendChild(previewContainer);
+      }
+      
+      // Update preview content based on file type
+      const fileType = getFileType(documentName);
+      
+      if (fileType === 'txt' || fileType === 'other') {
+        // For text files, show text preview
+        previewContainer.innerHTML = `<pre class="text-preview">${updatedContent.substring(0, 200)}${updatedContent.length > 200 ? '...' : ''}</pre>`;
+      } else {
+        // For other files, show basic preview with updated notice
+        previewContainer.innerHTML = `<div class="updated-notice">This document has been updated with the suggested changes.</div>`;
+      }
+      
+      // Update the uploadedDocuments object with new content
+      if (!uploadedDocuments[documentName]) {
+        uploadedDocuments[documentName] = {};
+      }
+      uploadedDocuments[documentName].content = updatedContent;
+      uploadedDocuments[documentName].updated = true;
+      
+      // Show notification
+      showNotification(`Document "${documentName}" has been updated`, "success");
+    }
+
+    // Add style for updated badge
+    document.addEventListener('DOMContentLoaded', function() {
+      const styleElement = document.createElement('style');
+      styleElement.textContent = `
+        .updated-badge {
+          background-color: #28a745;
+          color: white;
+          font-size: 0.7rem;
+          padding: 2px 5px;
+          border-radius: 3px;
+          margin-left: 5px;
+          vertical-align: middle;
+        }
+        
+        .updated-notice {
+          padding: 10px;
+          background-color: #d4edda;
+          border-left: 3px solid #28a745;
+          margin: 5px 0;
+          font-size: 0.9rem;
+        }
+        
+        .welcome-message {
+          background-color: #f8f9fa;
+          border-radius: 10px;
+          padding: 15px;
+          margin: 10px 0;
+          border-left: 4px solid #4a6cf7;
+        }
+        
+        .system-message {
+          text-align: center;
+          padding: 10px;
+          margin: 10px auto;
+          color: #6c757d;
+          font-size: 0.9rem;
+          font-style: italic;
+          max-width: 80%;
+        }
+      `;
+      
+      document.head.appendChild(styleElement);
+    });
   </script>
 </body>
 
