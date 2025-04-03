@@ -933,47 +933,13 @@
             position: relative;
         }
 
-        #input-container button {
-          padding: 8px;
-          border: none;
-          background-color: transparent; /* Remove default background */
-          font-size: 1.2em; /* Adjust icon size */
-          cursor: pointer;
+        .input-container {
+            position: relative;
+            flex: 1;
+            display: flex;
+            align-items: center;
         }
 
-        #input-container #send-button {
-            background-color: #4CAF50; /* Keep the original send button style */
-            color: white;
-            border-radius: 4px;
-            margin-left: 10px;
-        }
-
-        /* Mobile Responsiveness */
-        @media (max-width: 600px) {
-        #input-container {
-            flex-wrap: wrap; /* Allow buttons to wrap to the next line on small screens */
-        }
-
-        #input-container button {
-            width: 40px; /* Smaller buttons on mobile */
-            height: 40px;
-            font-size: 1em; /* Slightly smaller icons */
-        }
-
-        #user-input {
-            flex-basis: 100%; /* Input takes full width on mobile */
-            margin-top: 10px; /* Add space between buttons and input on mobile */
-            margin-left: 0; /* Remove left margin on mobile */
-        }
-
-        #input-container #send-button {
-            margin-left: 0; /*remove left margin on mobile */
-            width: 40px;
-            height: 40px;
-        }
-        }
-
-        
         .chat-input input {
             flex: 1;
             width: 100%;
@@ -2798,8 +2764,9 @@
 
             <div class="chat-input">
                 <div class="input-container">
-                    <input type="text" id="messageInput" placeholder="Type your message..."
+                    <input type="text" id="messageInput" placeholder="  Type your message...  "
                         aria-label="Type your message" onkeypress="if(event.key === 'Enter') sendMessage()">
+                     
 
                     <span class="image-btn" onclick="document.getElementById('imageInput').click()">
                         <i class="fas fa-camera"></i>
