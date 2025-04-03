@@ -3756,6 +3756,12 @@
             appendMessage("bot", text);
         }
 
+        // add default bot message
+
+        function displayDefaultBotMessage() {
+    appendMessage('Legal Mind', "Hi, I'm Legal Mind. You can ask me anything.");
+}
+
         // Toggle dark mode
         function toggleDarkMode() {
             const isDarkMode = document.body.classList.toggle("dark-mode");
