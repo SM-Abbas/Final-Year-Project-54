@@ -2618,11 +2618,11 @@
 
             <div class="dropdown">
               <a href="#" onclick="toggleModelsDropdown(event)">
-                <i class="fas fa-microchip"></i> <span id="currentModelDisplay">Mistral</span>
+                <i class="fas fa-microchip"></i> <span id="currentModelDisplay">Legalmind</span>
               </a>
               <div class="dropdown-content" id="modelsDropdown">
-                <a href="#" data-model="mistralModel" onclick="setActiveModel('mistralModel'); return false;"
-                  class="active-model"><i class="fas fa-brain"></i> Mistral</a>
+                <a href="#" data-model="LegalmindModel" onclick="setActiveModel('LegalmindModel'); return false;"
+                  class="active-model"><i class="fas fa-brain"></i> Legalmind</a>
                 <a href="#" data-model="deepseekModel" onclick="setActiveModel('deepseekModel'); return false;"><i
                     class="fas fa-brain"></i> DeepSeek</a>
                 <a href="#" data-model="legalMind" onclick="setActiveModel('legalMind'); return false;"><i
@@ -2731,7 +2731,7 @@
           <p><i class="fas fa-file-upload"></i> Upload documents using the paperclip icon or <i
               class="fas fa-camera"></i> upload images with text using the camera icon.</p>
           <div class="model-info">
-            <i class="fas fa-plug"></i> Connected to <span id="welcomeModelName">Mistral</span> model
+            <i class="fas fa-plug"></i> Connected to <span id="welcomeModelName">Legalmind</span> model
             <span class="model-id">(revision: 81f0038)</span>
           </div>
         </div>
@@ -2808,14 +2808,14 @@
     
     // Model configuration with encrypted tokens
     const encryptedModelConfig = {
-      mistralModel: {
-        name: "Mistral",
+      LegalmindModel: {
+        name: "Legalmind",
         requestTimeInSeconds: 60,
-        endpoint: encryptString("https://api.mistral.ai/v1/chat/completions", encryptionKey),
-        modelId: "mistral-large-latest",
+        endpoint: encryptString("https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud", encryptionKey),
+        modelId: "Legalmind-large-latest",
         readToken: encryptString("6GyO7F96S3WnBbzHItx5nC5mCFyVvxB0", encryptionKey),
         writeToken: encryptString("6GyO7F96S3WnBbzHItx5nC5mCFyVvxB0", encryptionKey),
-        timeout: 120000,
+        timeout: 210000,
         showIdInNotifications: false
       },
       deepseekModel: {
@@ -2824,7 +2824,7 @@
         endpoint: encryptString("https://api-inference.huggingface.co/models/deepseek-ai/deepseek-v2", encryptionKey),
         readToken: encryptString("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", encryptionKey),
         writeToken: encryptString("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", encryptionKey),
-        timeout: 60000,
+        timeout: 100000,
         showIdInNotifications: false
       },
       legalMind: {
@@ -2842,21 +2842,21 @@
         endpoint: encryptString("https://api-inference.huggingface.co/models/deepseek-ai/deepseek-math-7b-instruct", encryptionKey),
         readToken: encryptString("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", encryptionKey),
         writeToken: encryptString("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", encryptionKey),
-        timeout: 60000,
+        timeout: 120000,
         showIdInNotifications: false
       }
     };
     
     // Actual model config to use (reference the encrypted version)
     const modelConfig = {
-      mistralModel: {
-        name: "Mistral",
+      LegalmindModel: {
+        name: "Legalmind",
         requestTimeInSeconds: 60,
-        get endpoint() { return decryptString(encryptedModelConfig.mistralModel.endpoint, encryptionKey); },
-        modelId: "mistral-large-latest",
-        get readToken() { return decryptString(encryptedModelConfig.mistralModel.readToken, encryptionKey); },
-        get writeToken() { return decryptString(encryptedModelConfig.mistralModel.writeToken, encryptionKey); },
-        timeout: 120000,
+        get endpoint() { return decryptString(encryptedModelConfig.LegalmindModel.endpoint, encryptionKey); },
+        modelId: "Legalmind-large-latest",
+        get readToken() { return decryptString(encryptedModelConfig.LegalmindModel.readToken, encryptionKey); },
+        get writeToken() { return decryptString(encryptedModelConfig.LegalmindModel.writeToken, encryptionKey); },
+        timeout: 210000,
         showIdInNotifications: false
       },
       deepseekModel: {
@@ -2865,7 +2865,7 @@
         get endpoint() { return decryptString(encryptedModelConfig.deepseekModel.endpoint, encryptionKey); },
         get readToken() { return decryptString(encryptedModelConfig.deepseekModel.readToken, encryptionKey); },
         get writeToken() { return decryptString(encryptedModelConfig.deepseekModel.writeToken, encryptionKey); },
-        timeout: 60000,
+        timeout: 120000,
         showIdInNotifications: false
       },
       legalMind: {
@@ -2874,7 +2874,7 @@
         get endpoint() { return decryptString(encryptedModelConfig.legalMind.endpoint, encryptionKey); },
         get readToken() { return decryptString(encryptedModelConfig.legalMind.readToken, encryptionKey); },
         get writeToken() { return decryptString(encryptedModelConfig.legalMind.writeToken, encryptionKey); },
-        timeout: 120000,
+        timeout: 210000,
         showIdInNotifications: false
       },
       mathModel: {
@@ -2883,7 +2883,7 @@
         get endpoint() { return decryptString(encryptedModelConfig.mathModel.endpoint, encryptionKey); },
         get readToken() { return decryptString(encryptedModelConfig.mathModel.readToken, encryptionKey); },
         get writeToken() { return decryptString(encryptedModelConfig.mathModel.writeToken, encryptionKey); },
-        timeout: 60000,
+        timeout: 120000,
         showIdInNotifications: false
       }
     };
@@ -2894,10 +2894,10 @@
       for (let i = 0; i < keyLength; i++) {
         encryptionKey.replace(encryptionKey[i], '*');
       }
-    }, 5000);
+    }, 15000);
 
-    // Set the active model (prioritize Mistral)
-    let activeModel = "mistralModel";
+    // Set the active model (prioritize Legalmind)
+    let activeModel = "LegalmindModel";
     // Flag to track if endpoints are being connected
     let connectingEndpoints = false;
     // Store conversation context for continuity
@@ -3765,10 +3765,10 @@
           // Race between the fetch request and the timeout
           let apiRequest;
           
-          // Check if we're using the Mistral API (different format)
-          if (selectedModel === "mistralModel") {
-            // Prepare Mistral API parameters
-            const mistralParams = {
+          // Check if we're using the Legalmind API (different format)
+          if (selectedModel === "LegalmindModel") {
+            // Prepare Legalmind API parameters
+            const LegalmindParams = {
               model: modelConfig[selectedModel].modelId,
               messages: [
                 {
@@ -3780,14 +3780,14 @@
               max_tokens: 1500
             };
             
-            // Mistral API request
+            // Legalmind API request
             apiRequest = fetch(modelConfig[selectedModel].endpoint, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${modelConfig[selectedModel].readToken}`
               },
-              body: JSON.stringify(mistralParams)
+              body: JSON.stringify(LegalmindParams)
             });
           } else {
             // Hugging Face API request
@@ -3835,12 +3835,12 @@
               // Add bot response from the API
               let botResponse = ""; // Empty default
 
-              // Specific handling for Mistral model
-              if (selectedModel === "mistralModel") {
-                // Handle Mistral API response format
+              // Specific handling for Legalmind model
+              if (selectedModel === "LegalmindModel") {
+                // Handle Legalmind API response format
                 if (data && data.choices && data.choices.length > 0) {
                   botResponse = data.choices[0].message.content.trim();
-                  console.log("Using Mistral API response format");
+                  console.log("Using Legalmind API response format");
                 }
               } else if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
                 botResponse = data[0].generated_text.trim();
@@ -4680,7 +4680,7 @@
               // Add bot response from the API
               let botResponse = ""; // Empty default
 
-              // Specific handling for Mistral model
+              // Specific handling for Legalmind model
               if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
                 botResponse = data[0].generated_text.trim();
               } else if (data && data.generated_text) {
