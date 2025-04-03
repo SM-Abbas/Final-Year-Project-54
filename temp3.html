@@ -3756,11 +3756,12 @@
             appendMessage("bot", text);
         }
 
-        // add default bot message
+       function displayDefaultBotMessage() {
+            appendMessage('Legal Mind', "Hi, I'm Legal Mind. You can ask me anything.");
+        }
 
-        function displayDefaultBotMessage() {
-    appendMessage('Legal Mind', "Hi, I'm Legal Mind. You can ask me anything.");
-}
+        // Call the function when the page loads - IMPORTANT: Moved down here.
+        window.onload = displayDefaultBotMessage;
 
         // Toggle dark mode
         function toggleDarkMode() {
