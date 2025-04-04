@@ -1,3 +1,121 @@
+# LegalMind - AI-Powered Legal Document Platform
+
+LegalMind is an intelligent platform designed to simplify legal document analysis and management using advanced machine learning technologies.
+
+![LegalMind Screenshot](img/img1.jpg)
+
+## 🚀 Features
+
+- **AI-Powered Document Analysis**: Leverage machine learning to analyze and understand legal documents
+- **Intuitive Interface**: Clean, responsive design that works across devices
+- **User Authentication**: Secure login system with Firebase Authentication
+- **Interactive Chatbot**: Get assistance with legal queries through our AI chatbot
+
+## 🛠️ Technology Stack
+
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **Authentication**: Firebase Authentication
+- **Database**: Firebase Firestore
+- **ML/AI**: Custom models for legal document analysis
+- **Deployment**: GitHub Pages
+
+## 📋 Prerequisites
+
+- A modern web browser (Chrome, Firefox, Safari, Edge)
+- For development: 
+  - Node.js (v14+)
+  - npm or yarn
+  - Git
+
+## 🔧 Local Development Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/legalmind.git
+   cd legalmind
+   ```
+
+2. **Set up Firebase configuration**
+   - Create a Firebase project at [firebase.google.com](https://firebase.google.com/)
+   - Enable Authentication (Email/Password and Google Sign-in)
+   - Set up Firestore database
+   - Create a `.env` file with your Firebase configuration:
+   ```
+   FIREBASE_API_KEY=your_api_key
+   FIREBASE_AUTH_DOMAIN=your_auth_domain
+   FIREBASE_PROJECT_ID=your_project_id
+   FIREBASE_STORAGE_BUCKET=your_storage_bucket
+   FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
+   FIREBASE_APP_ID=your_app_id
+   ```
+
+3. **Run a local server**
+   ```bash
+   # With Python
+   python -m http.server 8000
+   
+   # With Node.js
+   npx serve
+   ```
+
+4. **Open in browser**
+   - Navigate to `http://localhost:8000` or the port shown in your terminal
+
+## 📂 Project Structure
+
+```
+legalmind/
+├── img/                   # Image assets
+├── visualizations/        # Data visualization files
+├── auth.html              # Authentication page
+├── auth.js                # Authentication logic
+├── contact.html           # Contact page
+├── index.html             # Home page
+├── services.html          # Services page
+├── style1.css             # Main stylesheet
+├── temp3.html             # Chatbot interface
+└── README.md              # Project documentation
+```
+
+## 🧠 Machine Learning Models
+
+Our platform uses several custom-trained models for legal document analysis:
+
+- **Document Classification**: Categorizes legal documents by type
+- **Entity Recognition**: Identifies important entities in legal text
+- **Summarization**: Creates concise summaries of lengthy legal documents
+
+For more details, see [model_analysis_summary.md](model_analysis_summary.md) and [ieee_model_card.md](ieee_model_card.md).
+
+## 🔒 Security & Privacy
+
+- User data is securely stored in Firebase Firestore
+- Authentication is handled by Firebase Auth with industry-standard practices
+- Document processing is done securely with data encryption in transit
+- We do not store the actual content of processed documents longer than necessary
+
+## 🤝 Contributing
+
+We welcome contributions to LegalMind! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 📞 Contact
+
+For questions or support, please reach out through our [contact form](https://legalmind.yourdomain.com/contact.html) or open an issue on GitHub.
+
+---
+
+© 2023 LegalMind Team | All Rights Reserved
+
 Final year project on legal documents 
 we worked with a lot of models and merged our model and some pre-trained models 
 our model's accuracy is slightly better than the other models available on the internet

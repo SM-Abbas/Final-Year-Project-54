@@ -1,16 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>LegalMind</title>
+    <meta name="description" content="LegalMind - Your trusted partner for legal document solutions. Simplify your legal needs with our AI-driven platform.">
+    <meta name="keywords" content="legal documents, AI, legal solutions, document analysis">
+    <title>LegalMind - AI-Powered Legal Document Solutions</title>
 
+    <!-- Preload critical assets -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+    <!-- CSS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css" />
-    <link href="style1.css" type="text/css" rel="Stylesheet" />
+    <link href="style1.css" type="text/css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    
+    <!-- Inline critical styles -->
     <style>
         .nav-profile {
             position: relative;
@@ -139,21 +149,20 @@
             align-items: center;
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
     <header>
         <div class="flex container">
             <a id="logo" href="index.html">LegalMind</a>
-            <div id="nav-toggle" class="menu-toggle">
+            <div id="nav-toggle" class="menu-toggle" aria-label="Toggle navigation menu">
                 <div class="strip"></div>
                 <div class="strip"></div>
                 <div class="strip"></div>
             </div>
             <nav>
                 <ul id="nav-menu">
-                    <li><a href="index.html">Home</a></li>
+                    <li><a href="index.html" aria-current="page">Home</a></li>
                     <li><a href="#about">About Us</a></li>
                     <li><a href="services.html">Services</a></li>
                     <li><a href="contact.html">Contact Us</a></li>
@@ -182,22 +191,24 @@
         </div>
     </header>
 
-    <section id="home">
-        <div class="home-container">
-            <h1 style="text-align: center;"><span class="animated-text">Welcome to Legal Mind</span></h1>
-            <p style="text-align: center;">Your trusted partner for legal document solutions. Simplify your legal needs with our AI-driven platform.</p>
-            <div class="button-group">
-                <a href="services.html" class="btn">Explore Our Services</a>
-                <a href="temp3.html" class="btn chatbot-btn"><i class="fas fa-robot"></i> Open Chatbot</a>
+    <main>
+        <section id="home">
+            <div class="home-container">
+                <h1 style="text-align: center;"><span class="animated-text">Welcome to Legal Mind</span></h1>
+                <p style="text-align: center;">Your trusted partner for legal document solutions. Simplify your legal needs with our AI-driven platform.</p>
+                <div class="button-group">
+                    <a href="services.html" class="btn">Explore Our Services</a>
+                    <a href="temp3.html" class="btn chatbot-btn"><i class="fas fa-robot"></i> Open Chatbot</a>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
     <footer>
         <div class="flex container">
             <div id="about" class="footer-about">
                 <h5>About Us</h5>
-                <p1>We are working on legal documents ML model</p1>
+                <p>We provide AI-powered legal document analysis and solutions designed to simplify complex legal processes.</p>
             </div>
             <div class="footer-quick-links">
                 <h5>Quick Links</h5>
@@ -210,84 +221,67 @@
             <div class="footer-quick-links">
                 <h5>Follow Us</h5>
                 <ul>
-                    <li><a href="https://github.com/SM-Abbas">Github</a></li>
-                    <li><a href="https://www.instagram.com/abbasgamer_1/#">Instagram</a></li>
-                    <li><a href="https://www.linkedin.com/in/mohammad-suheb-abbas-026428220/">Linkedin</a></li>
+                    <li><a href="https://github.com/SM-Abbas"><i class="fab fa-github"></i> Github</a></li>
+                    <li><a href="https://www.instagram.com/abbasgamer_1/#"><i class="fab fa-instagram"></i> Instagram</a></li>
+                    <li><a href="https://www.linkedin.com/in/mohammad-suheb-abbas-026428220/"><i class="fab fa-linkedin"></i> Linkedin</a></li>
                 </ul>
             </div>
         </div>
-        <small>Copyright &copy; 2025 All rights reserved</small>
+        <small>Copyright &copy; <span id="currentYear">2025</span> All rights reserved</small>
     </footer>
 
+    <!-- Scripts loaded at the end of body for better performance -->
     <script src="auth.js" type="module"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-    <script src="https://kit.fontawesome.com/95dc93da07.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://kit.fontawesome.com/95dc93da07.js" crossorigin="anonymous"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
     <script>
-        $(function () {
-            let headerElem = $('header');
-            let logo = $('#logo');
-            let navMenu = $('#nav-menu');
-            let navToggle = $('#nav-toggle');
+        // Update copyright year automatically
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-            navToggle.on('click', function() {
-                navToggle.toggleClass('active');
-                navMenu.toggleClass('active');
-            });
-
-            $(document).on('click', function(e) {
-                let target = $(e.target);
-                if (!(target.closest('#nav-toggle').length > 0 || target.closest('#nav-menu').length > 0)) {
-                    navToggle.removeClass('active');
-                    navMenu.removeClass('active');
-                }
-            });
-
-            // Close menu when clicking a nav link in mobile view
-            $('#nav-menu a').on('click', function() {
-                navToggle.removeClass('active');
-                navMenu.removeClass('active');
-            });
-
-            $(document).scroll(function() {
-                let scrollTop = $(document).scrollTop();
-
-                if (scrollTop > 0) {
-                    navMenu.addClass('is-sticky');
-                    logo.css('color', '#000');
-                    headerElem.css('background', '#fff');
-                    navToggle.css('border-color', '#000');
-                    navToggle.find('.strip').css('background-color', '#000');
-                } else {
-                    navMenu.removeClass('is-sticky');
-                    logo.css('color', '#b2aaaa');
-                    headerElem.css('background', 'transparent');
-                    navToggle.css('border-color', '#fff');
-                    navToggle.find('.strip').css('background-color', '#fff');
-                }
-
-                headerElem.css(scrollTop >= 200 ? { 'padding': '0.5rem', 'box-shadow': '0 -4px 10px 1px #999' } : { 'padding': '1rem 0', 'box-shadow': 'none' });
-            });
-
-            $(document).trigger('scroll');
-        });
-
-        // Add profile menu functionality
+        // Profile menu toggle
         document.addEventListener('DOMContentLoaded', function() {
-            // Profile menu toggle
-            const profilePicNav = document.getElementById('profilePicNav');
+            const profilePic = document.getElementById('profilePicNav');
             const profileMenu = document.getElementById('profileMenu');
             
-            if (profilePicNav && profileMenu) {
-                profilePicNav.addEventListener('click', () => {
+            if (profilePic && profileMenu) {
+                profilePic.addEventListener('click', function() {
                     profileMenu.classList.toggle('active');
                 });
                 
-                // Close profile menu when clicking outside
-                document.addEventListener('click', function(event) {
-                    if (!event.target.closest('.nav-profile') && !event.target.closest('.profile-menu')) {
+                // Close the menu when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!profilePic.contains(e.target) && !profileMenu.contains(e.target)) {
                         profileMenu.classList.remove('active');
                     }
+                });
+            }
+            
+            // Navigation toggle for mobile
+            const navToggle = document.getElementById('nav-toggle');
+            const navMenu = document.getElementById('nav-menu');
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function() {
+                    navToggle.classList.toggle('active');
+                    navMenu.classList.toggle('active');
+                });
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!navToggle.contains(e.target) && !navMenu.contains(e.target)) {
+                        navToggle.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    }
+                });
+                
+                // Close menu when clicking a nav link
+                const navLinks = navMenu.querySelectorAll('a');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        navToggle.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    });
                 });
             }
         });
