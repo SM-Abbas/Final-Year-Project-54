@@ -299,7 +299,7 @@
                 <span>OR</span>
             </div>
             
-            <button id="google-login" class="google-btn" onclick="handleGoogleLogin(event)"> 
+            <button id="google-login" class="google-btn"> 
                 <img src="https://developers.google.com/identity/images/g-logo.png" width="20px"> 
                 Sign in with Google 
             </button>
@@ -349,7 +349,7 @@
                 <span>OR</span>
             </div>
             
-            <button id="google-signup" class="google-btn" onclick="handleGoogleSignup(event)">
+            <button id="google-signup" class="google-btn">
                 <img src="https://developers.google.com/identity/images/g-logo.png" width="20px"> 
                 Sign up with Google
             </button>
@@ -389,24 +389,6 @@
                 });
             });
         });
-
-        // These functions will be called by the onclick attributes
-        // They'll be picked up by the auth.js module
-        window.handleGoogleLogin = function(e) {
-            e.preventDefault();
-            console.log("Google login button clicked (inline handler)");
-            // This will be a global event that auth.js can listen for
-            const event = new CustomEvent('google-login-clicked');
-            document.dispatchEvent(event);
-        };
-        
-        window.handleGoogleSignup = function(e) {
-            e.preventDefault();
-            console.log("Google signup button clicked (inline handler)");
-            // This will be a global event that auth.js can listen for
-            const event = new CustomEvent('google-signup-clicked');
-            document.dispatchEvent(event);
-        };
     </script>
 </body> 
 </html>
