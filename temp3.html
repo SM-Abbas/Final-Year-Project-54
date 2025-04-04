@@ -12,21 +12,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <!-- Add Tesseract.js for OCR (image text recognition) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.3/dist/tesseract.min.js"></script>
-    <!-- Add SheetJS library for Excel file processing -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-    <!-- Authentication check -->
-    <script>
-        // Check if user is logged in before allowing access
-        document.addEventListener('DOMContentLoaded', function() {
-            const isLoggedIn = localStorage.getItem('userToken') || localStorage.getItem('isLoggedIn');
-            
-            if (!isLoggedIn) {
-                // User is not logged in, redirect to login page
-                window.location.href = 'auth.html';
-            }
-        });
-    </script>
 
     <!-- OCR Styles -->
     <style>
@@ -459,22 +444,16 @@
             align-items: center;
             padding: var(--spacing-sm) var(--spacing-md);
             border-bottom: 1px solid var(--light-border);
-            min-height: 40px; /* Ensure minimum height for header */
-            position: relative; /* Position relative for absolute positioned close button */
         }
 
         .file-name-container {
             display: flex;
             align-items: center;
             gap: var(--spacing-sm);
-            max-width: calc(100% - 40px); /* Reserve space for delete button */
-            flex: 1;
-            padding-right: 36px; /* Make space for the delete button */
         }
 
         .file-name-container i {
             color: #555;
-            flex-shrink: 0; /* Prevent icon from shrinking */
         }
 
         body.dark-mode .file-name-container i {
@@ -487,7 +466,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            max-width: 100%; /* Allow text to shrink but not expand beyond container */
         }
 
         .file-preview-container {
@@ -512,19 +490,6 @@
             color: var(--danger-color);
             opacity: 0.7;
             transition: var(--transition);
-            flex-shrink: 0; /* Prevent button from shrinking */
-            min-width: 32px; /* Minimum width to ensure visibility */
-            min-height: 32px; /* Minimum height to ensure visibility */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-left: var(--spacing-sm);
-            position: absolute; /* Position absolute to ensure visibility */
-            right: 10px; /* Position from right edge */
-            top: 50%; /* Position at vertical center */
-            transform: translateY(-50%); /* Center vertically */
-            z-index: 2; /* Keep above other elements */
-            background-color: inherit; /* Use parent background to ensure visibility */
         }
 
         .delete-file:hover {
@@ -2550,111 +2515,6 @@
         .chat-input .image-btn:hover {
             color: var(--primary-color);
         }
-
-        /* Added CSS fix for input box overlaying buttons */
-        .chat-input .input-container {
-            display: flex;
-            align-items: center;
-            position: relative;
-            background: var(--input-bg, #fff);
-            border-radius: 24px;
-            border: 1px solid var(--border-color, #ddd);
-            padding: 4px 10px;
-            margin: 10px 0;
-        }
-
-        .chat-input #messageInput {
-            flex: 1;
-            border: none;
-            background: transparent;
-            height: 40px;
-            outline: none;
-            padding: 8px 100px 8px 10px; /* Add right padding to create space for buttons */
-            font-size: 14px;
-            color: var(--text-color, #333);
-            width: calc(100% - 120px); /* Adjust width to accommodate buttons */
-        }
-
-        .chat-input .image-btn,
-        .chat-input .attach-btn {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            cursor: pointer;
-            border-radius: 50%;
-            color: var(--icon-color, #777);
-            transition: background-color 0.2s, color 0.2s;
-            margin-left: 5px;
-            z-index: 2; /* Ensure buttons are above input */
-        }
-
-        .chat-input .image-btn:hover,
-        .chat-input .attach-btn:hover {
-            background-color: var(--hover-bg, #f0f0f0);
-            color: var(--primary-color, #007bff);
-        }
-
-        .chat-input #sendBtn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: var(--primary-color, #007bff);
-            color: #fff;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-left: 5px;
-            z-index: 2; /* Ensure button is above input */
-        }
-
-        .chat-input #sendBtn:hover {
-            background-color: var(--primary-hover, #0069d9);
-        }
-
-        /* Dark mode adjustments */
-        .dark-mode .chat-input .input-container {
-            background: var(--dark-input-bg, #2a2a2a);
-            border-color: var(--dark-border-color, #444);
-        }
-
-        .dark-mode .chat-input #messageInput {
-            color: var(--dark-text, #eee);
-        }
-
-        .dark-mode .chat-input .image-btn,
-        .dark-mode .chat-input .attach-btn {
-            color: var(--dark-icon, #aaa);
-        }
-
-        .dark-mode .chat-input .image-btn:hover,
-        .dark-mode .chat-input .attach-btn:hover {
-            background-color: var(--dark-hover-bg, #3a3a3a);
-        }
-
-        /* Mobile adjustments */
-        @media (max-width: 576px) {
-            .chat-input #messageInput {
-                padding-right: 85px; /* Less right padding for mobile */
-                width: calc(100% - 100px); /* Adjust width for mobile */
-            }
-            
-            .chat-input .image-btn,
-            .chat-input .attach-btn {
-                width: 32px;
-                height: 32px;
-            }
-            
-            .chat-input #sendBtn {
-                width: 36px;
-                height: 36px;
-            }
-        }
     </style>
 
     <script>
@@ -2717,338 +2577,6 @@
             }
         });
     </script>
-
-    <style>
-        .document-action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .document-action-buttons button {
-            background-color: var(--primary-color, #007bff);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .document-action-buttons button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-        
-        .document-action-buttons .improve-doc-btn {
-            background-color: #28a745;
-        }
-        
-        .document-action-buttons .download-original-btn {
-            background-color: #6c757d;
-        }
-        
-        .document-action-buttons .download-improved-btn {
-            background-color: #17a2b8;
-        }
-        
-        .document-action-buttons .compare-docs-btn {
-            background-color: #6610f2;
-        }
-        
-        .document-comparison {
-            background-color: var(--light-bg, #f8f9fa);
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 15px 0;
-            border: 1px solid var(--border-color, #dee2e6);
-        }
-        
-        .dark-mode .document-comparison {
-            background-color: var(--dark-bg-secondary, #2a2a2a);
-            border-color: var(--dark-border-color, #444);
-        }
-        
-        .comparison-header {
-            background-color: var(--primary-color, #007bff);
-            color: white;
-            padding: 10px 15px;
-        }
-        
-        .comparison-header h4 {
-            margin: 0;
-            color: white;
-        }
-        
-        .comparison-header p {
-            margin: 5px 0 0;
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .comparison-content {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            padding: 15px;
-        }
-        
-        @media (min-width: 768px) {
-            .comparison-content {
-                flex-direction: row;
-            }
-            
-            .original-doc, .improved-doc {
-                flex: 1;
-            }
-        }
-        
-        .original-doc, .improved-doc {
-            background-color: var(--white, #fff);
-            border-radius: 5px;
-            padding: 10px;
-            border: 1px solid var(--border-color, #dee2e6);
-        }
-        
-        .dark-mode .original-doc, 
-        .dark-mode .improved-doc {
-            background-color: var(--dark-bg, #343a40);
-            border-color: var(--dark-border-color, #444);
-        }
-        
-        .original-doc h5, .improved-doc h5 {
-            margin-top: 0;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border-color, #dee2e6);
-        }
-        
-        .dark-mode .original-doc h5, 
-        .dark-mode .improved-doc h5 {
-            border-color: var(--dark-border-color, #444);
-        }
-        
-        .original-doc pre, .improved-doc pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 10px;
-            margin: 0;
-            font-family: monospace;
-            font-size: 13px;
-            color: var(--text-color, #333);
-            background-color: transparent;
-        }
-        
-        .dark-mode .original-doc pre, 
-        .dark-mode .improved-doc pre {
-            color: var(--dark-text, #e9ecef);
-        }
-        
-        /* Excel file preview styles */
-        .excel-preview {
-            background-color: #f5f9ff;
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid #cad7e9;
-            text-align: center;
-        }
-        
-        .dark-mode .excel-preview {
-            background-color: #2d3748;
-            border-color: #4a5568;
-        }
-        
-        .excel-preview-message {
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-        
-        .excel-preview-message i {
-            color: #107c41; /* Excel green */
-            margin-right: 5px;
-        }
-        
-        .dark-mode .excel-preview-message i {
-            color: #2bbe6a;
-        }
-        
-        .excel-content-preview {
-            max-height: 400px;
-            overflow-y: auto;
-            text-align: left;
-            font-family: monospace;
-            white-space: pre-wrap;
-            padding: 15px;
-            background-color: #fff;
-            border-radius: 5px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .dark-mode .excel-content-preview {
-            background-color: #1a202c;
-            border-color: #2d3748;
-            color: #e2e8f0;
-        }
-    </style>
-
-    <!-- Add modal component for Excel previews -->
-    <style>
-        .modal-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal-container.active {
-            display: flex;
-        }
-        
-        .modal-content {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 800px;
-            max-height: 80vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .dark-mode .modal-content {
-            background-color: #2d3748;
-            color: #e2e8f0;
-        }
-        
-        .modal-header {
-            padding: 15px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .dark-mode .modal-header {
-            border-color: #4a5568;
-        }
-        
-        .modal-header h3 {
-            margin: 0;
-            font-size: 1.2rem;
-        }
-        
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #666;
-        }
-        
-        .dark-mode .modal-close {
-            color: #a0aec0;
-        }
-        
-        .modal-body {
-            padding: 20px;
-            overflow-y: auto;
-        }
-    </style>
-
-    <style>
-    /* Mobile Responsiveness Improvements */
-    @media (max-width: 768px) {
-        .file-item {
-            margin-bottom: 10px;
-        }
-        
-        .file-header {
-            padding: 8px 12px;
-        }
-        
-        .file-name-container span {
-            font-size: 0.8rem;
-        }
-        
-        .file-preview-container {
-            max-height: 150px;
-        }
-        
-        .file-preview-container img {
-            max-height: 130px;
-        }
-        
-        .modal-content {
-            width: 95%;
-            max-height: 90vh;
-        }
-        
-        .excel-content-preview {
-            font-size: 0.9rem;
-            overflow-x: auto;
-        }
-    }
-    
-    /* Ensure file preview animations and transitions are smooth */
-    .file-item {
-        animation: fadeIn 0.3s ease-in-out;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    /* Excel preview specific styles */
-    .excel-preview {
-        background-color: #f2f9f1;
-        padding: 12px;
-        border-radius: 5px;
-    }
-    
-    .dark-mode .excel-preview {
-        background-color: #263238;
-    }
-    
-    .excel-preview-message {
-        color: #1e7e34;
-        font-weight: 500;
-    }
-    
-    .dark-mode .excel-preview-message {
-        color: #75b798;
-    }
-    
-    .excel-content-preview {
-        font-family: monospace;
-        white-space: pre-wrap;
-        overflow-x: auto;
-        background-color: #f8f9fa;
-        padding: 10px;
-        border-radius: 4px;
-        border: 1px solid #dee2e6;
-    }
-    
-    .dark-mode .excel-content-preview {
-        background-color: #343a40;
-        border-color: #4a5568;
-        color: #e2e8f0;
-    }
-    </style>
 </head>
 
 <body>
@@ -3249,33 +2777,13 @@
                     <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
                         <i class="fas fa-paperclip"></i>
                     </span>
-                    <input type="file" id="fileInput" accept=".pdf,.txt,.docx,.xlsx" style="display:none;"
+                    <input type="file" id="fileInput" accept=".pdf,.txt,.docx" style="display:none;"
                         onchange="previewFile(event)">
 
                     <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="sidebar-container">
-        <!-- Main App Container -->
-        <div class="main-container">
-            <!-- Your existing content -->
-        </div>
-    </div>
-    
-    <!-- Modal for Excel previews -->
-    <div class="modal-container" id="modalContainer">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">Document Preview</h3>
-                <button class="modal-close" id="modalClose">&times;</button>
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- Content will be inserted here -->
             </div>
         </div>
     </div>
@@ -3909,58 +3417,12 @@
             if (lowerText.includes("who made you") ||
                 lowerText.includes("who created you") ||
                 lowerText.includes("who is your owner") ||
-                lowerText.includes("who developed you") ||
-                lowerText.includes("your owner") ||
-                lowerText.includes("your maker") ||
-                lowerText.includes("your creator") ||
-                lowerText.includes("your developer")) {
-                return "I was created by Mohammad Suheb Abbas. You can find him at https://github.com/sm-abbas";
+                lowerText.includes("who developed you")) {
+                return "I was created by Mohammad Suheb Abbas. You can find the project repository at https://github.com/SM-Abbas/Final-Year-Project-54";
             }
 
             // Default identity response
             return "I am LegalMind, an AI legal assistant that specializes in analyzing legal documents. I can help review contracts, legal agreements, and other documents, providing insights and suggestions for improvements. If you have a document you'd like me to analyze, please upload it using the paperclip icon in the chat input.";
-        }
-
-        // Function to detect simple greetings
-        function isGreeting(text) {
-            if (!text) return false;
-            
-            const lowerText = text.toLowerCase().trim();
-            
-            // Define common greeting patterns
-            const greetingPatterns = [
-                /^hi\b/i,
-                /^hello\b/i,
-                /^hey\b/i,
-                /^greetings\b/i,
-                /^howdy\b/i,
-                /^hola\b/i,
-                /^good (morning|afternoon|evening|day)\b/i,
-                /^what'?s up\b/i,
-                /^yo\b/i,
-                /^hi there\b/i,
-                /^hello there\b/i,
-                /^welcome\b/i
-            ];
-            
-            return greetingPatterns.some(pattern => pattern.test(lowerText));
-        }
-        
-        // Function to provide greeting responses
-        function getGreetingResponse() {
-            // Array of possible greeting responses for variety
-            const greetingResponses = [
-                "Hello! How can I assist you with your legal documents today?",
-                "Hi there! I'm LegalMind, ready to help with your legal document needs.",
-                "Greetings! What legal document questions can I help you with?",
-                "Hello! I'm here to assist with legal document analysis and questions.",
-                "Hi! How can I help you with your legal documents or questions today?",
-                "Hello and welcome! What would you like help with today?",
-                "Greetings! I'm LegalMind, your AI legal assistant. How may I help you?"
-            ];
-            
-            // Return a random response for variety
-            return greetingResponses[Math.floor(Math.random() * greetingResponses.length)];
         }
 
         // Function to determine if a question is a continuation of previous conversation
@@ -3995,7 +3457,7 @@
             const lowerText = text.toLowerCase().trim();
 
             // Define patterns for inappropriate content related to intimacy
-            const intimacyPatterns = [
+            const inappropriatePatterns = [
                 /\b(sex|sexual|sexuality|nude|naked|porn|explicit|adult content)\b/i,
                 /\b(intercourse|foreplay|orgasm|climax|ejacul|penetrat)\w*\b/i,
                 /\b(masturbat|genital|privates|private parts)\w*\b/i,
@@ -4007,39 +3469,7 @@
                 /\b(dirty talk|obscen|lewd|lust|horny|sensual pleasure)\b/i
             ];
 
-            // Define patterns for political and controversial content
-            const politicalPatterns = [
-                /\b(politic|democrat|republican|liberal|conservative|socialism|communism|fascism)\w*\b/i,
-                /\b(election|voting|ballot|campaign|candidate)\w*\b/i,
-                /\b(trump|biden|obama|clinton|bush|reagan|nixon)\b/i,
-                /\b(congress|senate|parliament|congressman|senator)\b/i,
-                /\b(right wing|left wing|alt right|alt left|antifa)\b/i,
-                /\b(abortion|pro-life|pro-choice)\b/i,
-                /\b(gun control|second amendment|2nd amendment)\b/i,
-                /\b(immigration|border|wall|deportation)\b/i,
-                /\b(capitalism|marxism|socialism|communism)\b/i,
-                /\b(protest|riot|uprising|rebellion|insurrection)\b/i
-            ];
-
-            // Define patterns for other sensitive topics
-            const sensitivePatterns = [
-                /\b(suicide|kill myself|killing myself|end my life)\b/i,
-                /\b(bomb|terrorist|terrorism|jihad|radicali[sz]e)\w*\b/i,
-                /\b(hack|hacking|cyberattack|ddos|password crack)\w*\b/i,
-                /\b(illegal|illegally)\b.*\b(download|access|obtain|acquire|hack)\b/i,
-                /\b(steal|pirate)\b.*\b(software|movie|music|content)\b/i,
-                /\b(drug|cocaine|heroin|meth|marijuana|weed)\b.*\b(buy|sell|make|produce|deal)\b/i,
-                /\b(racist|racism|sexist|sexism|homophobic|homophobia|transphobic|islamophobic|antisemitic)\b/i,
-                /\b(holocaust|genocide|ethnic cleansing)\b/i,
-                /\b(child|kid)\b.*\b(abuse|pornography|explicit)\b/i,
-                /\b(launder|laundering)\b.*\b(money)\b/i,
-                /\b(fraud|scam)\b.*\b(how to|instructions|guide)\b/i
-            ];
-
-            // Check all patterns
-            return intimacyPatterns.some(pattern => pattern.test(lowerText)) || 
-                   politicalPatterns.some(pattern => pattern.test(lowerText)) || 
-                   sensitivePatterns.some(pattern => pattern.test(lowerText));
+            return inappropriatePatterns.some(pattern => pattern.test(lowerText));
         }
 
         // Improved send message function
@@ -4054,34 +3484,12 @@
                 // Append user's message
                 appendMessage("user", userMessageText);
 
-                // Check for inappropriate content first
-                if (containsInappropriateContent(userMessageText)) {
-                    // Provide a censoring response
-                    const censorResponse = "I'm designed to assist with legal document analysis and related legal questions. I'm unable to discuss topics related to intimacy, politics, or other sensitive subjects. Please feel free to ask me about legal documents or legal concepts instead.";
-                    setTimeout(() => {
-                        console.log("Censoring inappropriate content");
-                        appendMessage("bot", censorResponse);
-                    }, 300);
-                    return;
-                }
-
-                // Check if this is a simple greeting
-                if (isGreeting(userMessageText)) {
-                    // Provide a greeting response
-                    const greetingResponse = getGreetingResponse();
-                    setTimeout(() => {
-                        console.log("Responding with greeting:", greetingResponse);
-                        appendMessage("bot", greetingResponse);
-                    }, 300);
-                    return;
-                }
-
                 // Check if this is an identity question
                 if (isIdentityQuestion(userMessageText)) {
                     // Provide standard identity response
-                    const identityResponse = getIdentityResponse(userMessageText);
+                    const identityResponse = "I'm LegalMind, an AI legal document assistant.";
                     setTimeout(() => {
-                        console.log("Responding with identity response:", identityResponse);
+                        console.log("Responding with standard identity response:", identityResponse);
                         appendMessage("bot", identityResponse);
                     }, 300);
                     return;
@@ -4707,7 +4115,7 @@
             }
         });
 
-        // Updated previewFile function with optimized file handling
+        // Updated previewFile function
         function previewFile(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -4715,15 +4123,14 @@
             // Process document content for the chat
             processDocumentContent(file);
 
-            // For mobile devices, just show the file in the chat as a message and skip sidebar preview
-            if (window.innerWidth <= 768) {
+            // For mobile devices, just show the file in the chat as a message
+            if (window.innerWidth <= 992) {
                 if (currentChatId) {
                     // Add a file upload message with icon based on file type
                     let fileIcon = 'fa-file';
                     if (file.name.endsWith('.pdf')) fileIcon = 'fa-file-pdf';
                     else if (file.name.endsWith('.txt')) fileIcon = 'fa-file-alt';
                     else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) fileIcon = 'fa-file-word';
-                    else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) fileIcon = 'fa-file-excel';
                     else if (file.type.startsWith('image/')) fileIcon = 'fa-file-image';
 
                     const fileMessage = `
@@ -4735,14 +4142,11 @@
 
                     // Create and append the HTML message
                     appendHtmlMessage("user", fileMessage);
-                    
-                    // Show notification
-                    showNotification(`File ${file.name} uploaded and processing`, "success");
                 }
                 return;
             }
 
-            // Desktop behavior
+            // Original desktop behavior below...
             const filePreview = document.getElementById("documentPreviews");
 
             // Clear welcome message if it exists
@@ -4766,7 +4170,6 @@
 
             const fileItem = document.createElement("div");
             fileItem.classList.add("file-item");
-            fileItem.dataset.filename = file.name; // Store filename as data attribute for easy reference
 
             // Create file header with name and delete button
             const fileHeader = document.createElement("div");
@@ -4780,7 +4183,6 @@
             const fileIcon = document.createElement('i');
             fileIcon.classList.add('fas');
 
-            // Determine the appropriate icon class based on file extension
             if (file.name.endsWith('.pdf')) {
                 fileIcon.classList.add('fa-file-pdf');
                 fileIcon.classList.add('pdf-icon');
@@ -4788,10 +4190,6 @@
                 fileIcon.classList.add('fa-file-alt');
             } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
                 fileIcon.classList.add('fa-file-word');
-            } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                fileIcon.classList.add('fa-file-excel');
-            } else if (file.type.startsWith('image/')) {
-                fileIcon.classList.add('fa-file-image');
             } else {
                 fileIcon.classList.add('fa-file');
             }
@@ -4799,7 +4197,6 @@
             // Create filename span
             const fileName = document.createElement('span');
             fileName.textContent = file.name;
-            fileName.title = file.name; // Add tooltip for long filenames
 
             // Add icon and filename to the name container
             fileNameContainer.appendChild(fileIcon);
@@ -4810,25 +4207,18 @@
             closeBtn.innerHTML = '<i class="fas fa-times"></i>';
             closeBtn.classList.add("delete-file");
             closeBtn.setAttribute('aria-label', 'Remove file');
-            closeBtn.title = 'Remove file'; // Add tooltip
 
             closeBtn.addEventListener("click", function (e) {
                 e.stopPropagation();
-                // Add smooth removal animation
-                fileItem.style.opacity = '0';
-                fileItem.style.transform = 'translateY(10px)';
-                
-                setTimeout(() => {
-                    filePreview.removeChild(fileItem);
-                    
-                    // If no more files, show welcome message
-                    if (filePreview.children.length === 0) {
-                        const welcomeText = document.createElement('p');
-                        welcomeText.className = 'empty-preview-message';
-                        welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
-                        filePreview.appendChild(welcomeText);
-                    }
-                }, 300);
+                filePreview.removeChild(fileItem);
+
+                // If no more files, show welcome message
+                if (filePreview.children.length === 0) {
+                    const welcomeText = document.createElement('p');
+                    welcomeText.className = 'empty-preview-message';
+                    welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
+                    filePreview.appendChild(welcomeText);
+                }
             });
 
             // Add name container and delete button to header
@@ -4838,11 +4228,10 @@
             // Add header to file item
             fileItem.appendChild(fileHeader);
 
-            // Add file preview for images, PDFs, Excel files
+            // Add file preview for images and PDFs
             const fileType = file.type.split('/')[0];
-            const fileExt = file.name.split('.').pop().toLowerCase();
 
-            if (fileType === 'image' || fileExt === 'pdf' || fileExt === 'xlsx' || fileExt === 'xls') {
+            if (fileType === 'image' || file.name.endsWith('.pdf')) {
                 const reader = new FileReader();
                 reader.onload = function () {
                     const previewContainer = document.createElement('div');
@@ -4852,9 +4241,8 @@
                         const img = document.createElement('img');
                         img.src = reader.result;
                         img.alt = file.name;
-                        img.loading = 'lazy'; // Lazy load images
                         previewContainer.appendChild(img);
-                    } else if (fileExt === 'pdf') {
+                    } else if (file.name.endsWith('.pdf')) {
                         previewContainer.classList.add('pdf-preview');
                         const obj = document.createElement('object');
                         obj.data = reader.result;
@@ -4862,53 +4250,6 @@
                         obj.width = '100%';
                         obj.height = '200px';
                         previewContainer.appendChild(obj);
-                    } else if (fileExt === 'xlsx' || fileExt === 'xls') {
-                        previewContainer.classList.add('excel-preview');
-                        const previewText = document.createElement('div');
-                        previewText.className = 'excel-preview-message';
-                        previewText.innerHTML = '<i class="fas fa-table"></i> Excel file loaded. Content will be processed for analysis.';
-                        previewContainer.appendChild(previewText);
-                        
-                        // Add preview button with improved styling
-                        const previewBtn = document.createElement('button');
-                        previewBtn.className = 'btn btn-success btn-sm';
-                        previewBtn.innerHTML = '<i class="fas fa-eye"></i> Preview Content';
-                        previewBtn.style.marginTop = '10px';
-                        previewBtn.style.borderRadius = '4px';
-                        previewBtn.style.padding = '6px 12px';
-                        
-                        previewBtn.onclick = function() {
-                            // Show loading indicator
-                            showNotification("Loading Excel content...", "info");
-                            
-                            // Add loading spinner to button
-                            const originalText = previewBtn.innerHTML;
-                            previewBtn.disabled = true;
-                            previewBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
-                            
-                            // Extract and show Excel data when preview is requested
-                            extractTextFromExcel(file)
-                                .then(text => {
-                                    // Format the text for display (convert tabs to table-like structure)
-                                    const formattedText = text.replace(/\t/g, ' | ').replace(/\n/g, '<br>');
-                                    
-                                    // Show preview in a modal
-                                    showModal(`Excel File: ${file.name}`, `<div class="excel-content-preview">${formattedText}</div>`);
-                                    
-                                    // Reset button
-                                    previewBtn.disabled = false;
-                                    previewBtn.innerHTML = originalText;
-                                })
-                                .catch(error => {
-                                    console.error("Error previewing Excel:", error);
-                                    showNotification("Error previewing Excel file", "error");
-                                    
-                                    // Reset button
-                                    previewBtn.disabled = false;
-                                    previewBtn.innerHTML = originalText;
-                                });
-                        };
-                        previewContainer.appendChild(previewBtn);
                     }
 
                     fileItem.appendChild(previewContainer);
@@ -4916,274 +4257,233 @@
                 reader.readAsDataURL(file);
             }
 
-            // Add file to preview area
             filePreview.appendChild(fileItem);
-        }
 
-        // Function to download the document (original or improved version)
-        function downloadDocument(filename, improved) {
-            // Determine which version to download
-            const content = improved ? 
-                uploadedDocuments[`${filename}_improved`] : 
-                uploadedDocuments[filename];
-                
-            if (!content) {
-                showNotification("Document content not found", "error");
-                return;
-            }
-            
-            // Create file name for the download
-            const downloadName = improved ? 
-                filename.replace(/\.[^/.]+$/, '') + '_improved' + getFileExtension(filename) : 
-                filename;
-                
-            // Create a Blob from the content
-            const blob = new Blob([content], { type: 'text/plain' });
-            
-            // Create download link
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = downloadName;
-            
-            // Trigger download
-            document.body.appendChild(a);
-            a.click();
-            
-            // Clean up
-            URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            
-            showNotification(`Document "${downloadName}" downloaded successfully`, "success");
-        }
-        
-        // Function to show a side-by-side comparison of original and improved documents
-        function showDocumentComparison(filename) {
-            const originalContent = uploadedDocuments[filename];
-            const improvedContent = uploadedDocuments[`${filename}_improved`];
-            
-            if (!originalContent || !improvedContent) {
-                showNotification("Document comparison data not available", "error");
-                return;
-            }
-            
-            // Create comparison HTML
-            const comparisonHTML = `
-            <div class="document-comparison">
-                <div class="comparison-header">
-                    <h4>Document Comparison</h4>
-                    <p>Original vs. Improved Version</p>
-                </div>
-                <div class="comparison-content">
-                    <div class="original-doc">
-                        <h5>Original</h5>
-                        <pre>${escapeHtml(originalContent.substring(0, 3000))}${originalContent.length > 3000 ? '...(truncated)' : ''}</pre>
-                    </div>
-                    <div class="improved-doc">
-                        <h5>Improved</h5>
-                        <pre>${escapeHtml(improvedContent.substring(0, 3000))}${improvedContent.length > 3000 ? '...(truncated)' : ''}</pre>
-                    </div>
-                </div>
-            </div>`;
-            
-            appendHtmlMessage("bot", comparisonHTML);
-        }
-        
-        // Helper function to escape HTML for safe display
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        // Helper function to get file extension
-        function getFileExtension(filename) {
-            return filename.substring(filename.lastIndexOf('.')) || '.txt';
-        }
+            // Force document preview section visible
+            const previewSection = document.querySelector('.documents-preview');
+            previewSection.style.display = 'block';
+            previewSection.style.visibility = 'visible';
+            previewSection.style.opacity = '1';
 
-        // Add styles for document improvement UI
-        const styleElement = document.createElement('style');
-        styleElement.textContent = `
-            .document-action-buttons {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                margin-top: 15px;
-            }
-            
-            .document-action-buttons button {
-                background-color: var(--primary-color, #007bff);
-                color: white;
-                border: none;
-                border-radius: 20px;
-                padding: 8px 16px;
-                font-size: 14px;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                transition: all 0.3s ease;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            }
-            
-            .document-action-buttons button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            }
-            
-            .document-action-buttons .improve-doc-btn {
-                background-color: #28a745;
-            }
-            
-            .document-action-buttons .download-original-btn {
-                background-color: #6c757d;
-            }
-            
-            .document-action-buttons .download-improved-btn {
-                background-color: #17a2b8;
-            }
-            
-            .document-action-buttons .compare-docs-btn {
-                background-color: #6610f2;
-            }
-            
-            .document-comparison {
-                background-color: var(--light-bg, #f8f9fa);
-                border-radius: 10px;
-                overflow: hidden;
-                margin: 15px 0;
-                border: 1px solid var(--border-color, #dee2e6);
-            }
-            
-            .dark-mode .document-comparison {
-                background-color: var(--dark-bg-secondary, #2a2a2a);
-                border-color: var(--dark-border-color, #444);
-            }
-            
-            .comparison-header {
-                background-color: var(--primary-color, #007bff);
-                color: white;
-                padding: 10px 15px;
-            }
-            
-            .comparison-header h4 {
-                margin: 0;
-                color: white;
-            }
-            
-            .comparison-header p {
-                margin: 5px 0 0;
-                font-size: 14px;
-                opacity: 0.9;
-            }
-            
-            .comparison-content {
-                display: flex;
-                flex-direction: column;
-                gap: 15px;
-                padding: 15px;
-            }
-            
-            @media (min-width: 768px) {
-                .comparison-content {
-                    flex-direction: row;
-                }
-                
-                .original-doc, .improved-doc {
-                    flex: 1;
-                }
-            }
-            
-            .original-doc, .improved-doc {
-                background-color: var(--white, #fff);
-                border-radius: 5px;
-                padding: 10px;
-                border: 1px solid var(--border-color, #dee2e6);
-            }
-            
-            .dark-mode .original-doc, 
-            .dark-mode .improved-doc {
-                background-color: var(--dark-bg, #343a40);
-                border-color: var(--dark-border-color, #444);
-            }
-            
-            .original-doc h5, .improved-doc h5 {
-                margin-top: 0;
-                padding-bottom: 8px;
-                border-bottom: 1px solid var(--border-color, #dee2e6);
-            }
-            
-            .dark-mode .original-doc h5, 
-            .dark-mode .improved-doc h5 {
-                border-color: var(--dark-border-color, #444);
-            }
-            
-            .original-doc pre, .improved-doc pre {
-                white-space: pre-wrap;
-                word-wrap: break-word;
-                max-height: 400px;
-                overflow-y: auto;
-                padding: 10px;
-                margin: 0;
-                font-family: monospace;
-                font-size: 13px;
-                color: var(--text-color, #333);
-                background-color: transparent;
-            }
-            
-            .dark-mode .original-doc pre, 
-            .dark-mode .improved-doc pre {
-                color: var(--dark-text, #e9ecef);
-            }
-            
-            /* Excel file preview styles */
-            .excel-preview {
-                background-color: #f5f9ff;
-                padding: 15px;
-                border-radius: 8px;
-                border: 1px solid #cad7e9;
-                text-align: center;
-            }
-            
-            .dark-mode .excel-preview {
-                background-color: #2d3748;
-                border-color: #4a5568;
-            }
-            
-            .excel-preview-message {
-                margin-bottom: 10px;
-                font-size: 14px;
-            }
-            
-            .excel-preview-message i {
-                color: #107c41; /* Excel green */
-                margin-right: 5px;
-            }
-            
-            .dark-mode .excel-preview-message i {
-                color: #2bbe6a;
-            }
-            
-            .excel-content-preview {
-                max-height: 400px;
-                overflow-y: auto;
-                text-align: left;
-                font-family: monospace;
-                white-space: pre-wrap;
-                padding: 15px;
-                background-color: #fff;
-                border-radius: 5px;
-                border: 1px solid #e2e8f0;
-            }
-            
-            .dark-mode .excel-content-preview {
-                background-color: #1a202c;
-                border-color: #2d3748;
-                color: #e2e8f0;
-            }
+            // If it's a chat context, add a message about the upload
+            if (currentChatId) {
+                // Add a file upload message with icon based on file type
+                let fileIcon = 'fa-file';
+                if (file.name.endsWith('.pdf')) fileIcon = 'fa-file-pdf';
+                else if (file.name.endsWith('.txt')) fileIcon = 'fa-file-alt';
+                else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) fileIcon = 'fa-file-word';
+                else if (file.type.startsWith('image/')) fileIcon = 'fa-file-image';
+
+                const fileMessage = `
+          <div class="file-upload">
+            <i class="fas ${fileIcon}"></i>
+            <span>${file.name}</span>
+          </div>
         `;
-        document.head.appendChild(styleElement);
+
+                appendHtmlMessage("user", fileMessage);
+            }
+        }
+
+        // Simple scroll-to-bottom button handler
+        document.addEventListener('DOMContentLoaded', function () {
+            const chatBox = document.getElementById('chatBox');
+            const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+
+            if (!chatBox || !scrollBottomBtn) return;
+
+            // Simple scroll position check
+            chatBox.addEventListener('scroll', function () {
+                // Show button when not at bottom (with small threshold)
+                const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
+
+                if (isAtBottom) {
+                    scrollBottomBtn.classList.remove('visible');
+                } else {
+                    scrollBottomBtn.classList.add('visible');
+                }
+            });
+
+            // Simple click handler for scroll button
+            scrollBottomBtn.addEventListener('click', function () {
+                chatBox.scrollTo({
+                    top: chatBox.scrollHeight,
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Function to test API connection
+        function testAPIConnection() {
+            const model = modelConfig.legalMind;
+            const endpoint = model.endpoints[model.currentEndpointIndex];
+            const token = model.authTokens[model.currentTokenIndex];
+
+            console.log("Testing API connection to:", endpoint);
+            console.log("Using token index:", model.currentTokenIndex);
+
+            // Show testing notification
+            showNotification(`Testing API connection to endpoint ${model.currentEndpointIndex}...`, "info");
+
+            // Check if token appears valid
+            if (!token || !token.startsWith('hf_') || token.length < 10) {
+                console.error("API Token appears invalid:", token);
+                showNotification("API token appears invalid. Check console for details.", "error");
+                return;
+            }
+
+            // Create a timeout promise that will reject after 15 seconds
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error('API request timed out after 15 seconds'));
+                }, 15000); // 15 seconds timeout
+            });
+
+            // Race between the fetch request and the timeout
+            Promise.race([
+                // Make a simple test request
+                fetch(endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        inputs: "Hello, can you give me a very brief response to test the connection?",
+                        parameters: {
+                            max_new_tokens: 50,
+                            temperature: 0.7,
+                            top_p: 0.95,
+                            do_sample: true,
+                            return_full_text: false
+                        }
+                    })
+                }),
+                timeoutPromise
+            ])
+                .then(response => {
+                    console.log("Test API Status:", response.status);
+                    console.log("Test API Headers:", [...response.headers.entries()]);
+
+                    if (!response.ok) {
+                        return response.text().then(text => {
+                            console.error("Test API Error Details:", text);
+                            showNotification(`API connection failed (${response.status}): ${response.statusText}`, "error");
+
+                            // Try next endpoint or token
+                            if (tryNextEndpointOrToken("legalMind")) {
+                                setTimeout(testAPIConnection, 1000);
+                            }
+
+                            return null;
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data) {
+                        console.log("Test API Success:", data);
+
+                        // Display the actual response in the notification
+                        let responseText = "";
+                        if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+                            responseText = data[0].generated_text.substring(0, 50); // First 50 chars
+                        } else if (data && data.generated_text) {
+                            responseText = data.generated_text.substring(0, 50);
+                        } else {
+                            responseText = JSON.stringify(data).substring(0, 50);
+                        }
+
+                        showNotification(`API connection successful! Response: "${responseText}..."`, "success");
+
+                        // Also append result to chat if a chat is active
+                        if (currentChatId) {
+                            let successMessage = `API Test Result: Connection successful! Using endpoint ${model.currentEndpointIndex} and token ${model.currentTokenIndex}.`;
+
+                            // If we're using the DeepSeek fallback model, indicate this in the message
+                            if (model.currentEndpointIndex === model.endpoints.length - 1) {
+                                successMessage = "API Test Result: Connection successful using fallback model. The original model endpoints are not available, but this alternative will work.";
+                            }
+
+                            appendMessage("bot", successMessage);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Test API Error:", error);
+
+                    // Specific handling for timeout errors
+                    if (error.message.includes('timed out')) {
+                        console.log("Test API request timed out - trying next endpoint");
+                        showNotification("Test API connection timed out. Trying next model...", "warning");
+
+                        // Try next endpoint or token
+                        if (tryNextEndpointOrToken("legalMind")) {
+                            setTimeout(testAPIConnection, 1000);
+                        } else {
+                            showNotification("All models timed out during testing. Please try again later.", "error");
+                        }
+                        return;
+                    }
+
+                    showNotification("API connection error: " + error.message, "error");
+
+                    // Try next endpoint or token for other errors
+                    if (tryNextEndpointOrToken("legalMind")) {
+                        setTimeout(testAPIConnection, 1000);
+                    }
+                });
+        }
+
+        // Add a button to test the connection - button removed per user request
+        document.addEventListener('DOMContentLoaded', function () {
+            // No buttons added to UI
+        });
+
+        // Add buttons to test the connection and wake up the endpoint - buttons removed per user request
+        document.addEventListener('DOMContentLoaded', function () {
+            // No buttons added to UI
+        });
+
+        // Function to process document content
+        function processDocumentContent(file) {
+            console.log("Processing document:", file.name);
+            showNotification("Processing document: " + file.name, "info");
+
+            if (file.name.endsWith('.pdf')) {
+                extractTextFromPDF(file)
+                    .then(text => {
+                        console.log("Extracted PDF text length:", text.length);
+                        uploadedDocuments[file.name] = text;
+                        showNotification("PDF processed successfully", "success");
+                    })
+                    .catch(error => {
+                        console.error("Error extracting PDF text:", error);
+                        showNotification("Error processing PDF", "error");
+                    });
+            } else if (file.name.endsWith('.txt')) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const text = e.target.result;
+                    uploadedDocuments[file.name] = text;
+                    console.log("Processed text file:", file.name);
+                    showNotification("Text file processed successfully", "success");
+                };
+                reader.onerror = function () {
+                    console.error("Error reading text file");
+                    showNotification("Error processing text file", "error");
+                };
+                reader.readAsText(file);
+            } else if (file.type.startsWith('image/')) {
+                // For images, just store a placeholder
+                uploadedDocuments[file.name] = "[Image: " + file.name + "]";
+                showNotification("Image added to conversation", "success");
+            } else {
+                // For other files, store a note that they can't be processed
+                uploadedDocuments[file.name] = "[File type not supported for content extraction: " + file.name + "]";
+                showNotification("File type not supported for content processing", "warning");
+            }
+        }
 
         // Function to extract text from PDF
         async function extractTextFromPDF(file) {
@@ -5223,84 +4523,6 @@
 
                 reader.readAsArrayBuffer(file);
             });
-        }
-
-        // Function to extract text from Excel files
-        async function extractTextFromExcel(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    try {
-                        const data = new Uint8Array(e.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        
-                        let result = '';
-                        // Process each sheet
-                        workbook.SheetNames.forEach(sheetName => {
-                            result += `Sheet: ${sheetName}\n`;
-                            
-                            // Convert sheet to JSON
-                            const worksheet = workbook.Sheets[sheetName];
-                            const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                            
-                            // Format as tabular text
-                            jsonData.forEach(row => {
-                                if (row.length > 0) {
-                                    // Filter out empty cells and join with tabs for table-like display
-                                    result += row.map(cell => cell !== undefined ? cell : '').join('\t');
-                                    result += '\n';
-                                }
-                            });
-                            result += '\n';
-                        });
-                        
-                        resolve(result.trim());
-                    } catch (error) {
-                        console.error('Error parsing Excel file:', error);
-                        reject(error);
-                    }
-                };
-                
-                reader.onerror = function() {
-                    reject(new Error('Error reading the Excel file'));
-                };
-                
-                reader.readAsArrayBuffer(file);
-            });
-        }
-
-        // Function to process document content
-        async function processDocumentContent(file) {
-            // Determine the file type
-            const fileType = file.name.split('.').pop().toLowerCase();
-
-            if (fileType === 'pdf') {
-                // Extract text from PDF
-                extractTextFromPDF(file)
-                    .then(text => {
-                        // Process the extracted text
-                        console.log("Extracted text from PDF:", text);
-                        // You can add any additional processing logic you want to execute on the PDF text
-                    })
-                    .catch(error => {
-                        console.error("Error processing PDF:", error);
-                    });
-            } else if (fileType === 'xlsx' || fileType === 'xls') {
-                // Extract text from Excel
-                extractTextFromExcel(file)
-                    .then(text => {
-                        // Process the extracted text
-                        console.log("Extracted text from Excel:", text);
-                        // You can add any additional processing logic you want to execute on the Excel text
-                    })
-                    .catch(error => {
-                        console.error("Error processing Excel:", error);
-                    });
-            } else {
-                // If it's not a PDF or Excel file, you might want to handle it differently
-                console.warn("Unsupported file format:", fileType);
-            }
         }
 
         // Function to get document summary for the prompt
@@ -5503,34 +4725,6 @@
             ];
 
             return identityPatterns.some(pattern => pattern.test(lowerText));
-        }
-        
-        // Function to show a modal window for document previews
-        function showModal(title, content) {
-            // Get modal elements
-            const modalContainer = document.getElementById('modalContainer');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalBody = document.getElementById('modalBody');
-            const modalClose = document.getElementById('modalClose');
-            
-            // Set content
-            modalTitle.textContent = title;
-            modalBody.innerHTML = content;
-            
-            // Show modal
-            modalContainer.classList.add('active');
-            
-            // Handle close button
-            modalClose.onclick = function() {
-                modalContainer.classList.remove('active');
-            };
-            
-            // Also close when clicking outside
-            modalContainer.onclick = function(event) {
-                if (event.target === modalContainer) {
-                    modalContainer.classList.remove('active');
-                }
-            };
         }
     </script>
 </body>
