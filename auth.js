@@ -69,6 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     console.log("User signed in successfully:", userCredential.user);
+                    // Set a flag in session storage to indicate successful login
+                    sessionStorage.setItem('authRedirecting', 'true');
                     window.location.href = "temp3.html";
                 })
                 .catch((error) => {
@@ -129,10 +131,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         newGoogleLoginBtn.addEventListener("click", () => {
             console.log("Google login clicked - using popup");
-    signInWithPopup(auth, provider)
+            signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google login successful:", result.user);
-            window.location.href = "temp3.html";
+                    // Set a flag in session storage to indicate successful login
+                    sessionStorage.setItem('authRedirecting', 'true');
+                    window.location.href = "temp3.html";
                 })
                 .catch((error) => {
                     console.error("Google login error:", error);
@@ -154,9 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
             signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google signup successful:", result.user);
+                    // Set a flag in session storage to indicate successful login
+                    sessionStorage.setItem('authRedirecting', 'true');
                     window.location.href = "temp3.html";
-        })
-        .catch((error) => {
+                })
+                .catch((error) => {
                     console.error("Google signup error:", error);
                     if (error.code !== 'auth/cancelled-popup-request') {
                         alert("Google signup failed: " + error.message);
@@ -218,6 +224,9 @@ onAuthStateChanged(auth, (user) => {
                 profilePicNav.src = `https://ui-avatars.com/api/?name=${initials}&background=random`;
             }
         }
+        
+        // Clear the redirecting flag if it was set
+        sessionStorage.removeItem('authRedirecting');
     } else {
         // User is signed out
         console.log("User is logged out");
@@ -230,7 +239,8 @@ onAuthStateChanged(auth, (user) => {
         if (navProfile) navProfile.style.display = "none";
         
         // If on temp3.html page and not logged in, redirect to auth.html
-        if (window.location.pathname.includes("temp3.html")) {
+        // But only if we're not in the middle of a login redirect
+        if (window.location.pathname.includes("temp3.html") && !sessionStorage.getItem('authRedirecting')) {
             window.location.href = "auth.html";
         }
     }
