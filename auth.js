@@ -27,11 +27,16 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Fix for GitHub Pages domain
-// Set the domain for cookies
+// Fix for Google Sign-In popup
+provider.addScope('https://www.googleapis.com/auth/userinfo.email');
+provider.addScope('https://www.googleapis.com/auth/userinfo.profile');
+auth.useDeviceLanguage();
+
+// Set the domain for cookies and disable verification for testing
 auth.settings.appVerificationDisabledForTesting = true;
 provider.setCustomParameters({
-    prompt: 'select_account'
+    prompt: 'select_account',
+    login_hint: 'user@example.com'
 });
 
 // DOM elements
@@ -51,6 +56,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Logout element
     const logoutBtn = document.getElementById('logout');
+    
+    // Listen for custom events from inline handlers
+    document.addEventListener('google-login-clicked', handleGoogleLogin);
+    document.addEventListener('google-signup-clicked', handleGoogleSignup);
     
     // Email/Password Sign In
     if (loginBtn) {
@@ -121,60 +130,98 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Google Sign-In (Login tab)
+    // Google Sign-In function (called by the custom event)
+    async function handleGoogleLogin() {
+        console.log("Google login handler triggered");
+        
+        try {
+            // First try the popup method
+            const result = await signInWithPopup(auth, provider);
+            console.log("Google login successful:", result.user);
+            // Store a flag in localStorage to indicate user is logged in
+            localStorage.setItem('isLoggedIn', 'true');
+            window.location.href = "temp3.html";
+        } catch (error) {
+            console.error("Google login popup error:", error);
+            
+            // If popup is blocked or fails, try alternative approach
+            if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+                try {
+                    alert("Popup was blocked. Please allow popups for this site in your browser settings and try again.");
+                } catch (redirectError) {
+                    console.error("Redirect error:", redirectError);
+                    alert("Google login failed. Please check your internet connection and try again.");
+                }
+            } else if (error.code !== 'auth/cancelled-popup-request') {
+                alert("Google login failed: " + error.message);
+            }
+        }
+    }
+    
+    // Google Sign-Up function (called by the custom event)
+    async function handleGoogleSignup() {
+        console.log("Google signup handler triggered");
+        
+        try {
+            // First try the popup method
+            const result = await signInWithPopup(auth, provider);
+            console.log("Google signup successful:", result.user);
+            // Store a flag in localStorage to indicate user is logged in
+            localStorage.setItem('isLoggedIn', 'true');
+            window.location.href = "temp3.html";
+        } catch (error) {
+            console.error("Google signup popup error:", error);
+            
+            // If popup is blocked or fails, try alternative approach
+            if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+                try {
+                    alert("Popup was blocked. Please allow popups for this site in your browser settings and try again.");
+                } catch (redirectError) {
+                    console.error("Redirect error:", redirectError);
+                    alert("Google signup failed. Please check your internet connection and try again.");
+                }
+            } else if (error.code !== 'auth/cancelled-popup-request') {
+                alert("Google signup failed: " + error.message);
+            }
+        }
+    }
+    
+    // Google Sign-In (Login tab) - Keep as backup
     if (googleLoginBtn) {
         // Remove any existing click event listeners
         const newGoogleLoginBtn = googleLoginBtn.cloneNode(true);
         googleLoginBtn.parentNode.replaceChild(newGoogleLoginBtn, googleLoginBtn);
         
-        newGoogleLoginBtn.addEventListener("click", () => {
-            console.log("Google login clicked - using popup");
-    signInWithPopup(auth, provider)
-                .then((result) => {
-                    console.log("Google login successful:", result.user);
-            window.location.href = "temp3.html";
-                })
-                .catch((error) => {
-                    console.error("Google login error:", error);
-                    if (error.code !== 'auth/cancelled-popup-request') {
-                        alert("Google login failed: " + error.message);
-                    }
-                });
+        newGoogleLoginBtn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            console.log("Google login clicked from event listener");
+            handleGoogleLogin();
         });
     }
     
-    // Google Sign-In (Signup tab)
+    // Google Sign-In (Signup tab) - Keep as backup
     if (googleSignupBtn) {
         // Remove any existing click event listeners
         const newGoogleSignupBtn = googleSignupBtn.cloneNode(true);
         googleSignupBtn.parentNode.replaceChild(newGoogleSignupBtn, googleSignupBtn);
         
-        newGoogleSignupBtn.addEventListener("click", () => {
-            console.log("Google signup clicked - using popup");
-            signInWithPopup(auth, provider)
-                .then((result) => {
-                    console.log("Google signup successful:", result.user);
-                    window.location.href = "temp3.html";
-        })
-        .catch((error) => {
-                    console.error("Google signup error:", error);
-                    if (error.code !== 'auth/cancelled-popup-request') {
-                        alert("Google signup failed: " + error.message);
-                    }
-                });
+        newGoogleSignupBtn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            console.log("Google signup clicked from event listener");
+            handleGoogleSignup();
         });
     }
 
 // Logout
     if (logoutBtn) {
         logoutBtn.addEventListener("click", () => {
-    signOut(auth).then(() => {
-        console.log("User signed out.");
+            signOut(auth).then(() => {
+                console.log("User signed out.");
                 window.location.href = "index.html";
-    }).catch((error) => {
+            }).catch((error) => {
                 console.error("Logout error:", error.message);
             });
-    });
+        });
     }
 });
 
