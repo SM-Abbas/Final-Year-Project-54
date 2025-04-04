@@ -2552,6 +2552,160 @@
       }
     });
   </script>
+  <style>
+    /* Enhanced thinking animation with expandable details */
+    .thinking-expandable {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      margin: 10px 0;
+      background-color: var(--light-bg);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .dark-mode .thinking-expandable {
+      background-color: var(--dark-surface);
+      border-color: #444;
+    }
+    
+    .thinking-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    
+    .thinking-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+    
+    .model-badge {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      margin-left: 5px;
+    }
+    
+    .thinking-toggle {
+      background: none;
+      border: none;
+      color: var(--primary-color);
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid var(--primary-color);
+      transition: all 0.2s ease;
+    }
+    
+    .thinking-toggle:hover {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .thinking-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, opacity 0.3s ease, margin-top 0.3s ease;
+      margin-top: 0;
+      opacity: 0;
+    }
+    
+    .thinking-expandable.expanded .thinking-content {
+      max-height: 500px;
+      opacity: 1;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-color);
+    }
+    
+    .thinking-prompts {
+      font-family: monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      padding: 8px;
+      background-color: rgba(0, 0, 0, 0.05);
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .dark-mode .thinking-prompts {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    .thinking-stage {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+    
+    /* Thinking indicators animation */
+    .thinking-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .thinking-indicator span {
+      width: 5px;
+      height: 5px;
+      background-color: var(--primary-color);
+      border-radius: 50%;
+      display: inline-block;
+      animation: thinking 1.4s infinite ease-in-out both;
+    }
+    
+    .thinking-indicator span:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+    
+    .thinking-indicator span:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+    
+    @keyframes thinking {
+      0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0;
+      }
+      40% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+  </style>
+  <style>
+    /* CSS for Premium Model in dropdown */
+    .dropdown-content a[data-model="legalMindPremium"] {
+      background: linear-gradient(to right, rgba(255,215,0,0.1), transparent);
+      border-left: 3px solid #ffd700;
+    }
+    
+    .dropdown-content a[data-model="legalMindPremium"] i.fa-crown {
+      color: #ffd700;
+    }
+    
+    .dropdown-content a[data-model="legalMindPremium"]:hover {
+      background: linear-gradient(to right, rgba(255,215,0,0.2), rgba(255,215,0,0.05));
+    }
+    
+    .dark-mode .dropdown-content a[data-model="legalMindPremium"] {
+      background: linear-gradient(to right, rgba(255,215,0,0.15), transparent);
+    }
+    
+    .dark-mode .dropdown-content a[data-model="legalMindPremium"]:hover {
+      background: linear-gradient(to right, rgba(255,215,0,0.25), rgba(255,215,0,0.1));
+    }
+  </style>
 </head>
 <body>
   <div class="dashboard">
@@ -2596,27 +2750,8 @@
         
         <div class="nav-right">
           <div class="nav-links">
-            <div class="dropdown">
-              <a href="#" onclick="togglePlansDropdown(event)">
-                <i class="fas fa-crown"></i> Plans
-              </a>
-              <div class="dropdown-content" id="plansDropdown">
-                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Month – ₹100</a>
-                <a href="#"><i class="fas fa-calendar-alt"></i> 3 Months – ₹250</a>
-                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Year – ₹800</a>
-              </div>
-            </div>
-            
-            <div class="dropdown">
-              <a href="#" onclick="toggleModelsDropdown(event)">
-                <i class="fas fa-microchip"></i> <span id="currentModelDisplay">LegalMind</span>
-              </a>
-              <div class="dropdown-content" id="modelsDropdown">
-                <a href="#" data-model="legalMind" onclick="setActiveModel('legalMind'); return false;" class="active-model"><i class="fas fa-brain"></i> LegalMind (Abbasgamer1)</a>
-                <a href="#" data-model="distilBert" onclick="setActiveModel('distilBert'); return false;"><i class="fas fa-brain"></i> Distl-BERT Model</a>
-              </div>
-            </div>
-            
+            <a href="plans.html"><i class="fas fa-crown"></i> Plans</a>
+            <a href="#" id="modelDisplay"><i class="fas fa-microchip"></i> <span id="currentModelDisplay">LegalMind</span></a>
             <a href="contact.html"><i class="fas fa-envelope"></i> Contact Us</a>
           </div>
           
@@ -2701,6 +2836,10 @@
             <i class="fas fa-file-alt"></i>
             <span>Document Preview</span>
           </button>
+          <button class="mobile-menu-btn" onclick="window.location.href='plans.html'">
+            <i class="fas fa-crown"></i>
+            <span>Plans & Pricing</span>
+          </button>
           <button class="mobile-menu-btn" onclick="window.location.href='contact.html'">
             <i class="fas fa-envelope"></i>
             <span>Contact Us</span>
@@ -2781,6 +2920,26 @@
         // Flag to indicate we're using the fallback model
         usingFallbackModel: false
       },
+      legalMindPremium: {
+        name: "LegalMind Premium",
+        // Use DeepSeek R1 as the primary endpoint for premium service
+        endpoints: [
+          "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-coder-1.3b-instruct",
+          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324",
+          "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-7b-chat"
+        ],
+        // Use the same auth tokens
+        authTokens: [
+          "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",  // legalmindapi - WRITE
+          "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"   // Current token
+        ],
+        // Track which endpoint and token is currently being used
+        currentEndpointIndex: 0,
+        currentTokenIndex: 0,
+        // Flag to indicate this is a premium model
+        usingFallbackModel: false,
+        isPremium: true
+      },
       // Add more models here if needed
     };
     
@@ -2832,18 +2991,32 @@
         // Update the model name in the dropdown header
         const currentModelDisplay = document.getElementById("currentModelDisplay");
         if (currentModelDisplay) {
-          currentModelDisplay.textContent = modelConfig[modelKey].name;
+          // Add premium badge if using premium model
+          if (modelKey === 'legalMindPremium') {
+            currentModelDisplay.innerHTML = `${modelConfig[modelKey].name} <span style="background-color: #ffd700; color: #000; font-size: 10px; padding: 2px 5px; border-radius: 10px; margin-left: 5px;">PREMIUM</span>`;
+          } else {
+            currentModelDisplay.textContent = modelConfig[modelKey].name;
+          }
         }
         
         // Update the welcome message model name
         const welcomeModelName = document.getElementById("welcomeModelName");
         if (welcomeModelName) {
-          welcomeModelName.textContent = modelConfig[modelKey].name;
+          // Add premium badge if using premium model
+          if (modelKey === 'legalMindPremium') {
+            welcomeModelName.innerHTML = `${modelConfig[modelKey].name} <span style="background-color: #ffd700; color: #000; font-size: 10px; padding: 2px 5px; border-radius: 10px; margin-left: 5px;">PREMIUM</span>`;
+          } else {
+            welcomeModelName.textContent = modelConfig[modelKey].name;
+          }
         }
         
         // Show notification if the model actually changed
         if (previousModel !== modelKey) {
-          showNotification(`Model changed to ${modelConfig[modelKey].name}`, 'success');
+          if (modelKey === 'legalMindPremium') {
+            showNotification(`Switched to ${modelConfig[modelKey].name} - Using DeepSeek's advanced model`, 'success');
+          } else {
+            showNotification(`Model changed to ${modelConfig[modelKey].name}`, 'success');
+          }
         }
         
         return true;
@@ -2862,6 +3035,24 @@
           document.getElementById('darkModeIcon').classList.add('fa-sun');
           document.getElementById('darkModeText').textContent = 'Light Mode';
         }
+      }
+      
+      // Check if a model was selected from the plans page
+      const selectedModel = localStorage.getItem('selectedModel');
+      if (selectedModel) {
+        // Set the selected model
+        setActiveModel(selectedModel);
+        // Clear the selection so it doesn't keep applying on refresh
+        localStorage.removeItem('selectedModel');
+      }
+      
+      // Add click handler for model display to redirect to plans page
+      const modelDisplay = document.getElementById('modelDisplay');
+      if (modelDisplay) {
+        modelDisplay.addEventListener('click', function(e) {
+          e.preventDefault();
+          window.location.href = 'plans.html';
+        });
       }
       
       // Mobile menu handlers
@@ -3243,7 +3434,7 @@
       const lowerText = text.toLowerCase().trim();
       
       // Very short questions are often continuations
-      if (lowerText.split(' ').length <= 5) {
+      if (lowerText.split(' ').length <= 5 && !lowerText.endsWith('?')) {
         return true;
       }
       
@@ -3255,8 +3446,45 @@
         /^(and|but|so|also|besides|additionally)\b/i,
         /\b(more|elaboration|clarify|explain|details)\b/i,
         /\bcan you/i,
-        /\b(the|your|previous) (answer|response|explanation)\b/i
+        /\b(the|your|previous) (answer|response|explanation)\b/i,
+        /\byou (said|mentioned|noted|explained|stated)\b/i,
+        /\b(earlier|before|previously)\b/i,
+        /\b(going back to|referring to|regarding|about that|on that note)\b/i,
+        /\b(follow(ing)? up|to continue|continuing)\b/i,
+        /\bnow\b.*\b(tell|explain|elaborate)\b/i,
+        /\b(tell|show|give) me more\b/i,
+        /\b(what about|how about)\b/i,
+        /\b(another|one more|similar)\b/i
       ];
+      
+      // For longer questions, we need to be more careful about context
+      if (lowerText.split(' ').length > 5) {
+        // Check against previous message to see if this is likely related
+        const previousMessages = messages.slice(-3); // Get last 3 messages
+        let previousContent = '';
+        for (const msg of previousMessages) {
+          previousContent += ' ' + msg.content.toLowerCase();
+        }
+        
+        // Look for shared keywords (significant words)
+        const significantWords = lowerText.split(/\W+/).filter(word => 
+          word.length > 4 && 
+          !['about', 'after', 'again', 'below', 'could', 'every', 'first', 'found', 'great', 'however', 'large', 'other', 'should', 'small', 'their', 'there', 'these', 'think', 'those', 'through', 'under', 'where', 'which', 'while', 'would'].includes(word)
+        );
+        
+        // If we find shared significant words, it's more likely to be a continuation
+        let sharedWordCount = 0;
+        for (const word of significantWords) {
+          if (previousContent.includes(word)) {
+            sharedWordCount++;
+          }
+        }
+        
+        // If more than 2 significant words are shared, it's likely a continuation
+        if (sharedWordCount >= 2) {
+          return true;
+        }
+      }
       
       return continuationPatterns.some(pattern => pattern.test(lowerText));
     }
@@ -3370,7 +3598,33 @@
           }
           
           // Create thinking message with model info and data attribute for animation
-          const thinkingMessage = `<span data-thinking="true">Thinking (using ${modelName})</span>`;
+          const thinkingMessage = `
+            <div class="thinking-expandable" data-thinking="true">
+              <div class="thinking-header" onclick="toggleThinkingDetails(this)">
+                <div class="thinking-title">
+                  <i class="fas fa-brain thinking-brain"></i>
+                  <span>${modelName} is thinking</span>
+                  <div class="thinking-indicator"><span></span><span></span><span></span></div>
+                </div>
+                <button class="thinking-toggle" onclick="event.stopPropagation(); toggleThinkingDetails(this.parentNode)">
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
+              <div class="thinking-content">
+                <span class="thinking-stage">Processing prompt...</span>
+                <div class="thinking-prompts">
+                  <strong>User Query:</strong> ${userMessageText}
+                  
+                  <strong>Model:</strong> ${modelName}
+                  <strong>Endpoint:</strong> ${currentEndpoint}
+                  
+                  <strong>Context Length:</strong> ${conversationContext.split('\n').length} lines
+                  <strong>Continuation Question:</strong> ${isContinuation ? 'Yes (including more context)' : 'No (standard context)'}
+                  ${hasDocuments ? '<strong>Documents:</strong> ' + Object.keys(uploadedDocuments).join(', ') : ''}
+                </div>
+              </div>
+            </div>
+          `;
           appendHtmlMessage("bot", thinkingMessage);
           
           // Reference to the thinking message to remove it later
@@ -3383,7 +3637,7 @@
             const isContinuation = isContinuationQuestion(userMessageText, chats[currentChatId].messages);
             
             // Get more context for continuations, otherwise use standard context length
-            const contextLength = isContinuation ? 15 : 10;
+            const contextLength = isContinuation ? 20 : 10;
             
             // Get recent messages for context, more if it's a continuation
             const recentMessages = chats[currentChatId].messages.slice(-contextLength);
@@ -3404,6 +3658,15 @@
                           conversationContext + 
                           "User: " + userMessageText + "\nAssistant:";
           
+          // For continuation questions, add special instructions
+          if (isContinuation) {
+            fullPrompt = "You are LegalMind, a helpful assistant. This is a CONTINUATION of the previous conversation.\n" +
+                        "The user may be referring to or asking about something mentioned earlier in the conversation.\n" +
+                        "Pay close attention to previous messages when you respond. Maintain continuity in the conversation.\n\n" +
+                        conversationContext + 
+                        "User: " + userMessageText + "\nAssistant:";
+          }
+          
           // If we're using the DeepSeek model, use its recommended format
           const currentEndpointInfo = getCurrentEndpointInfo(activeModel);
           if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
@@ -3419,6 +3682,16 @@
                         conversationContext +
                         "User: " + userMessageText + "\nAssistant:";
             console.log("Using DeepSeek model with specialized prompt format");
+          }
+          
+          // For continuation questions, add special instructions for DeepSeek model too
+          if (isContinuation && currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
+            fullPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
+                        "This is a CONTINUATION of the previous conversation. " +
+                        "The user may be referring to or asking about something mentioned earlier. " +
+                        "Pay close attention to the context and maintain continuity.\n\n" +
+                        conversationContext +
+                        "User: " + userMessageText + "\nAssistant:";
           }
           
           console.log("Sending prompt:", fullPrompt);
@@ -3439,6 +3712,7 @@
                 documentContext + 
                 "\n\n" + conversationContext + 
                 "User: " + userMessageText + "\n" +
+                (isContinuation ? "NOTE: This is a continuation of the previous conversation. The user may be referring to previous messages or documents. Maintain continuity in your response.\n" : "") +
                 "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
                 "Assistant:";
             } else {
@@ -3448,6 +3722,7 @@
                 documentContext + 
                 "\n\n" + conversationContext + 
                 "User: " + userMessageText + "\n" +
+                (isContinuation ? "NOTE: This is a continuation of the previous conversation. The user may be referring to previous messages or documents. Maintain continuity in your response.\n" : "") +
                 "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
                 "Assistant:";
             }
@@ -3566,7 +3841,35 @@
               botResponse = "I apologize, but I received an empty response. Please try asking your question again.";
             }
             
-            appendMessage("bot", botResponse);
+            // Add document download/update buttons if analysis is successful
+            if (botResponse && !botResponse.includes("I apologize")) {
+              // Store the improvement suggestions for later use
+              if (!window.documentImprovements) {
+                window.documentImprovements = {};
+              }
+              window.documentImprovements[filename] = {
+                original: uploadedDocuments[filename],
+                suggestions: botResponse
+              };
+              
+              // Append the main response
+              appendMessage("bot", botResponse);
+              
+              // Add action buttons for document improvements
+              const actionButtonsHtml = `
+                <div class="document-action-buttons" style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                  <button onclick="implementImprovements('${filename}')" class="action-button primary-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--primary-color); color: white; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-magic"></i> Implement Suggestions
+                  </button>
+                  <button onclick="downloadOriginalDocument('${filename}')" class="action-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--light-bg); color: var(--text-color); border: 1px solid var(--border-color); cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-download"></i> Download Original
+                  </button>
+                </div>
+              `;
+              appendHtmlMessage("bot", actionButtonsHtml);
+            } else {
+              appendMessage("bot", botResponse);
+            }
           })
           .catch(error => {
             console.error("Error connecting to LegalMind API:", error);
@@ -4365,7 +4668,35 @@
               botResponse = "I apologize, but I couldn't analyze the document properly. Please ask me specific questions about it.";
             }
             
-            appendMessage("bot", botResponse);
+            // Add document download/update buttons if analysis is successful
+            if (botResponse && !botResponse.includes("I apologize")) {
+              // Store the improvement suggestions for later use
+              if (!window.documentImprovements) {
+                window.documentImprovements = {};
+              }
+              window.documentImprovements[filename] = {
+                original: uploadedDocuments[filename],
+                suggestions: botResponse
+              };
+              
+              // Append the main response
+              appendMessage("bot", botResponse);
+              
+              // Add action buttons for document improvements
+              const actionButtonsHtml = `
+                <div class="document-action-buttons" style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                  <button onclick="implementImprovements('${filename}')" class="action-button primary-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--primary-color); color: white; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-magic"></i> Implement Suggestions
+                  </button>
+                  <button onclick="downloadOriginalDocument('${filename}')" class="action-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--light-bg); color: var(--text-color); border: 1px solid var(--border-color); cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-download"></i> Download Original
+                  </button>
+                </div>
+              `;
+              appendHtmlMessage("bot", actionButtonsHtml);
+            } else {
+              appendMessage("bot", botResponse);
+            }
           })
           .catch(error => {
             console.error("Error analyzing document:", error);
@@ -5058,6 +5389,278 @@
       };
       
       reader.readAsDataURL(file);
+    }
+
+    // Simple scroll-to-bottom button handler
+    document.addEventListener('DOMContentLoaded', function() {
+      const scrollBtn = document.getElementById('scrollToBottom');
+      if (scrollBtn) {
+        scrollBtn.addEventListener('click', function() {
+          const chatBox = document.getElementById('chatBox');
+          chatBox.scrollTop = chatBox.scrollHeight;
+        });
+      }
+    });
+    
+    // Function to implement document improvements
+    function implementImprovements(filename) {
+      if (!window.documentImprovements || !window.documentImprovements[filename]) {
+        showNotification("No improvement suggestions found for this document", "error");
+        return;
+      }
+      
+      // Show processing notification
+      showNotification("Processing document improvements...", "info");
+      
+      const originalText = window.documentImprovements[filename].original;
+      const suggestions = window.documentImprovements[filename].suggestions;
+      
+      // Create a prompt for implementing the improvements
+      let improvementPrompt;
+      
+      if (modelConfig[activeModel].usingFallbackModel) {
+        improvementPrompt = `
+          Please implement all the improvement suggestions for the following document.
+          
+          ORIGINAL DOCUMENT:
+          ${originalText}
+          
+          IMPROVEMENT SUGGESTIONS:
+          ${suggestions}
+          
+          INSTRUCTIONS:
+          1. Apply all suggested improvements to the document
+          2. Fix any grammatical or spelling errors
+          3. Improve formatting and structure
+          4. Return ONLY the improved document text, without any comments or explanations
+        `;
+      } else {
+        improvementPrompt = `
+          You are an expert document editor. Implement all the improvement suggestions for this document.
+          
+          ORIGINAL DOCUMENT:
+          ${originalText}
+          
+          IMPROVEMENT SUGGESTIONS:
+          ${suggestions}
+          
+          INSTRUCTIONS:
+          1. Apply all suggested improvements to the document
+          2. Fix any grammatical or spelling errors
+          3. Improve formatting and structure
+          4. Return ONLY the improved document text, without any comments or explanations
+        `;
+      }
+      
+      // API request to implement improvements
+      fetch(modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex], {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${modelConfig[activeModel].authTokens[modelConfig[activeModel].currentTokenIndex]}`
+        },
+        body: JSON.stringify({
+          inputs: improvementPrompt,
+          parameters: {
+            max_new_tokens: 2048,
+            temperature: 0.3,
+            top_p: 0.8,
+            do_sample: true,
+            return_full_text: false
+          }
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        let improvedText = "";
+        
+        // Extract the improved text based on the model's response format
+        if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+          improvedText = data[0].generated_text.trim();
+        } else if (data && data.generated_text) {
+          improvedText = data.generated_text.trim();
+        } else if (data && data.choices && data.choices.length > 0) {
+          improvedText = (data.choices[0].message?.content || data.choices[0].text).trim();
+        } else {
+          throw new Error("Unexpected response format");
+        }
+        
+        // Store the improved document
+        const improvedFilename = filename.replace(/(\.[^.]+)$/, "_improved$1");
+        uploadedDocuments[improvedFilename] = improvedText;
+        
+        // Add the improved document to UI
+        addImprovedDocumentToUI(improvedFilename, improvedText);
+        
+        // Show success message with download options
+        const successMessageHtml = `
+          <div style="padding: 15px; background-color: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px; margin: 15px 0;">
+            <h4 style="margin-top: 0; color: #2e7d32;">✅ Document Improved Successfully</h4>
+            <p>I've implemented all the suggested improvements. The improved document is now available in your document panel.</p>
+            <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+              <button onclick="downloadDocument('${improvedFilename}')" class="action-button primary-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--primary-color); color: white; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-download"></i> Download Improved Document
+              </button>
+            </div>
+          </div>
+        `;
+        appendHtmlMessage("bot", successMessageHtml);
+        
+        showNotification("Document improved successfully!", "success");
+      })
+      .catch(error => {
+        console.error("Error implementing improvements:", error);
+        showNotification("Error implementing document improvements", "error");
+        appendMessage("bot", "I encountered an error while trying to implement the improvements. Please try again or implement the suggestions manually.");
+      });
+    }
+    
+    // Function to add improved document to UI
+    function addImprovedDocumentToUI(filename, content) {
+      const filePreview = document.getElementById("documentPreviews");
+      
+      // Create file item element
+      const fileItem = document.createElement('div');
+      fileItem.classList.add('file-item');
+      fileItem.setAttribute('data-filename', filename);
+      
+      // Create file header
+      const fileHeader = document.createElement('div');
+      fileHeader.className = 'file-header';
+      
+      // Create file name container
+      const fileNameContainer = document.createElement('div');
+      fileNameContainer.className = 'file-name';
+      
+      // Determine icon based on file type
+      let iconClass = 'fa-file-alt';
+      if (filename.endsWith('.pdf')) {
+        iconClass = 'fa-file-pdf';
+      } else if (filename.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        iconClass = 'fa-file-image';
+      } else if (filename.match(/\.(doc|docx)$/i)) {
+        iconClass = 'fa-file-word';
+      }
+      
+      // Create file icon
+      const fileIcon = document.createElement('i');
+      fileIcon.classList.add('fas', iconClass);
+      fileIcon.style.color = '#4caf50'; // Green color for improved documents
+      
+      // Create filename span with "improved" badge
+      const fileName = document.createElement('span');
+      fileName.innerHTML = `${filename} <span style="background-color: #4caf50; color: white; padding: 2px 6px; font-size: 10px; border-radius: 10px; margin-left: 5px;">IMPROVED</span>`;
+      
+      // Add icon and filename to the name container
+      fileNameContainer.appendChild(fileIcon);
+      fileNameContainer.appendChild(fileName);
+      
+      // Create delete button
+      const closeBtn = document.createElement("button");
+      closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+      closeBtn.classList.add("delete-file");
+      closeBtn.setAttribute('aria-label', 'Remove file');
+      
+      closeBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        filePreview.removeChild(fileItem);
+        delete uploadedDocuments[filename];
+        
+        // If no more files, show welcome message
+        if (filePreview.children.length === 0) {
+          const welcomeText = document.createElement('p');
+          welcomeText.className = 'empty-preview-message';
+          welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
+          filePreview.appendChild(welcomeText);
+        }
+      });
+      
+      // Add name container and delete button to header
+      fileHeader.appendChild(fileNameContainer);
+      fileHeader.appendChild(closeBtn);
+      
+      // Add header to file item
+      fileItem.appendChild(fileHeader);
+      
+      // Create a text preview
+      const previewContainer = document.createElement('div');
+      previewContainer.className = 'file-preview-container ocr-preview';
+      
+      // Add a textarea with the content
+      const textPreview = document.createElement('textarea');
+      textPreview.readOnly = true;
+      textPreview.value = content;
+      
+      previewContainer.appendChild(textPreview);
+      fileItem.appendChild(previewContainer);
+      
+      filePreview.appendChild(fileItem);
+      
+      // Force document preview section visible
+      const previewSection = document.querySelector('.documents-preview');
+      previewSection.style.display = 'block';
+      previewSection.style.visibility = 'visible';
+      previewSection.style.opacity = '1';
+    }
+    
+    // Function to download original document
+    function downloadOriginalDocument(filename) {
+      if (!uploadedDocuments[filename]) {
+        showNotification("Document not found", "error");
+        return;
+      }
+      
+      downloadDocument(filename);
+    }
+    
+    // Function to download any document
+    function downloadDocument(filename) {
+      if (!uploadedDocuments[filename]) {
+        showNotification("Document not found", "error");
+        return;
+      }
+      
+      const content = uploadedDocuments[filename];
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      
+      // Cleanup
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      showNotification(`Downloading ${filename}`, "success");
+    }
+    
+    // Function to toggle thinking details visibility
+    function toggleThinkingDetails(header) {
+      const thinkingContainer = header.closest('.thinking-expandable');
+      const isExpanded = thinkingContainer.classList.contains('expanded');
+      const toggleButton = thinkingContainer.querySelector('.thinking-toggle i');
+      
+      if (isExpanded) {
+        // Collapse
+        thinkingContainer.classList.remove('expanded');
+        toggleButton.classList.remove('fa-chevron-up');
+        toggleButton.classList.add('fa-chevron-down');
+      } else {
+        // Expand
+        thinkingContainer.classList.add('expanded');
+        toggleButton.classList.remove('fa-chevron-down');
+        toggleButton.classList.add('fa-chevron-up');
+      }
     }
   </script>
 </body>

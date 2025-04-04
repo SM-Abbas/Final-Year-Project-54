@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="LegalMind - Subscription Plans">
+  <title>LegalMind Plans</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="auth.js" type="module"></script>
+  
+  <style>
+    :root {
+      --primary-color: #007bff;
+      --primary-hover: #0056b3;
+      --success-color: #28a745;
+      --success-hover: #218838;
+      --danger-color: #dc3545;
+      --light-bg: #f8f9fa;
+      --dark-bg: #121212;
+      --light-surface: #ffffff;
+      --dark-surface: #1e1e1e;
+      --light-text: #212529;
+      --dark-text: #f8f9fa;
+      --light-border: #dee2e6;
+      --dark-border: #444;
+      --premium-color: #ffd700;
+      --premium-dark: #d4af37;
+      --border-radius: 8px;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--light-bg);
+      color: var(--light-text);
+      min-height: 100vh;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    
+    body.dark-mode {
+      background-color: var(--dark-bg);
+      color: var(--dark-text);
+    }
+    
+    header {
+      background-color: var(--light-surface);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 15px 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      transition: background-color 0.3s;
+    }
+    
+    body.dark-mode header {
+      background-color: var(--dark-surface);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    
+    .nav-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      color: var(--light-text);
+      font-weight: 700;
+      font-size: 1.25rem;
+    }
+    
+    body.dark-mode .logo {
+      color: var(--dark-text);
+    }
+    
+    .logo img {
+      margin-right: 10px;
+      border-radius: 50%;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .nav-links a {
+      text-decoration: none;
+      color: var(--light-text);
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: var(--border-radius);
+      transition: background-color 0.2s;
+    }
+    
+    body.dark-mode .nav-links a {
+      color: var(--dark-text);
+    }
+    
+    .nav-links a:hover {
+      background-color: rgba(0,0,0,0.05);
+    }
+    
+    body.dark-mode .nav-links a:hover {
+      background-color: rgba(255,255,255,0.05);
+    }
+    
+    .nav-links a i {
+      margin-right: 8px;
+    }
+    
+    .nav-links a.active {
+      color: var(--primary-color);
+      font-weight: 600;
+    }
+    
+    main {
+      padding: 40px 0;
+    }
+    
+    .page-title {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .page-title h1 {
+      margin-bottom: 10px;
+      font-size: 2.5rem;
+    }
+    
+    .page-title p {
+      color: #6c757d;
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    body.dark-mode .page-title p {
+      color: #adb5bd;
+    }
+    
+    .plans-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 40px;
+    }
+    
+    .plan-card {
+      background-color: var(--light-surface);
+      border-radius: var(--border-radius);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+      padding: 30px;
+      width: 300px;
+      transition: transform 0.3s, box-shadow 0.3s, background-color 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    body.dark-mode .plan-card {
+      background-color: var(--dark-surface);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .plan-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    body.dark-mode .plan-card:hover {
+      box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+    
+    .plan-card.premium {
+      border: 2px solid var(--premium-color);
+    }
+    
+    .plan-badge {
+      position: absolute;
+      top: 12px;
+      right: -28px;
+      background-color: var(--premium-color);
+      color: #000;
+      font-weight: 600;
+      font-size: 0.8rem;
+      padding: 5px 30px;
+      transform: rotate(45deg);
+    }
+    
+    .plan-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: var(--light-text);
+    }
+    
+    body.dark-mode .plan-title {
+      color: var(--dark-text);
+    }
+    
+    .premium .plan-title {
+      color: var(--premium-dark);
+    }
+    
+    body.dark-mode .premium .plan-title {
+      color: var(--premium-color);
+    }
+    
+    .plan-price {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--primary-color);
+    }
+    
+    .plan-price small {
+      font-size: 1rem;
+      color: #6c757d;
+      font-weight: 400;
+    }
+    
+    body.dark-mode .plan-price small {
+      color: #adb5bd;
+    }
+    
+    .plan-features {
+      margin: 25px 0;
+      padding: 0;
+      list-style: none;
+    }
+    
+    .plan-features li {
+      margin-bottom: 12px;
+      padding-left: 28px;
+      position: relative;
+    }
+    
+    .plan-features li i {
+      position: absolute;
+      left: 0;
+      top: 3px;
+      color: var(--success-color);
+    }
+    
+    .plan-features li.unavailable {
+      color: #6c757d;
+      text-decoration: line-through;
+    }
+    
+    body.dark-mode .plan-features li.unavailable {
+      color: #adb5bd;
+    }
+    
+    .plan-features li.unavailable i {
+      color: #dc3545;
+    }
+    
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      text-align: center;
+      border-radius: var(--border-radius);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      text-decoration: none;
+      border: none;
+      font-family: inherit;
+      font-size: 1rem;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+    }
+    
+    .btn-premium {
+      background-color: var(--premium-color);
+      color: black;
+    }
+    
+    .btn-premium:hover {
+      background-color: var(--premium-dark);
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 2px solid var(--primary-color);
+      color: var(--primary-color);
+    }
+    
+    .btn-outline:hover {
+      background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    body.dark-mode .btn-outline:hover {
+      background-color: rgba(0, 123, 255, 0.2);
+    }
+    
+    .model-comparison {
+      margin-top: 60px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .model-comparison h2 {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: var(--light-surface);
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+    
+    body.dark-mode .comparison-table {
+      background-color: var(--dark-surface);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+      padding: 15px;
+      text-align: left;
+      border-bottom: 1px solid var(--light-border);
+    }
+    
+    body.dark-mode .comparison-table th,
+    body.dark-mode .comparison-table td {
+      border-bottom: 1px solid var(--dark-border);
+    }
+    
+    .comparison-table th {
+      background-color: rgba(0,0,0,0.03);
+      font-weight: 600;
+    }
+    
+    body.dark-mode .comparison-table th {
+      background-color: rgba(255,255,255,0.03);
+    }
+    
+    .comparison-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .comparison-table i.check {
+      color: var(--success-color);
+    }
+    
+    .comparison-table i.times {
+      color: var(--danger-color);
+    }
+    
+    .toggle-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 60px;
+    }
+    
+    .dark-mode-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .dark-mode-toggle input {
+      display: none;
+    }
+    
+    .dark-mode-toggle i {
+      margin-right: 8px;
+    }
+    
+    footer {
+      background-color: var(--light-surface);
+      padding: 30px 0;
+      margin-top: 60px;
+      border-top: 1px solid var(--light-border);
+      transition: background-color 0.3s;
+    }
+    
+    body.dark-mode footer {
+      background-color: var(--dark-surface);
+      border-top: 1px solid var(--dark-border);
+    }
+    
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .footer-links {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .footer-links a {
+      color: #6c757d;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    
+    body.dark-mode .footer-links a {
+      color: #adb5bd;
+    }
+    
+    .footer-links a:hover {
+      color: var(--primary-color);
+    }
+    
+    .copyright {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+    
+    body.dark-mode .copyright {
+      color: #adb5bd;
+    }
+    
+    @media (max-width: 768px) {
+      .plans-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .plan-card {
+        width: 100%;
+        max-width: 350px;
+      }
+      
+      .comparison-table {
+        font-size: 0.9rem;
+      }
+      
+      .footer-content {
+        flex-direction: column;
+        gap: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="container nav-container">
+      <a href="temp3.html" class="logo">
+        <img src="https://ui-avatars.com/api/?name=Legal&background=0D8ABC&color=fff" width="30" height="30" alt="Logo">
+        <span>LegalMind</span>
+      </a>
+      
+      <div class="nav-links">
+        <a href="temp3.html"><i class="fas fa-comments"></i> Chat</a>
+        <a href="plans.html" class="active"><i class="fas fa-crown"></i> Plans</a>
+        <a href="contact.html"><i class="fas fa-envelope"></i> Contact</a>
+        <a href="#" onclick="toggleDarkMode()">
+          <i id="darkModeIcon" class="fas fa-moon"></i>
+          <span id="darkModeText">Dark Mode</span>
+        </a>
+      </div>
+    </div>
+  </header>
+  
+  <main>
+    <div class="container">
+      <div class="page-title">
+        <h1>Choose Your Plan</h1>
+        <p>Select the LegalMind plan that fits your needs and unlock powerful AI features for legal document analysis.</p>
+      </div>
+      
+      <div class="plans-container">
+        <div class="plan-card">
+          <div class="plan-title">Basic</div>
+          <div class="plan-price">Free <small>No credit card required</small></div>
+          <button class="btn btn-outline" onclick="selectModel('legalMind')">Select Basic Plan</button>
+          <ul class="plan-features">
+            <li><i class="fas fa-check"></i> Access to Standard LegalMind Model</li>
+            <li><i class="fas fa-check"></i> Legal Document Analysis</li>
+            <li><i class="fas fa-check"></i> Document Improvement Suggestions</li>
+            <li><i class="fas fa-check"></i> Upload PDF, TXT, and Images</li>
+            <li class="unavailable"><i class="fas fa-times"></i> Advanced DeepSeek Models</li>
+            <li class="unavailable"><i class="fas fa-times"></i> Unlimited Document Size</li>
+            <li class="unavailable"><i class="fas fa-times"></i> Priority Support</li>
+          </ul>
+          <button class="btn btn-primary" onclick="selectModel('legalMind')">Select Free</button>
+        </div>
+        
+        <div class="plan-card premium">
+          <div class="plan-badge">PREMIUM</div>
+          <div class="plan-title">Premium</div>
+          <div class="plan-price">₹100 <small>per month</small></div>
+          <button class="btn btn-premium" onclick="selectModel('legalMindPremium')">Select Premium</button>
+          <ul class="plan-features">
+            <li><i class="fas fa-check"></i> Access to All Models (Including DeepSeek)</li>
+            <li><i class="fas fa-check"></i> Enhanced Legal Document Analysis</li>
+            <li><i class="fas fa-check"></i> Detailed Document Improvement Suggestions</li>
+            <li><i class="fas fa-check"></i> Improved Response Quality</li>
+            <li><i class="fas fa-check"></i> Upload PDF, TXT, and Images</li>
+            <li><i class="fas fa-check"></i> Larger Document Size Limits</li>
+            <li><i class="fas fa-check"></i> Priority Support</li>
+          </ul>
+          <button class="btn btn-premium" onclick="selectModel('legalMindPremium')">Select Premium</button>
+        </div>
+        
+        <div class="plan-card">
+          <div class="plan-title">Annual</div>
+          <div class="plan-price">₹800 <small>per year (33% off)</small></div>
+          <button class="btn btn-outline" onclick="selectModel('legalMindPremium')">Select Annual Plan</button>
+          <ul class="plan-features">
+            <li><i class="fas fa-check"></i> All Premium Features</li>
+            <li><i class="fas fa-check"></i> Access to All Models (Including DeepSeek)</li>
+            <li><i class="fas fa-check"></i> Enhanced Legal Document Analysis</li>
+            <li><i class="fas fa-check"></i> Detailed Document Improvement Suggestions</li>
+            <li><i class="fas fa-check"></i> Upload PDF, TXT, and Images</li>
+            <li><i class="fas fa-check"></i> Largest Document Size Limits</li>
+            <li><i class="fas fa-check"></i> Priority Support</li>
+          </ul>
+          <button class="btn btn-primary" onclick="selectModel('legalMindPremium')">Select Annual</button>
+        </div>
+      </div>
+      
+      <div class="model-comparison">
+        <h2>Model Comparison</h2>
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Standard (Free)</th>
+              <th>Premium</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Base Model</td>
+              <td>LegalMind (Mistral)</td>
+              <td>LegalMind Premium (DeepSeek)</td>
+            </tr>
+            <tr>
+              <td>Context Understanding</td>
+              <td>Good</td>
+              <td>Excellent</td>
+            </tr>
+            <tr>
+              <td>Legal Document Analysis</td>
+              <td><i class="fas fa-check check"></i></td>
+              <td><i class="fas fa-check check"></i></td>
+            </tr>
+            <tr>
+              <td>Improvement Suggestions</td>
+              <td><i class="fas fa-check check"></i></td>
+              <td><i class="fas fa-check check"></i> (More detailed)</td>
+            </tr>
+            <tr>
+              <td>Response Quality</td>
+              <td>Good</td>
+              <td>Superior</td>
+            </tr>
+            <tr>
+              <td>Document Size Limit</td>
+              <td>Up to 10,000 chars</td>
+              <td>Up to 30,000 chars</td>
+            </tr>
+            <tr>
+              <td>Priority Support</td>
+              <td><i class="fas fa-times times"></i></td>
+              <td><i class="fas fa-check check"></i></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+  
+  <footer>
+    <div class="container footer-content">
+      <div class="footer-links">
+        <a href="temp3.html">Home</a>
+        <a href="contact.html">Contact</a>
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+      </div>
+      <div class="copyright">
+        © 2023 LegalMind. All rights reserved.
+      </div>
+    </div>
+  </footer>
+  
+  <script>
+    // Function to toggle dark mode
+    function toggleDarkMode() {
+      const body = document.body;
+      const darkModeIcon = document.getElementById('darkModeIcon');
+      const darkModeText = document.getElementById('darkModeText');
+      
+      body.classList.toggle('dark-mode');
+      
+      if (body.classList.contains('dark-mode')) {
+        localStorage.setItem('darkMode', 'enabled');
+        if (darkModeIcon) {
+          darkModeIcon.classList.remove('fa-moon');
+          darkModeIcon.classList.add('fa-sun');
+          darkModeText.textContent = 'Light Mode';
+        }
+      } else {
+        localStorage.setItem('darkMode', 'disabled');
+        if (darkModeIcon) {
+          darkModeIcon.classList.remove('fa-sun');
+          darkModeIcon.classList.add('fa-moon');
+          darkModeText.textContent = 'Dark Mode';
+        }
+      }
+    }
+    
+    // Function to select a model and redirect to chat
+    function selectModel(modelKey) {
+      localStorage.setItem('selectedModel', modelKey);
+      window.location.href = 'temp3.html';
+    }
+    
+    // Check for dark mode preference on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      if (localStorage.getItem('darkMode') === 'enabled') {
+        document.body.classList.add('dark-mode');
+        const darkModeIcon = document.getElementById('darkModeIcon');
+        const darkModeText = document.getElementById('darkModeText');
+        if (darkModeIcon) {
+          darkModeIcon.classList.remove('fa-moon');
+          darkModeIcon.classList.add('fa-sun');
+          darkModeText.textContent = 'Light Mode';
+        }
+      }
+    });
+  </script>
+</body>
+</html> 
