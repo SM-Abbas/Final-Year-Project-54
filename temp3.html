@@ -15,6 +15,19 @@
     <!-- Add SheetJS library for Excel file processing -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+    <!-- Authentication check -->
+    <script>
+        // Check if user is logged in before allowing access
+        document.addEventListener('DOMContentLoaded', function() {
+            const isLoggedIn = localStorage.getItem('userToken') || localStorage.getItem('isLoggedIn');
+            
+            if (!isLoggedIn) {
+                // User is not logged in, redirect to login page
+                window.location.href = 'auth.html';
+            }
+        });
+    </script>
+
     <!-- OCR Styles -->
     <style>
         .file-preview-container.ocr-preview {

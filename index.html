@@ -194,11 +194,11 @@
     <main>
         <section id="home">
             <div class="home-container">
-                <h1 style="text-align: center;"><span class="animated-text" style="color: #007bff; background: linear-gradient(90deg, #007bff, #6b47fb); -webkit-background-clip: text; background-clip: text; color: transparent;">Welcome to Legal Mind</span></h1>
+                <h1 style="text-align: center;"><span class="animated-text" style="color: #ffffff;">Welcome to Legal Mind</span></h1>
                 <p style="text-align: center;">Your trusted partner for legal document solutions. Simplify your legal needs with our AI-driven platform.</p>
                 <div class="button-group">
                     <a href="services.html" class="btn">Explore Our Services</a>
-                    <a href="temp3.html" class="btn chatbot-btn"><i class="fas fa-robot"></i> Open Chatbot</a>
+                    <a href="#" id="chatbotButton" class="btn chatbot-btn"><i class="fas fa-robot"></i> Open Chatbot</a>
                 </div>
             </div>
         </section>
@@ -239,8 +239,28 @@
         // Update copyright year automatically
         document.getElementById('currentYear').textContent = new Date().getFullYear();
 
-        // Profile menu toggle
+        // Check authentication status for chatbot button
         document.addEventListener('DOMContentLoaded', function() {
+            const chatbotButton = document.getElementById('chatbotButton');
+            
+            if (chatbotButton) {
+                chatbotButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Check if user is logged in (using localStorage)
+                    const isLoggedIn = localStorage.getItem('userToken') || localStorage.getItem('isLoggedIn');
+                    
+                    if (isLoggedIn) {
+                        // User is logged in, redirect to chatbot
+                        window.location.href = 'temp3.html';
+                    } else {
+                        // User is not logged in, redirect to login page
+                        window.location.href = 'auth.html';
+                    }
+                });
+            }
+            
+            // Profile menu toggle
             const profilePic = document.getElementById('profilePicNav');
             const profileMenu = document.getElementById('profileMenu');
             
