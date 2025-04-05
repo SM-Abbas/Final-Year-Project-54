@@ -218,27 +218,6 @@ onAuthStateChanged(auth, (user) => {
                 profilePicNav.src = `https://ui-avatars.com/api/?name=${initials}&background=random`;
             }
         }
-        
-        // If we're on the auth page and the user is already logged in,
-        // redirect to temp3.html (chatbot interface)
-        if (window.location.pathname.includes("auth.html")) {
-            console.log("Already logged in and on auth page, redirecting to temp3.html");
-            
-            // Get redirect target or default to temp3.html
-            const redirectTarget = localStorage.getItem('redirectedFrom') === 'chatbot' ? 
-                'temp3.html' : 'temp3.html';
-                
-            // Set the returning flag for temp3.html to detect
-            sessionStorage.setItem('returningFromAuth', 'true');
-            
-            // Clear the redirectedFrom flag
-            localStorage.removeItem('redirectedFrom');
-            
-            // Redirect after a short delay
-            setTimeout(() => {
-                window.location.href = redirectTarget;
-            }, 500);
-        }
     } else {
         // User is signed out
         console.log("User is logged out");
@@ -252,18 +231,6 @@ onAuthStateChanged(auth, (user) => {
         
         // If on temp3.html page and not logged in, redirect to auth.html
         if (window.location.pathname.includes("temp3.html")) {
-            // Check if we're already in a redirect loop
-            const now = Date.now();
-            const lastRedirect = parseInt(localStorage.getItem('lastAuthRedirect') || '0');
-            
-            if (now - lastRedirect < 5000) {
-                console.log("Preventing auth redirect loop");
-                return;
-            }
-            
-            console.log("Not logged in and on chatbot page, redirecting to auth.html");
-            localStorage.setItem('lastAuthRedirect', now.toString());
-            localStorage.setItem('redirectedFrom', 'chatbot');
             window.location.href = "auth.html";
         }
     }
@@ -277,10 +244,6 @@ onAuthStateChanged(auth, (user) => {
         newLogoutBtn.addEventListener("click", () => {
             signOut(auth).then(() => {
                 console.log("User signed out from profile menu.");
-                // Clear all auth-related flags from storage
-                localStorage.removeItem('redirectedFrom');
-                localStorage.removeItem('lastAuthRedirect');
-                sessionStorage.removeItem('returningFromAuth');
                 window.location.href = "index.html";
             }).catch((error) => {
                 console.error("Logout error:", error.message);
