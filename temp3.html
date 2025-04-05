@@ -2712,15 +2712,7 @@
       }
     }
   </style>
-  <!-- Add an authentication overlay that blocks all content until logged in -->
-  <div id="authOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
-    <div style="text-align: center; max-width: 500px; padding: 20px;">
-      <h2>Authentication Required</h2>
-      <p>You must be logged in to access LegalMind.</p>
-      <p>Redirecting to login page...</p>
-      <div style="margin-top: 20px; width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-    </div>
-  </div>
+  <!-- Remove authentication overlay -->
   
   <style>
     @keyframes spin {
@@ -2728,24 +2720,10 @@
       100% { transform: rotate(360deg); }
     }
     
-    /* Hide all content until authentication is confirmed */
-    body.not-authenticated .sidebar,
-    body.not-authenticated .main-content,
-    body.not-authenticated .chat-section,
-    body.not-authenticated .documents-preview {
-      display: none !important;
-    }
+    /* Remove authentication blocking styles */
   </style>
   
-  <!-- Add an authentication overlay that blocks all content until logged in -->
-  <div id="authOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
-    <div style="text-align: center; max-width: 500px; padding: 20px;">
-      <h2>Authentication Required</h2>
-      <p>You must be logged in to access LegalMind.</p>
-      <p>Redirecting to login page...</p>
-      <div style="margin-top: 20px; width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-    </div>
-  </div>
+  <!-- Remove second authentication overlay -->
 </head>
 <body>
   <div class="dashboard">
@@ -3067,61 +3045,16 @@
 
     // Initialize dark mode from preferences
     document.addEventListener('DOMContentLoaded', function() {
-      // Mark document as not authenticated initially
-      document.body.classList.add('not-authenticated');
+      // Remove authentication checks and initialize directly
+      console.log("DOM loaded - initializing app directly without auth check");
       
-      // Show the auth overlay
-      document.getElementById('authOverlay').style.display = 'flex';
-      
-      console.log("DOM loaded - checking Firebase auth status");
-      
-      // Simple auth check - if logged in, allow access, else redirect to auth.html
-      setTimeout(() => {
-        // Check if Firebase auth is available
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-          firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-              // User is authenticated
-              console.log("User is authenticated:", user.displayName || user.email);
-              
-              // Remove the auth overlay
-              document.getElementById('authOverlay').style.display = 'none';
-              
-              // Remove the not-authenticated class to show content
-              document.body.classList.remove('not-authenticated');
-              
-              // Initialize the rest of the app
-              initializeApp();
-            } else {
-              // User is not authenticated, redirect to login page
-              console.log("User is not authenticated, redirecting to login page");
-              window.location.href = "auth.html";
-            }
-          });
-        } else {
-          console.error("Firebase auth not available. Make sure auth.js is properly loaded.");
-          
-          // Show an error in the auth overlay
-          const authOverlay = document.getElementById('authOverlay');
-          if (authOverlay) {
-            authOverlay.innerHTML = `
-              <div style="text-align: center; max-width: 500px; padding: 20px;">
-                <h2>Authentication Error</h2>
-                <p>Unable to load authentication system.</p>
-                <p>Please try refreshing the page or contact support if the issue persists.</p>
-                <button onclick="window.location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; margin-top: 15px; cursor: pointer;">
-                  Refresh Page
-                </button>
-              </div>
-            `;
-          }
-        }
-      }, 1000);
+      // Initialize the app immediately without checking authentication
+      initializeApp();
     });
     
     // Function that initializes the app after authentication
     function initializeApp() {
-      console.log("Initializing app after authentication");
+      console.log("Initializing app");
       
       // Check for saved dark mode preference
       if (localStorage.getItem('darkMode') === 'enabled') {
