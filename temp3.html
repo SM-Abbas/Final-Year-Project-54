@@ -7,6 +7,18 @@
   <title>LegalMind Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Immediate auth check before any assets load -->
+  <script>
+    // Check if user is already logged in via Firebase Auth
+    if (!localStorage.getItem('firebase:authUser:AIzaSyB9TKLmKIVO7-YWKv1iORqnax0sru249sY:[DEFAULT]')) {
+      console.log("Not logged in (quick check). Redirecting to auth page...");
+      window.location.href = "auth.html";
+    } else {
+      console.log("Auth token found in localStorage");
+    }
+  </script>
+  
   <!-- Add PDF.js library for PDF processing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
   <!-- Add Tesseract.js for OCR (image text recognition) -->
@@ -2748,25 +2760,34 @@
     <!-- Left Sidebar -->
     <div class="sidebar">
       <div class="chat-header">
-        <h1><i class="fas fa-scale-balanced"></i> LegalMind</h1>
-      </div>
-     
-      <div id="currentChat" style="margin-bottom: var(--spacing-md); font-weight: 500; font-size: 0.9rem; color: #6c757d;">
-        <span>Current Chat:</span> <span id="currentChatName">None</span>
+        <img src="https://ui-avatars.com/api/?name=Legal&background=0D8ABC&color=fff" width="30" height="30" alt="Logo">
+        <h1>LegalMind</h1>
       </div>
       
-      <button class="new-chat" onclick="addNewChat()">
-        <i class="fas fa-plus"></i> New Chat
-      </button>
+      <div class="chat-controls">
+        <button id="newChatBtn" onclick="addNewChat()">
+          <i class="fas fa-plus"></i>
+          <span>New chat</span>
+        </button>
+      </div>
       
-      <ul class="chat-list" id="chatList"></ul>
+      <div class="chat-list">
+        <ul id="chatList">
+          <!-- Chats will be listed here -->
+        </ul>
+      </div>
       
       <div class="documents-preview">
-        <h3><i class="fas fa-file-alt"></i> Documents</h3>
-        <div id="documentPreviews"></div>
-        <button class="documents-toggle" id="documentsToggle">
+        <h3 id="documentsToggle">
+          <i class="fas fa-file-alt"></i> Documents 
           <i class="fas fa-chevron-up"></i>
-        </button>
+        </h3>
+        <div id="documentPreviews">
+          <!-- Empty state message added by default -->
+          <p class="empty-preview-message">
+            <i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input
+          </p>
+        </div>
       </div>
     </div>
 
@@ -2781,33 +2802,36 @@
           <div class="model-dropdown">
             <span class="nav-brand">LegalMind</span>
             <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i>
-        </div>
+          </div>
         </div>
         
         <!-- Right nav items -->
         <div class="nav-right">
-          <!-- Model dropdown (for switching models) -->
-          <div class="model-dropdown">
-            <!-- Replace Plans dropdown with direct link -->
+          <div class="nav-links">
             <a href="plans" class="nav-link">
               <i class="fas fa-crown"></i> Plans
             </a>
-            
-            <!-- Replace Models dropdown with Services link -->
             <a href="services" class="nav-link">
               <i class="fas fa-cogs"></i> Services
             </a>
-            
-            <!-- Profile dropdown (keep this) -->
-            <div class="dropdown">
-              <a href="#" onclick="toggleProfileDropdown(event)">
-                <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" />
+          </div>
+          
+          <!-- Profile dropdown -->
+          <div class="nav-profile">
+            <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" />
+            <div class="profile-menu" id="profileMenu">
+              <div class="profile-menu-header">
                 <span class="user-name" id="profileUserName">User Name</span>
                 <span class="user-plan">Subscription: Basic</span>
-              </a>
-              <div class="dropdown-content" id="profileDropdown">
-                <a href="#" onclick="toggleProfileSettings(event)"><i class="fas fa-cog"></i> Settings</a>
-                <a href="#" id="logoutButton"><i class="fas fa-sign-out-alt"></i> Logout</a>
+              </div>
+              
+              <div class="profile-menu-actions" id="profileMainMenu">
+                <button class="profile-menu-btn" id="settingsButton" onclick="toggleProfileSettings(event)">
+                  <i class="fas fa-cog"></i> Settings
+                </button>
+                <button class="profile-menu-btn logout" id="logoutButton">
+                  <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
               </div>
             </div>
           </div>
@@ -3093,15 +3117,6 @@
         previewSection.style.visibility = 'visible';
         previewSection.style.opacity = '1';
         previewSection.style.zIndex = '5';
-        
-        // Initialize preview area
-        const documentPreviews = document.getElementById('documentPreviews');
-        if (documentPreviews && documentPreviews.children.length === 0) {
-          const welcomeText = document.createElement('p');
-          welcomeText.className = 'empty-preview-message';
-          welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
-          documentPreviews.appendChild(welcomeText);
-        }
       }
       
       // Simplified documents toggle functionality with forced visibility
@@ -3115,12 +3130,12 @@
         documentsToggle.addEventListener('click', function() {
           if (documentPreviews.style.display === 'none') {
             documentPreviews.style.display = 'block';
-            this.querySelector('i').classList.remove('fa-chevron-down');
-            this.querySelector('i').classList.add('fa-chevron-up');
+            this.querySelector('i:last-child').classList.remove('fa-chevron-down');
+            this.querySelector('i:last-child').classList.add('fa-chevron-up');
           } else {
             documentPreviews.style.display = 'none';
-            this.querySelector('i').classList.remove('fa-chevron-up');
-            this.querySelector('i').classList.add('fa-chevron-down');
+            this.querySelector('i:last-child').classList.remove('fa-chevron-up');
+            this.querySelector('i:last-child').classList.add('fa-chevron-down');
           }
         });
       }
