@@ -30,63 +30,6 @@
     
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
-    
-    // Add protection against auth loops
-    let authChecked = false;
-    let redirectAttempt = false;
-    let lastRedirectTime = 0;
-    
-    // Check authentication on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      // Mark document as not authenticated initially
-      document.body.classList.add('not-authenticated');
-      
-      // Show the auth overlay
-      document.getElementById('authOverlay').style.display = 'flex';
-      
-      firebase.auth().onAuthStateChanged(function(user) {
-        // Prevent multiple checks/redirects in rapid succession
-        if (authChecked && !user) {
-          console.log("Auth already checked, preventing loop");
-          return;
-        }
-        
-        authChecked = true;
-        
-        if (!user) {
-          console.log("User not authenticated, redirecting to login page");
-          
-          // Prevent redirect loops by checking last redirect time
-          const now = Date.now();
-          if (redirectAttempt && now - lastRedirectTime < 3000) {
-            console.log("Preventing redirect loop - multiple redirects in short period");
-            return;
-          }
-          
-          redirectAttempt = true;
-          lastRedirectTime = now;
-          
-          // Store that we're coming from the chatbot page
-          localStorage.setItem('redirectedFrom', 'chatbot');
-          
-          // Redirect with a slight delay to allow logging
-          setTimeout(() => {
-            window.location.href = "auth.html";
-          }, 500);
-        } else {
-          console.log("User authenticated:", user.displayName || user.email);
-          
-          // Remove the auth overlay
-          document.getElementById('authOverlay').style.display = 'none';
-          
-          // Remove the not-authenticated class to show content
-          document.body.classList.remove('not-authenticated');
-          
-          // Initialize the rest of the app now that we know the user is authenticated
-          initializeApp();
-        }
-      });
-    });
   </script>
   
   <!-- OCR Styles -->
@@ -2784,6 +2727,16 @@
       display: none !important;
     }
   </style>
+  
+  <!-- Add an authentication overlay that blocks all content until logged in -->
+  <div id="authOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
+    <div style="text-align: center; max-width: 500px; padding: 20px;">
+      <h2>Authentication Required</h2>
+      <p>You must be logged in to access LegalMind.</p>
+      <p>Redirecting to login page...</p>
+      <div style="margin-top: 20px; width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    </div>
+  </div>
 </head>
 <body>
   <div class="dashboard">
@@ -2983,7 +2936,7 @@
     </div>
   </div>
 
-  <script src="auth.js"></script>
+  <script src="auth.js" type="module"></script>
   <script>
     // Global storage for chat conversations and documents
     let chats = {};
@@ -3105,9 +3058,88 @@
 
     // Initialize dark mode from preferences
     document.addEventListener('DOMContentLoaded', function() {
+      // Mark document as not authenticated initially
+      document.body.classList.add('not-authenticated');
+      
+      // Show the auth overlay
+      document.getElementById('authOverlay').style.display = 'flex';
+      
       // With Firebase integration, we now handle initialization differently
       // The main initialization will happen in initializeApp() after auth check
       console.log("DOM loaded - waiting for Firebase auth check...");
+      
+      // Add protection against auth loops
+      let authChecked = false;
+      let redirectAttempt = false;
+      let lastRedirectTime = 0;
+      
+      // If auth.js module is handling the auth state, we also need a fallback check here
+      setTimeout(() => {
+        console.log("Checking authentication status...");
+        
+        // Check if Firebase auth is available
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+          firebase.auth().onAuthStateChanged(function(user) {
+            // Prevent multiple checks/redirects in rapid succession
+            if (authChecked) {
+              console.log("Auth already checked, preventing duplicate check");
+              return;
+            }
+            
+            authChecked = true;
+            
+            if (!user) {
+              console.log("User not authenticated, redirecting to login page");
+              
+              // Prevent redirect loops by checking last redirect time
+              const now = Date.now();
+              if (redirectAttempt && now - lastRedirectTime < 3000) {
+                console.log("Preventing redirect loop - multiple redirects in short period");
+                return;
+              }
+              
+              redirectAttempt = true;
+              lastRedirectTime = now;
+              
+              // Store that we're coming from the chatbot page
+              localStorage.setItem('redirectedFrom', 'chatbot');
+              
+              // Redirect with a slight delay to allow logging
+              setTimeout(() => {
+                window.location.href = "auth.html";
+              }, 500);
+            } else {
+              console.log("User authenticated:", user.displayName || user.email);
+              
+              // Remove the auth overlay
+              document.getElementById('authOverlay').style.display = 'none';
+              
+              // Remove the not-authenticated class to show content
+              document.body.classList.remove('not-authenticated');
+              
+              // Initialize the rest of the app now that we know the user is authenticated
+              initializeApp();
+            }
+          });
+        } else {
+          console.error("Firebase auth not available. Make sure auth.js is properly loaded.");
+          
+          // Show an error in the auth overlay
+          const authOverlay = document.getElementById('authOverlay');
+          if (authOverlay) {
+            authOverlay.innerHTML = `
+              <div style="text-align: center; max-width: 500px; padding: 20px;">
+                <h2>Authentication Error</h2>
+                <p>Unable to load authentication system.</p>
+                <p>Please try refreshing the page or contact support if the issue persists.</p>
+                <button onclick="window.location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; margin-top: 15px; cursor: pointer;">
+                  Refresh Page
+                </button>
+              </div>
+            `;
+          }
+        }
+      }, 1000); // Give auth.js a second to load and initialize
     });
     
     // Function that initializes the app after authentication
