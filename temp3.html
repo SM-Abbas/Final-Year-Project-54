@@ -7,18 +7,6 @@
   <title>LegalMind Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Immediate auth check before any assets load -->
-  <script>
-    // Check if user is already logged in via Firebase Auth
-    if (!localStorage.getItem('firebase:authUser:AIzaSyB9TKLmKIVO7-YWKv1iORqnax0sru249sY:[DEFAULT]')) {
-      console.log("Not logged in (quick check). Redirecting to auth page...");
-      window.location.href = "auth.html";
-    } else {
-      console.log("Auth token found in localStorage");
-    }
-  </script>
-  
   <!-- Add PDF.js library for PDF processing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
   <!-- Add Tesseract.js for OCR (image text recognition) -->
@@ -43,39 +31,57 @@
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     
+    // Add protection against auth loops
+    let authChecked = false;
+    let redirectAttempt = false;
+    let lastRedirectTime = 0;
+    
     // Check authentication on page load
     document.addEventListener('DOMContentLoaded', function() {
-      console.log("DOM loaded, checking authentication");
+      // Mark document as not authenticated initially
+      document.body.classList.add('not-authenticated');
       
-      // Flag to check if we're already in the authentication process
-      const isRedirecting = localStorage.getItem('auth_redirecting') === 'true';
-      const isGoogleAuthPopup = localStorage.getItem('google_auth_popup') === 'true';
-      
-      if (isRedirecting || isGoogleAuthPopup) {
-        console.log("Auth redirect already in progress or Google popup active, preventing loop");
-        if (!isGoogleAuthPopup) {
-          localStorage.removeItem('auth_redirecting');
-        }
-        return;
-      }
+      // Show the auth overlay
+      document.getElementById('authOverlay').style.display = 'flex';
       
       firebase.auth().onAuthStateChanged(function(user) {
-        // Skip redirect during Google auth popup
-        if (localStorage.getItem('google_auth_popup') === 'true') {
-          console.log("Google auth in progress, skipping auth state change");
+        // Prevent multiple checks/redirects in rapid succession
+        if (authChecked && !user) {
+          console.log("Auth already checked, preventing loop");
           return;
         }
         
+        authChecked = true;
+        
         if (!user) {
           console.log("User not authenticated, redirecting to login page");
-          // Set redirect flag to prevent loops
-          localStorage.setItem('auth_redirecting', 'true');
-          window.location.href = "auth.html";
+          
+          // Prevent redirect loops by checking last redirect time
+          const now = Date.now();
+          if (redirectAttempt && now - lastRedirectTime < 3000) {
+            console.log("Preventing redirect loop - multiple redirects in short period");
+            return;
+          }
+          
+          redirectAttempt = true;
+          lastRedirectTime = now;
+          
+          // Store that we're coming from the chatbot page
+          localStorage.setItem('redirectedFrom', 'chatbot');
+          
+          // Redirect with a slight delay to allow logging
+          setTimeout(() => {
+            window.location.href = "auth.html";
+          }, 500);
         } else {
           console.log("User authenticated:", user.displayName || user.email);
-          // Clear redirect flag
-          localStorage.removeItem('auth_redirecting');
-          localStorage.removeItem('google_auth_popup');
+          
+          // Remove the auth overlay
+          document.getElementById('authOverlay').style.display = 'none';
+          
+          // Remove the not-authenticated class to show content
+          document.body.classList.remove('not-authenticated');
+          
           // Initialize the rest of the app now that we know the user is authenticated
           initializeApp();
         }
@@ -2754,40 +2760,55 @@
       }
     }
   </style>
+  <!-- Add an authentication overlay that blocks all content until logged in -->
+  <div id="authOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white;">
+    <div style="text-align: center; max-width: 500px; padding: 20px;">
+      <h2>Authentication Required</h2>
+      <p>You must be logged in to access LegalMind.</p>
+      <p>Redirecting to login page...</p>
+      <div style="margin-top: 20px; width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    </div>
+  </div>
+  
+  <style>
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Hide all content until authentication is confirmed */
+    body.not-authenticated .sidebar,
+    body.not-authenticated .main-content,
+    body.not-authenticated .chat-section,
+    body.not-authenticated .documents-preview {
+      display: none !important;
+    }
+  </style>
 </head>
 <body>
   <div class="dashboard">
     <!-- Left Sidebar -->
     <div class="sidebar">
       <div class="chat-header">
-        <img src="https://ui-avatars.com/api/?name=Legal&background=0D8ABC&color=fff" width="30" height="30" alt="Logo">
-        <h1>LegalMind</h1>
+        <h1><i class="fas fa-scale-balanced"></i> LegalMind</h1>
+      </div>
+     
+      <div id="currentChat" style="margin-bottom: var(--spacing-md); font-weight: 500; font-size: 0.9rem; color: #6c757d;">
+        <span>Current Chat:</span> <span id="currentChatName">None</span>
       </div>
       
-      <div class="chat-controls">
-        <button id="newChatBtn" onclick="addNewChat()">
-          <i class="fas fa-plus"></i>
-          <span>New chat</span>
-        </button>
-      </div>
+      <button class="new-chat" onclick="addNewChat()">
+        <i class="fas fa-plus"></i> New Chat
+      </button>
       
-      <div class="chat-list">
-        <ul id="chatList">
-          <!-- Chats will be listed here -->
-        </ul>
-      </div>
+      <ul class="chat-list" id="chatList"></ul>
       
       <div class="documents-preview">
-        <h3 id="documentsToggle">
-          <i class="fas fa-file-alt"></i> Documents 
+        <h3><i class="fas fa-file-alt"></i> Documents</h3>
+        <div id="documentPreviews"></div>
+        <button class="documents-toggle" id="documentsToggle">
           <i class="fas fa-chevron-up"></i>
-        </h3>
-        <div id="documentPreviews">
-          <!-- Empty state message added by default -->
-          <p class="empty-preview-message">
-            <i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input
-          </p>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -2802,21 +2823,35 @@
           <div class="model-dropdown">
             <span class="nav-brand">LegalMind</span>
             <i class="fas fa-chevron-down" style="font-size: 0.8rem; margin-left: 5px;"></i>
-          </div>
+        </div>
         </div>
         
-        <!-- Right nav items -->
         <div class="nav-right">
           <div class="nav-links">
-            <a href="plans" class="nav-link">
-              <i class="fas fa-crown"></i> Plans
-            </a>
-            <a href="services" class="nav-link">
-              <i class="fas fa-cogs"></i> Services
-            </a>
+            <div class="dropdown">
+              <a href="#" onclick="togglePlansDropdown(event)">
+                <i class="fas fa-crown"></i> Plans
+              </a>
+              <div class="dropdown-content" id="plansDropdown">
+                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Month – ₹100</a>
+                <a href="#"><i class="fas fa-calendar-alt"></i> 3 Months – ₹250</a>
+                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Year – ₹800</a>
+              </div>
+            </div>
+            
+            <div class="dropdown">
+              <a href="#" onclick="toggleModelsDropdown(event)">
+                <i class="fas fa-microchip"></i> <span id="currentModelDisplay">LegalMind</span>
+              </a>
+              <div class="dropdown-content" id="modelsDropdown">
+                <a href="#" data-model="legalMind" onclick="setActiveModel('legalMind'); return false;" class="active-model"><i class="fas fa-brain"></i> LegalMind (Abbasgamer1)</a>
+                <a href="#" data-model="distilBert" onclick="setActiveModel('distilBert'); return false;"><i class="fas fa-brain"></i> Distl-BERT Model</a>
+              </div>
+            </div>
+            
+            <a href="contact.html"><i class="fas fa-envelope"></i> Contact Us</a>
           </div>
           
-          <!-- Profile dropdown -->
           <div class="nav-profile">
             <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" />
             <div class="profile-menu" id="profileMenu">
@@ -2826,12 +2861,44 @@
               </div>
               
               <div class="profile-menu-actions" id="profileMainMenu">
-                <button class="profile-menu-btn" id="settingsButton" onclick="toggleProfileSettings(event)">
+                <button class="profile-menu-btn" id="settingsButton">
                   <i class="fas fa-cog"></i> Settings
                 </button>
                 <button class="profile-menu-btn logout" id="logoutButton">
                   <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
+              </div>
+              
+              <div class="settings-panel" id="settingsPanel">
+                <button class="back-to-menu" id="backToMenu">
+                  <i class="fas fa-arrow-left"></i> Back
+                </button>
+                
+                <div class="settings-section">
+                  <div class="settings-section-header">
+                    <i class="fas fa-moon"></i> Appearance
+                  </div>
+              <label class="switch">
+                <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                    <span>Dark Mode</span>
+              </label>
+            </div>
+                
+                <div class="settings-section">
+                  <div class="settings-section-header">
+                    <i class="fas fa-user"></i> Profile Picture
+          </div>
+                  <div class="profile-pic-upload">
+                    <div class="profile-preview">
+                      <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile Preview" id="profilePreview">
+                    </div>
+                    <label for="uploadProfile" class="upload-btn">
+                      <i class="fas fa-upload"></i> Choose File
+                    </label>
+                    <input type="file" id="uploadProfile" onchange="uploadProfilePicture(event)" accept="image/*" style="display: none;">
+                    <p id="uploadedFileName" class="file-name"></p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -3117,6 +3184,15 @@
         previewSection.style.visibility = 'visible';
         previewSection.style.opacity = '1';
         previewSection.style.zIndex = '5';
+        
+        // Initialize preview area
+        const documentPreviews = document.getElementById('documentPreviews');
+        if (documentPreviews && documentPreviews.children.length === 0) {
+          const welcomeText = document.createElement('p');
+          welcomeText.className = 'empty-preview-message';
+          welcomeText.innerHTML = '<i class="fas fa-info-circle"></i> Upload files by clicking the paperclip icon in the chat input';
+          documentPreviews.appendChild(welcomeText);
+        }
       }
       
       // Simplified documents toggle functionality with forced visibility
@@ -3130,12 +3206,12 @@
         documentsToggle.addEventListener('click', function() {
           if (documentPreviews.style.display === 'none') {
             documentPreviews.style.display = 'block';
-            this.querySelector('i:last-child').classList.remove('fa-chevron-down');
-            this.querySelector('i:last-child').classList.add('fa-chevron-up');
+            this.querySelector('i').classList.remove('fa-chevron-down');
+            this.querySelector('i').classList.add('fa-chevron-up');
           } else {
             documentPreviews.style.display = 'none';
-            this.querySelector('i:last-child').classList.remove('fa-chevron-up');
-            this.querySelector('i:last-child').classList.add('fa-chevron-down');
+            this.querySelector('i').classList.remove('fa-chevron-up');
+            this.querySelector('i').classList.add('fa-chevron-down');
           }
         });
       }
