@@ -30,6 +30,15 @@
     
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
+    
+    // Set persistence to LOCAL for better auth state persistence
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+      .then(() => {
+        console.log("Firebase persistence set to LOCAL");
+      })
+      .catch((error) => {
+        console.error("Error setting persistence:", error);
+      });
   </script>
   
   <!-- OCR Styles -->
@@ -3073,6 +3082,13 @@
       let redirectAttempt = false;
       let lastRedirectTime = 0;
       
+      // Check if we're returning from a redirect from auth.html
+      const isReturningFromAuth = sessionStorage.getItem('returningFromAuth') === 'true';
+      if (isReturningFromAuth) {
+        console.log("Returning from auth page, clearing redirect flag");
+        sessionStorage.removeItem('returningFromAuth');
+      }
+      
       // If auth.js module is handling the auth state, we also need a fallback check here
       setTimeout(() => {
         console.log("Checking authentication status...");
@@ -3091,9 +3107,29 @@
             if (!user) {
               console.log("User not authenticated, redirecting to login page");
               
+              // Skip redirect if we just came from auth.html to prevent loops
+              if (isReturningFromAuth) {
+                console.log("Skipping redirect since we just came from auth.html");
+                // Show error message instead of redirecting again
+                const authOverlay = document.getElementById('authOverlay');
+                if (authOverlay) {
+                  authOverlay.innerHTML = `
+                    <div style="text-align: center; max-width: 500px; padding: 20px;">
+                      <h2>Authentication Failed</h2>
+                      <p>Unable to complete the authentication process.</p>
+                      <p>Please try again by clicking the button below.</p>
+                      <button onclick="window.location.href = 'auth.html'" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 5px; margin-top: 15px; cursor: pointer;">
+                        Go to Login
+                      </button>
+                    </div>
+                  `;
+                }
+                return;
+              }
+              
               // Prevent redirect loops by checking last redirect time
               const now = Date.now();
-              if (redirectAttempt && now - lastRedirectTime < 3000) {
+              if (redirectAttempt && now - lastRedirectTime < 5000) { // Increased time window to 5 seconds
                 console.log("Preventing redirect loop - multiple redirects in short period");
                 return;
               }
@@ -3103,6 +3139,9 @@
               
               // Store that we're coming from the chatbot page
               localStorage.setItem('redirectedFrom', 'chatbot');
+              
+              // Set a flag in sessionStorage to know we're coming from this page
+              sessionStorage.setItem('returningFromAuth', 'true');
               
               // Redirect with a slight delay to allow logging
               setTimeout(() => {
@@ -3139,7 +3178,7 @@
             `;
           }
         }
-      }, 1000); // Give auth.js a second to load and initialize
+      }, 2000); // Increased from 1000ms to 2000ms to give Firebase more time to initialize
     });
     
     // Function that initializes the app after authentication

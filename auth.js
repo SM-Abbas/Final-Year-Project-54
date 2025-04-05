@@ -69,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     console.log("User signed in successfully:", userCredential.user);
-                    localStorage.removeItem('auth_redirecting');
                     window.location.href = "temp3.html";
                 })
                 .catch((error) => {
@@ -112,7 +111,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }).then(() => {
                         console.log("User created successfully:", userCredential.user);
-                        localStorage.removeItem('auth_redirecting');
                         window.location.href = "temp3.html";
                     });
                 })
@@ -131,19 +129,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         newGoogleLoginBtn.addEventListener("click", () => {
             console.log("Google login clicked - using popup");
-            // Set flag before starting popup flow
-            localStorage.setItem('google_auth_popup', 'true');
-            
-            signInWithPopup(auth, provider)
+    signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google login successful:", result.user);
-                    localStorage.removeItem('auth_redirecting');
-                    localStorage.removeItem('google_auth_popup');
-                    window.location.href = "temp3.html";
+            window.location.href = "temp3.html";
                 })
                 .catch((error) => {
                     console.error("Google login error:", error);
-                    localStorage.removeItem('google_auth_popup');
                     if (error.code !== 'auth/cancelled-popup-request') {
                         alert("Google login failed: " + error.message);
                     }
@@ -159,19 +151,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         newGoogleSignupBtn.addEventListener("click", () => {
             console.log("Google signup clicked - using popup");
-            // Set flag before starting popup flow
-            localStorage.setItem('google_auth_popup', 'true');
-            
             signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google signup successful:", result.user);
-                    localStorage.removeItem('auth_redirecting');
-                    localStorage.removeItem('google_auth_popup');
                     window.location.href = "temp3.html";
-                })
-                .catch((error) => {
+        })
+        .catch((error) => {
                     console.error("Google signup error:", error);
-                    localStorage.removeItem('google_auth_popup');
                     if (error.code !== 'auth/cancelled-popup-request') {
                         alert("Google signup failed: " + error.message);
                     }
@@ -200,15 +186,6 @@ onAuthStateChanged(auth, (user) => {
     const profileUserName = document.getElementById("profileUserName");
     const profilePicNav = document.getElementById("profilePicNav");
     const navProfile = document.querySelector(".nav-profile");
-    
-    console.log("Auth state changed:", user ? "Logged in" : "Logged out");
-    
-    // Check if we're in the middle of a Google auth popup flow
-    const isGoogleAuthPopup = localStorage.getItem('google_auth_popup') === 'true';
-    if (isGoogleAuthPopup) {
-        console.log("Google auth popup in progress, skipping redirect logic");
-        return; // Skip the rest of the auth changes while popup is active
-    }
     
     if (user) {
         // User is signed in
@@ -241,21 +218,26 @@ onAuthStateChanged(auth, (user) => {
                 profilePicNav.src = `https://ui-avatars.com/api/?name=${initials}&background=random`;
             }
         }
-
-        // If on temp3.html page and not logged in, redirect to auth.html
-        if (window.location.pathname.includes("temp3.html")) {
-            // Check if we're already in the authentication process or in Google popup
-            const isRedirecting = localStorage.getItem('auth_redirecting') === 'true';
-            const isGoogleAuthPopup = localStorage.getItem('google_auth_popup') === 'true';
+        
+        // If we're on the auth page and the user is already logged in,
+        // redirect to temp3.html (chatbot interface)
+        if (window.location.pathname.includes("auth.html")) {
+            console.log("Already logged in and on auth page, redirecting to temp3.html");
             
-            if (isRedirecting || isGoogleAuthPopup) {
-                console.log("Auth redirect already in progress or Google popup active, preventing loop in auth.js");
-                return;
-            }
+            // Get redirect target or default to temp3.html
+            const redirectTarget = localStorage.getItem('redirectedFrom') === 'chatbot' ? 
+                'temp3.html' : 'temp3.html';
+                
+            // Set the returning flag for temp3.html to detect
+            sessionStorage.setItem('returningFromAuth', 'true');
             
-            // Set redirect flag to prevent loops
-            localStorage.setItem('auth_redirecting', 'true');
-            window.location.href = "auth.html";
+            // Clear the redirectedFrom flag
+            localStorage.removeItem('redirectedFrom');
+            
+            // Redirect after a short delay
+            setTimeout(() => {
+                window.location.href = redirectTarget;
+            }, 500);
         }
     } else {
         // User is signed out
@@ -270,17 +252,18 @@ onAuthStateChanged(auth, (user) => {
         
         // If on temp3.html page and not logged in, redirect to auth.html
         if (window.location.pathname.includes("temp3.html")) {
-            // Check if we're already in the authentication process or in Google popup
-            const isRedirecting = localStorage.getItem('auth_redirecting') === 'true';
-            const isGoogleAuthPopup = localStorage.getItem('google_auth_popup') === 'true';
+            // Check if we're already in a redirect loop
+            const now = Date.now();
+            const lastRedirect = parseInt(localStorage.getItem('lastAuthRedirect') || '0');
             
-            if (isRedirecting || isGoogleAuthPopup) {
-                console.log("Auth redirect already in progress or Google popup active, preventing loop in auth.js");
+            if (now - lastRedirect < 5000) {
+                console.log("Preventing auth redirect loop");
                 return;
             }
             
-            // Set redirect flag to prevent loops
-            localStorage.setItem('auth_redirecting', 'true');
+            console.log("Not logged in and on chatbot page, redirecting to auth.html");
+            localStorage.setItem('lastAuthRedirect', now.toString());
+            localStorage.setItem('redirectedFrom', 'chatbot');
             window.location.href = "auth.html";
         }
     }
@@ -294,6 +277,10 @@ onAuthStateChanged(auth, (user) => {
         newLogoutBtn.addEventListener("click", () => {
             signOut(auth).then(() => {
                 console.log("User signed out from profile menu.");
+                // Clear all auth-related flags from storage
+                localStorage.removeItem('redirectedFrom');
+                localStorage.removeItem('lastAuthRedirect');
+                sessionStorage.removeItem('returningFromAuth');
                 window.location.href = "index.html";
             }).catch((error) => {
                 console.error("Logout error:", error.message);
