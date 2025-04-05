@@ -36,14 +36,24 @@
       console.log("DOM loaded, checking authentication");
       
       // Flag to check if we're already in the authentication process
-      const isRedirecting = localStorage.getItem('auth_redirecting');
-      if (isRedirecting === 'true') {
-        console.log("Auth redirect already in progress, preventing loop");
-        localStorage.removeItem('auth_redirecting');
+      const isRedirecting = localStorage.getItem('auth_redirecting') === 'true';
+      const isGoogleAuthPopup = localStorage.getItem('google_auth_popup') === 'true';
+      
+      if (isRedirecting || isGoogleAuthPopup) {
+        console.log("Auth redirect already in progress or Google popup active, preventing loop");
+        if (!isGoogleAuthPopup) {
+          localStorage.removeItem('auth_redirecting');
+        }
         return;
       }
       
       firebase.auth().onAuthStateChanged(function(user) {
+        // Skip redirect during Google auth popup
+        if (localStorage.getItem('google_auth_popup') === 'true') {
+          console.log("Google auth in progress, skipping auth state change");
+          return;
+        }
+        
         if (!user) {
           console.log("User not authenticated, redirecting to login page");
           // Set redirect flag to prevent loops
@@ -53,6 +63,7 @@
           console.log("User authenticated:", user.displayName || user.email);
           // Clear redirect flag
           localStorage.removeItem('auth_redirecting');
+          localStorage.removeItem('google_auth_popup');
           // Initialize the rest of the app now that we know the user is authenticated
           initializeApp();
         }

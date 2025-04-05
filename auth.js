@@ -131,14 +131,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         newGoogleLoginBtn.addEventListener("click", () => {
             console.log("Google login clicked - using popup");
-    signInWithPopup(auth, provider)
+            // Set flag before starting popup flow
+            localStorage.setItem('google_auth_popup', 'true');
+            
+            signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google login successful:", result.user);
                     localStorage.removeItem('auth_redirecting');
+                    localStorage.removeItem('google_auth_popup');
                     window.location.href = "temp3.html";
                 })
                 .catch((error) => {
                     console.error("Google login error:", error);
+                    localStorage.removeItem('google_auth_popup');
                     if (error.code !== 'auth/cancelled-popup-request') {
                         alert("Google login failed: " + error.message);
                     }
@@ -154,14 +159,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         newGoogleSignupBtn.addEventListener("click", () => {
             console.log("Google signup clicked - using popup");
+            // Set flag before starting popup flow
+            localStorage.setItem('google_auth_popup', 'true');
+            
             signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google signup successful:", result.user);
                     localStorage.removeItem('auth_redirecting');
+                    localStorage.removeItem('google_auth_popup');
                     window.location.href = "temp3.html";
-        })
-        .catch((error) => {
+                })
+                .catch((error) => {
                     console.error("Google signup error:", error);
+                    localStorage.removeItem('google_auth_popup');
                     if (error.code !== 'auth/cancelled-popup-request') {
                         alert("Google signup failed: " + error.message);
                     }
@@ -190,6 +200,15 @@ onAuthStateChanged(auth, (user) => {
     const profileUserName = document.getElementById("profileUserName");
     const profilePicNav = document.getElementById("profilePicNav");
     const navProfile = document.querySelector(".nav-profile");
+    
+    console.log("Auth state changed:", user ? "Logged in" : "Logged out");
+    
+    // Check if we're in the middle of a Google auth popup flow
+    const isGoogleAuthPopup = localStorage.getItem('google_auth_popup') === 'true';
+    if (isGoogleAuthPopup) {
+        console.log("Google auth popup in progress, skipping redirect logic");
+        return; // Skip the rest of the auth changes while popup is active
+    }
     
     if (user) {
         // User is signed in
@@ -222,6 +241,22 @@ onAuthStateChanged(auth, (user) => {
                 profilePicNav.src = `https://ui-avatars.com/api/?name=${initials}&background=random`;
             }
         }
+
+        // If on temp3.html page and not logged in, redirect to auth.html
+        if (window.location.pathname.includes("temp3.html")) {
+            // Check if we're already in the authentication process or in Google popup
+            const isRedirecting = localStorage.getItem('auth_redirecting') === 'true';
+            const isGoogleAuthPopup = localStorage.getItem('google_auth_popup') === 'true';
+            
+            if (isRedirecting || isGoogleAuthPopup) {
+                console.log("Auth redirect already in progress or Google popup active, preventing loop in auth.js");
+                return;
+            }
+            
+            // Set redirect flag to prevent loops
+            localStorage.setItem('auth_redirecting', 'true');
+            window.location.href = "auth.html";
+        }
     } else {
         // User is signed out
         console.log("User is logged out");
@@ -235,10 +270,12 @@ onAuthStateChanged(auth, (user) => {
         
         // If on temp3.html page and not logged in, redirect to auth.html
         if (window.location.pathname.includes("temp3.html")) {
-            // Check if we're already in the authentication process
-            const isRedirecting = localStorage.getItem('auth_redirecting');
-            if (isRedirecting === 'true') {
-                console.log("Auth redirect already in progress, preventing loop in auth.js");
+            // Check if we're already in the authentication process or in Google popup
+            const isRedirecting = localStorage.getItem('auth_redirecting') === 'true';
+            const isGoogleAuthPopup = localStorage.getItem('google_auth_popup') === 'true';
+            
+            if (isRedirecting || isGoogleAuthPopup) {
+                console.log("Auth redirect already in progress or Google popup active, preventing loop in auth.js");
                 return;
             }
             

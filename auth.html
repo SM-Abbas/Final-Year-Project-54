@@ -265,7 +265,8 @@
       // Clear any auth redirecting flags when the auth page loads
       document.addEventListener('DOMContentLoaded', function() {
         localStorage.removeItem('auth_redirecting');
-        console.log("Auth page loaded, cleared redirecting flag");
+        localStorage.removeItem('google_auth_popup');
+        console.log("Auth page loaded, cleared redirecting flags");
       });
     </script>
     <script src="auth.js" type="module"></script>
