@@ -1091,12 +1091,27 @@
       align-self: flex-start;
       border-bottom-left-radius: 5px;
       border: 1px solid var(--light-border);
+      font-size: 0.9rem; /* Smaller font size for bot messages */
     }
     
     body.dark-mode .bot {
       background-color: rgba(255, 255, 255, 0.05);
       color: var(--dark-text);
       border-color: var(--dark-border);
+    }
+    
+    /* Additional styles for better readability with smaller text */
+    .message.bot p {
+      margin: 8px 0;
+      line-height: 1.5;
+    }
+    
+    .message.bot h3.section-header {
+      font-size: 1rem; /* Slightly larger than regular text */
+    }
+    
+    .message.bot .list-item {
+      margin: 6px 0;
     }
     
     /* Welcome Message with fixed positioning */
@@ -3003,10 +3018,10 @@
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
-        // Original endpoint is scaled to zero due to inactivity
+
         endpoints: [
-          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
           "https://api-inference.huggingface.co/models/google/gemma-3-12b-it",
+          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
           "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
           "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind"
           // Hidden fallback
@@ -3481,7 +3496,7 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
             msgDiv.innerHTML = formattedText;
         } else {
             // For user messages, just use regular text
-            msgDiv.textContent = text;
+        msgDiv.textContent = text;
         }
         
         msgDiv.classList.add("message", sender);
@@ -3755,6 +3770,9 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
       const originalActiveModel = activeModel;
       const isLegal = isLegalQuery(userMessageText);
       
+      // Create a variable to track if we need to add a disclaimer
+      let needsDisclaimer = false;
+      
       if (!isLegal) {
         // Find the Gemma model endpoint in the legalMind config
         const gemmaIndex = modelConfig.legalMind.endpoints.findIndex(endpoint =>
@@ -3762,7 +3780,7 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
         );
         
         if (gemmaIndex !== -1) {
-          console.log("Non-legal query detected. Routing to Gemma model.");
+          console.log("Non-legal query detected. Using Gemma model but continuing to respond.");
           // Temporarily set the endpoint to Gemma
           modelConfig.legalMind.currentEndpointIndex = gemmaIndex;
           
@@ -3771,10 +3789,11 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
             userMessageText = addDocumentContext(userMessageText);
           }
           
-          // Show notification if switched to Gemma for non-legal query
-          if (!modelConfig.legalMind.usingFallbackModel) {
-            showNotification("Non-legal query detected - Using Gemma model", "info");
-          }
+          // Set flag to add disclaimer
+          needsDisclaimer = true;
+          
+          // Show a subtle notification that this is a non-legal query
+          showNotification("Answering non-legal query with disclaimer", "info");
         }
       } else {
         // Check which model endpoint we're using currently
@@ -3801,11 +3820,6 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
       
       // Clear the input field
       messageInput.value = "";
-      
-      // Show notification if switched to Gemma for non-legal query
-      if (!isLegal) {
-        showNotification("Non-legal query detected - Using Gemma model", "info");
-      }
       
       if (currentChatId) {
         // Check for inappropriate content before proceeding
@@ -4119,6 +4133,11 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
             // Safety check for empty responses
             if (!botResponse) {
               botResponse = "I apologize, but I received an empty response. Please try asking your question again.";
+            }
+            
+            // Add disclaimer for non-legal queries
+            if (needsDisclaimer) {
+              botResponse = "Note: I am not a professional in this field. This response is provided for informational purposes only.\n\n" + botResponse;
             }
             
             // Format the bot response to ensure proper line spacing for step-by-step explanations
