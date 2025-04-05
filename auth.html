@@ -260,15 +260,7 @@
                 padding: 12px;
             }
         }
-    </style>
-    <script>
-      // Clear any auth redirecting flags when the auth page loads
-      document.addEventListener('DOMContentLoaded', function() {
-        localStorage.removeItem('auth_redirecting');
-        console.log("Auth page loaded, cleared redirecting flag");
-      });
-    </script>
-    <script src="auth.js" type="module"></script>
+    </style> 
 </head> 
 <body> 
     <div class="container"> 
@@ -368,6 +360,7 @@
         </a>
     </div> 
  
+    <script src="auth.js" type="module"></script> 
     <script>
         // Tab switching functionality
         document.addEventListener('DOMContentLoaded', function() {
