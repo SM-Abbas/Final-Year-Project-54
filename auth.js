@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     console.log("User signed in successfully:", userCredential.user);
+                    localStorage.removeItem('auth_redirecting');
                     window.location.href = "temp3.html";
                 })
                 .catch((error) => {
@@ -111,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         });
                     }).then(() => {
                         console.log("User created successfully:", userCredential.user);
+                        localStorage.removeItem('auth_redirecting');
                         window.location.href = "temp3.html";
                     });
                 })
@@ -132,7 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
     signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google login successful:", result.user);
-            window.location.href = "temp3.html";
+                    localStorage.removeItem('auth_redirecting');
+                    window.location.href = "temp3.html";
                 })
                 .catch((error) => {
                     console.error("Google login error:", error);
@@ -154,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
             signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google signup successful:", result.user);
+                    localStorage.removeItem('auth_redirecting');
                     window.location.href = "temp3.html";
         })
         .catch((error) => {
@@ -231,6 +235,15 @@ onAuthStateChanged(auth, (user) => {
         
         // If on temp3.html page and not logged in, redirect to auth.html
         if (window.location.pathname.includes("temp3.html")) {
+            // Check if we're already in the authentication process
+            const isRedirecting = localStorage.getItem('auth_redirecting');
+            if (isRedirecting === 'true') {
+                console.log("Auth redirect already in progress, preventing loop in auth.js");
+                return;
+            }
+            
+            // Set redirect flag to prevent loops
+            localStorage.setItem('auth_redirecting', 'true');
             window.location.href = "auth.html";
         }
     }

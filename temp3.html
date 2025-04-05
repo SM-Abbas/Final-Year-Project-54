@@ -34,19 +34,25 @@
     // Check authentication on page load
     document.addEventListener('DOMContentLoaded', function() {
       console.log("DOM loaded, checking authentication");
-      // Use a flag to prevent multiple redirects
-      let authChecked = false;
+      
+      // Flag to check if we're already in the authentication process
+      const isRedirecting = localStorage.getItem('auth_redirecting');
+      if (isRedirecting === 'true') {
+        console.log("Auth redirect already in progress, preventing loop");
+        localStorage.removeItem('auth_redirecting');
+        return;
+      }
       
       firebase.auth().onAuthStateChanged(function(user) {
-        // Only handle this check once per page load
-        if (authChecked) return;
-        authChecked = true;
-        
         if (!user) {
           console.log("User not authenticated, redirecting to login page");
+          // Set redirect flag to prevent loops
+          localStorage.setItem('auth_redirecting', 'true');
           window.location.href = "auth.html";
         } else {
           console.log("User authenticated:", user.displayName || user.email);
+          // Clear redirect flag
+          localStorage.removeItem('auth_redirecting');
           // Initialize the rest of the app now that we know the user is authenticated
           initializeApp();
         }
