@@ -12,6 +12,40 @@
   <!-- Add Tesseract.js for OCR (image text recognition) -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.3/dist/tesseract.min.js"></script>
   
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  
+  <!-- Initialize Firebase -->
+  <script>
+    // Firebase Configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9TKLmKIVO7-YWKv1iORqnax0sru249sY",
+      authDomain: "legalmind-users.firebaseapp.com",
+      projectId: "legalmind-users",
+      storageBucket: "legalmind-users.firebaseapp.com",
+      messagingSenderId: "321034025311",
+      appId: "1:321034025311:web:d8a01ac0c02d5b152b1eea"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    
+    // Check authentication on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      firebase.auth().onAuthStateChanged(function(user) {
+        if (!user) {
+          console.log("User not authenticated, redirecting to login page");
+          window.location.href = "auth.html";
+        } else {
+          console.log("User authenticated:", user.displayName || user.email);
+          // Initialize the rest of the app now that we know the user is authenticated
+          initializeApp();
+        }
+      });
+    });
+  </script>
+  
   <!-- OCR Styles -->
   <style>
     .file-preview-container.ocr-preview {
@@ -3004,6 +3038,15 @@
 
     // Initialize dark mode from preferences
     document.addEventListener('DOMContentLoaded', function() {
+      // With Firebase integration, we now handle initialization differently
+      // The main initialization will happen in initializeApp() after auth check
+      console.log("DOM loaded - waiting for Firebase auth check...");
+    });
+    
+    // Function that initializes the app after authentication
+    function initializeApp() {
+      console.log("Initializing app after authentication");
+      
       // Check for saved dark mode preference
       if (localStorage.getItem('darkMode') === 'enabled') {
         document.body.classList.add('dark-mode');
@@ -3145,7 +3188,7 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
       
       // Initialize file upload handling
       initializeFileHandling();
-    });
+    }
     
     // Function to initialize file handling
     function initializeFileHandling() {
@@ -4221,28 +4264,39 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
     
     // Function to get or set username
     function getUserName() {
-      let userName = localStorage.getItem('userName');
+      // Check if we have a Firebase auth user
+      const auth = firebase.auth();
+      const user = auth.currentUser;
       
-      // If no username is stored, prompt the user
-      if (!userName) {
-        userName = prompt("Welcome to LegalMind! What's your name?", "");
+      if (user && user.displayName) {
+        // Use Firebase display name
+        const userName = user.displayName;
+        console.log("Using Firebase displayName:", userName);
         
-        // If user cancels or enters empty string, use default
-        if (!userName) {
-          userName = "there";
-        } else {
-          // Store the username for future use
-          localStorage.setItem('userName', userName);
-          
-          // Also update the profile display if it exists
-          const profileUserName = document.getElementById('profileUserName');
-          if (profileUserName) {
-            profileUserName.textContent = userName;
-          }
+        // Update the profile display
+        const profileUserName = document.getElementById('profileUserName');
+        if (profileUserName) {
+          profileUserName.textContent = userName;
         }
+        
+        return userName;
+      } else if (user && user.email) {
+        // If no display name, use email (without the domain part)
+        const emailName = user.email.split('@')[0];
+        console.log("Using email as name:", emailName);
+        
+        // Update the profile display
+        const profileUserName = document.getElementById('profileUserName');
+        if (profileUserName) {
+          profileUserName.textContent = emailName;
+        }
+        
+        return emailName;
+      } else {
+        // Fallback - this shouldn't happen with auth protection
+        console.warn("No user found in Firebase auth, but page is loaded");
+        return "there";
       }
-      
-      return userName;
     }
 
     function closeMobileMenu() {
