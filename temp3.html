@@ -2683,29 +2683,6 @@
       }
     }
   </style>
-  <style>
-    /* CSS for Premium Model in dropdown */
-    .dropdown-content a[data-model="legalMindPremium"] {
-      background: linear-gradient(to right, rgba(255,215,0,0.1), transparent);
-      border-left: 3px solid #ffd700;
-    }
-    
-    .dropdown-content a[data-model="legalMindPremium"] i.fa-crown {
-      color: #ffd700;
-    }
-    
-    .dropdown-content a[data-model="legalMindPremium"]:hover {
-      background: linear-gradient(to right, rgba(255,215,0,0.2), rgba(255,215,0,0.05));
-    }
-    
-    .dark-mode .dropdown-content a[data-model="legalMindPremium"] {
-      background: linear-gradient(to right, rgba(255,215,0,0.15), transparent);
-    }
-    
-    .dark-mode .dropdown-content a[data-model="legalMindPremium"]:hover {
-      background: linear-gradient(to right, rgba(255,215,0,0.25), rgba(255,215,0,0.1));
-    }
-  </style>
 </head>
 <body>
   <div class="dashboard">
@@ -2750,8 +2727,27 @@
         
         <div class="nav-right">
           <div class="nav-links">
-            <a href="plans.html"><i class="fas fa-crown"></i> Plans</a>
-            <a href="#" id="modelDisplay"><i class="fas fa-microchip"></i> <span id="currentModelDisplay">LegalMind</span></a>
+            <div class="dropdown">
+              <a href="#" onclick="togglePlansDropdown(event)">
+                <i class="fas fa-crown"></i> Plans
+              </a>
+              <div class="dropdown-content" id="plansDropdown">
+                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Month – ₹100</a>
+                <a href="#"><i class="fas fa-calendar-alt"></i> 3 Months – ₹250</a>
+                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Year – ₹800</a>
+              </div>
+            </div>
+            
+            <div class="dropdown">
+              <a href="#" onclick="toggleModelsDropdown(event)">
+                <i class="fas fa-microchip"></i> <span id="currentModelDisplay">LegalMind</span>
+              </a>
+              <div class="dropdown-content" id="modelsDropdown">
+                <a href="#" data-model="legalMind" onclick="setActiveModel('legalMind'); return false;" class="active-model"><i class="fas fa-brain"></i> LegalMind (Abbasgamer1)</a>
+                <a href="#" data-model="distilBert" onclick="setActiveModel('distilBert'); return false;"><i class="fas fa-brain"></i> Distl-BERT Model</a>
+              </div>
+            </div>
+            
             <a href="contact.html"><i class="fas fa-envelope"></i> Contact Us</a>
           </div>
           
@@ -2836,10 +2832,6 @@
             <i class="fas fa-file-alt"></i>
             <span>Document Preview</span>
           </button>
-          <button class="mobile-menu-btn" onclick="window.location.href='plans.html'">
-            <i class="fas fa-crown"></i>
-            <span>Plans & Pricing</span>
-          </button>
           <button class="mobile-menu-btn" onclick="window.location.href='contact.html'">
             <i class="fas fa-envelope"></i>
             <span>Contact Us</span>
@@ -2890,7 +2882,7 @@
     </div>
   </div>
 
-  <script src="auth.js" type="module"></script>
+  <script src="auth.js"></script>
   <script>
     // Global storage for chat conversations and documents
     let chats = {};
@@ -2920,31 +2912,31 @@
         // Flag to indicate we're using the fallback model
         usingFallbackModel: false
       },
-      legalMindPremium: {
-        name: "LegalMind Premium",
-        // Use DeepSeek R1 as the primary endpoint for premium service
-        endpoints: [
-          "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-coder-1.3b-instruct",
-          "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324",
-          "https://api-inference.huggingface.co/models/deepseek-ai/deepseek-7b-chat"
-        ],
-        // Use the same auth tokens
-        authTokens: [
-          "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",  // legalmindapi - WRITE
-          "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"   // Current token
-        ],
-        // Track which endpoint and token is currently being used
-        currentEndpointIndex: 0,
-        currentTokenIndex: 0,
-        // Flag to indicate this is a premium model
-        usingFallbackModel: false,
-        isPremium: true
-      },
       // Add more models here if needed
     };
     
     // Current active model
     let activeModel = "legalMind";
+    
+    // Function to determine if a query is legal-related
+    function isLegalQuery(query) {
+      const legalKeywords = [
+        'legal', 'law', 'lawyer', 'attorney', 'court', 'judge', 'lawsuit', 'sue', 'plaintiff', 'defendant',
+        'contract', 'agreement', 'clause', 'provision', 'statute', 'regulation', 'compliance', 'liability',
+        'tort', 'negligence', 'damages', 'compensation', 'party', 'parties', 'breach', 'obligation',
+        'jurisdiction', 'rights', 'duties', 'legal document', 'legal advice', 'license', 'patent',
+        'copyright', 'trademark', 'intellectual property', 'legislation', 'bylaws', 'crime', 'criminal',
+        'civil', 'case law', 'precedent', 'arbitration', 'mediation', 'settlement', 'legal claim', 'petition',
+        'probate', 'estate', 'will', 'property', 'divorce', 'custody', 'immigration', 'visa', 'asylum'
+      ];
+      
+      const query_lower = query.toLowerCase();
+      
+      // Check if the query contains any legal keywords
+      return legalKeywords.some(keyword => query_lower.includes(keyword.toLowerCase())) ||
+             // Also consider document analysis as legal queries
+             Object.keys(uploadedDocuments).length > 0;
+    }
     
     // Function to show a notification
     function showNotification(message, type = 'info') {
@@ -2991,32 +2983,18 @@
         // Update the model name in the dropdown header
         const currentModelDisplay = document.getElementById("currentModelDisplay");
         if (currentModelDisplay) {
-          // Add premium badge if using premium model
-          if (modelKey === 'legalMindPremium') {
-            currentModelDisplay.innerHTML = `${modelConfig[modelKey].name} <span style="background-color: #ffd700; color: #000; font-size: 10px; padding: 2px 5px; border-radius: 10px; margin-left: 5px;">PREMIUM</span>`;
-          } else {
-            currentModelDisplay.textContent = modelConfig[modelKey].name;
-          }
+          currentModelDisplay.textContent = modelConfig[modelKey].name;
         }
         
         // Update the welcome message model name
         const welcomeModelName = document.getElementById("welcomeModelName");
         if (welcomeModelName) {
-          // Add premium badge if using premium model
-          if (modelKey === 'legalMindPremium') {
-            welcomeModelName.innerHTML = `${modelConfig[modelKey].name} <span style="background-color: #ffd700; color: #000; font-size: 10px; padding: 2px 5px; border-radius: 10px; margin-left: 5px;">PREMIUM</span>`;
-          } else {
-            welcomeModelName.textContent = modelConfig[modelKey].name;
-          }
+          welcomeModelName.textContent = modelConfig[modelKey].name;
         }
         
         // Show notification if the model actually changed
         if (previousModel !== modelKey) {
-          if (modelKey === 'legalMindPremium') {
-            showNotification(`Switched to ${modelConfig[modelKey].name} - Using DeepSeek's advanced model`, 'success');
-          } else {
-            showNotification(`Model changed to ${modelConfig[modelKey].name}`, 'success');
-          }
+          showNotification(`Model changed to ${modelConfig[modelKey].name}`, 'success');
         }
         
         return true;
@@ -3035,24 +3013,6 @@
           document.getElementById('darkModeIcon').classList.add('fa-sun');
           document.getElementById('darkModeText').textContent = 'Light Mode';
         }
-      }
-      
-      // Check if a model was selected from the plans page
-      const selectedModel = localStorage.getItem('selectedModel');
-      if (selectedModel) {
-        // Set the selected model
-        setActiveModel(selectedModel);
-        // Clear the selection so it doesn't keep applying on refresh
-        localStorage.removeItem('selectedModel');
-      }
-      
-      // Add click handler for model display to redirect to plans page
-      const modelDisplay = document.getElementById('modelDisplay');
-      if (modelDisplay) {
-        modelDisplay.addEventListener('click', function(e) {
-          e.preventDefault();
-          window.location.href = 'plans.html';
-        });
       }
       
       // Mobile menu handlers
@@ -3147,11 +3107,68 @@
       }
       
       // Add mobile menu button to toggle document visibility
-      document.getElementById('toggleSidebarBtn').addEventListener('click', function() {
+      const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+      if (toggleSidebarBtn) {
+        toggleSidebarBtn.addEventListener('click', function() {
         toggleSidebar();
         document.getElementById('mobileMenu').classList.remove('active');
       });
+      }
+      
+      // Automatically create a new chat and show welcome message
+      // Check if there are no existing chats first
+      const chatList = document.getElementById("chatList");
+      if (chatList && chatList.children.length === 0) {
+        // Create a new chat
+        addNewChat();
+        
+        // Add a welcome message from the bot
+        setTimeout(() => {
+          // Get the username
+          const userName = getUserName();
+          
+          const welcomeMessageText = `👋 Welcome to LegalMind! Hi ${userName}, I'm your AI legal assistant.
+
+I can help you with:
+• Analyzing and summarizing legal documents
+• Answering questions about legal concepts and terminology
+• Suggesting improvements to contracts and agreements
+• Providing general legal information
+
+Upload a document using the paperclip icon 📎 or simply ask me a question to get started!
+
+Note: For non-legal questions, I'll automatically switch to a general knowledge mode to better assist you.`;
+          
+          appendMessage("bot", welcomeMessageText);
+        }, 300);
+      }
+      
+      // Initialize file upload handling
+      initializeFileHandling();
     });
+    
+    // Function to initialize file handling
+    function initializeFileHandling() {
+      // Reset file inputs to ensure they're clear
+      const fileInput = document.getElementById('fileInput');
+      const imageInput = document.getElementById('imageInput');
+      
+      if (fileInput) {
+        fileInput.value = '';
+        console.log("File input initialized");
+      }
+      
+      if (imageInput) {
+        imageInput.value = '';
+        console.log("Image input initialized");
+      }
+      
+      // Make sure we have a chat ready for document uploads
+      if (!currentChatId) {
+        // We'll create the chat when needed, but we log this state
+        console.log("No chat active yet, will create one when documents are uploaded");
+      }
+    }
 
     function addNewChat() {
       const chatList = document.getElementById("chatList");
@@ -3434,59 +3451,99 @@
       const lowerText = text.toLowerCase().trim();
       
       // Very short questions are often continuations
-      if (lowerText.split(' ').length <= 5 && !lowerText.endsWith('?')) {
+      if (lowerText.split(' ').length <= 5) {
         return true;
       }
       
       // Check for pronouns and continuation phrases
       const continuationPatterns = [
+        // Pronouns that could reference previous content
         /\b(it|this|that|they|them|these|those)\b/i,
         /\b(its|their|theirs)\b/i,
+        
+        // Question words that might reference previous context
         /\b(why|how|what|when|where|who)\b.*\?$/i,
-        /^(and|but|so|also|besides|additionally)\b/i,
-        /\b(more|elaboration|clarify|explain|details)\b/i,
-        /\bcan you/i,
-        /\b(the|your|previous) (answer|response|explanation)\b/i,
-        /\byou (said|mentioned|noted|explained|stated)\b/i,
-        /\b(earlier|before|previously)\b/i,
-        /\b(going back to|referring to|regarding|about that|on that note)\b/i,
-        /\b(follow(ing)? up|to continue|continuing)\b/i,
-        /\bnow\b.*\b(tell|explain|elaborate)\b/i,
-        /\b(tell|show|give) me more\b/i,
+        
+        // Conjunctions at the start suggest continuity
+        /^(and|but|so|also|besides|additionally|however|moreover|furthermore)\b/i,
+        
+        // References seeking more details
+        /\b(more|elaboration|clarify|explain|details|elaborate|continue|tell me more)\b/i,
+        
+        // Direct references to previous interactions
+        /\bcan you\b/i,
+        /\b(the|your|previous|last|earlier) (answer|response|explanation|message|point|summary|analysis)\b/i,
+        
+        // References to understanding or agreement
+        /\b(i understand|i see|i get it|makes sense|got it)\b.*\?/i,
+        
+        // Questions about previous statements
+        /\b(you said|you mentioned|you noted|you stated|you indicated|you suggested)\b/i,
+        
+        // Referencing something without clarifying what "that" is
         /\b(what about|how about)\b/i,
-        /\b(another|one more|similar)\b/i
+        
+        // Asking for completion
+        /\b(finish|continue|go on|proceed|what else|anything else)\b/i,
+        
+        // Follow-up indicators
+        /\b(follow(ing)? up|related to|regarding|concerning|about that|on that note)\b/i,
+        
+        // Asking for examples
+        /\b(example|instance|case|scenario)\b/i,
+        
+        // Requesting alternatives
+        /\b(alternative|instead|other options|different way|another approach)\b/i,
+        
+        // Comparison questions 
+        /\b(better|worse|difference between|compare)\b/i
       ];
       
-      // For longer questions, we need to be more careful about context
-      if (lowerText.split(' ').length > 5) {
-        // Check against previous message to see if this is likely related
-        const previousMessages = messages.slice(-3); // Get last 3 messages
-        let previousContent = '';
-        for (const msg of previousMessages) {
-          previousContent += ' ' + msg.content.toLowerCase();
-        }
+      // Check if any pattern matches
+      const isPatternMatch = continuationPatterns.some(pattern => pattern.test(lowerText));
+      if (isPatternMatch) return true;
+      
+      // Check for references to specific entities from the last few messages
+      const recentBotMessages = messages
+        .filter(msg => msg.sender === "bot")
+        .slice(-3)
+        .map(msg => msg.content);
+      
+      // Extract potential key entities (nouns, named entities, etc.) from recent messages
+      // Simplified approach: look for capitalized words and phrases in recent responses
+      let keyEntities = [];
+      recentBotMessages.forEach(message => {
+        // Find capitalized words/phrases (potential entities)
+        const capitalizedMatches = message.match(/\b[A-Z][a-zA-Z]*\b/g) || [];
+        // Find quoted text
+        const quotedMatches = message.match(/"([^"]*)"/g) || [];
         
-        // Look for shared keywords (significant words)
-        const significantWords = lowerText.split(/\W+/).filter(word => 
-          word.length > 4 && 
-          !['about', 'after', 'again', 'below', 'could', 'every', 'first', 'found', 'great', 'however', 'large', 'other', 'should', 'small', 'their', 'there', 'these', 'think', 'those', 'through', 'under', 'where', 'which', 'while', 'would'].includes(word)
+        // Extract term from quotes (remove the quotes)
+        const quotedTerms = quotedMatches.map(match => 
+          match.replace(/^"|"$/g, '').toLowerCase()
         );
         
-        // If we find shared significant words, it's more likely to be a continuation
-        let sharedWordCount = 0;
-        for (const word of significantWords) {
-          if (previousContent.includes(word)) {
-            sharedWordCount++;
-          }
-        }
+        // Add all found entities
+        keyEntities = [...keyEntities, 
+          ...capitalizedMatches.map(m => m.toLowerCase()),
+          ...quotedTerms
+        ];
+      });
+      
+      // Remove duplicates and common words
+      const commonWords = ["i", "me", "you", "we", "us", "they", "them", "it", "the", "a", "an", "this", "that", "these", "those"];
+      keyEntities = [...new Set(keyEntities)].filter(e => e.length > 2 && !commonWords.includes(e));
+      
+      // Check if question mentions any key entity
+      if (keyEntities.length > 0) {
+        const mentionsEntity = keyEntities.some(entity => 
+          lowerText.includes(entity)
+        );
         
-        // If more than 2 significant words are shared, it's likely a continuation
-        if (sharedWordCount >= 2) {
-          return true;
-        }
+        if (mentionsEntity) return true;
       }
       
-      return continuationPatterns.some(pattern => pattern.test(lowerText));
+      return false;
     }
     
     // Function to detect and filter inappropriate content related to intimacy
@@ -3513,12 +3570,39 @@
 
     // Send message function
     function sendMessage() {
+      // Get message text
       const messageInput = document.getElementById("messageInput");
       const userMessageText = messageInput.value.trim();
-      messageInput.value = "";
+      
+      // Check if it's not a legal query, route to DeepSeek
+      const originalActiveModel = activeModel;
+      const isLegal = isLegalQuery(userMessageText);
+      
+      if (!isLegal) {
+        // Find the DeepSeek model endpoint in the legalMind config
+        const deepSeekIndex = modelConfig.legalMind.endpoints.findIndex(endpoint => 
+          endpoint.toLowerCase().includes('deepseek')
+        );
+        
+        if (deepSeekIndex !== -1) {
+          console.log("Non-legal query detected. Routing to DeepSeek model.");
+          // Temporarily set the endpoint to DeepSeek
+          modelConfig.legalMind.currentEndpointIndex = deepSeekIndex;
+        }
+      }
       
       // Don't send empty messages
-      if (!userMessageText) return;
+      if (userMessageText === "") {
+        return;
+      }
+      
+      // Clear the input field
+      messageInput.value = "";
+      
+      // Show notification if switched to DeepSeek for non-legal query
+      if (!isLegal) {
+        showNotification("Non-legal query detected - Using DeepSeek model", "info");
+      }
       
       if (currentChatId) {
         // Check for inappropriate content before proceeding
@@ -3581,21 +3665,39 @@
           return;
         }
         
+        // Initialize variables before using them
+          let conversationContext = "";
+        let isContinuation = false;
+        const hasDocuments = Object.keys(uploadedDocuments).length > 0;
+        
+        // Prepare conversation history for context if we have messages
+          if (chats[currentChatId] && chats[currentChatId].messages) {
+            // Check if this appears to be a continuation question
+          isContinuation = isContinuationQuestion(userMessageText, chats[currentChatId].messages);
+            
+            // Get more context for continuations, otherwise use standard context length
+          const contextLength = isContinuation ? 25 : 10;
+            
+            // Get recent messages for context, more if it's a continuation
+            const recentMessages = chats[currentChatId].messages.slice(-contextLength);
+            
+            for (const msg of recentMessages) {
+              if (msg.sender === "user") {
+                conversationContext += "User: " + msg.content + "\n";
+              } else if (msg.sender === "bot") {
+                conversationContext += "Assistant: " + msg.content + "\n";
+              }
+            }
+            
+            console.log("Is continuation question:", isContinuation);
+          }
+        
         // Show typing indicator with a slight delay
         const typingIndicator = setTimeout(() => {
           // Get current model name
           const currentModel = modelConfig[activeModel].name;
           const currentEndpoint = modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex];
-          let modelName = currentModel;
-          
-          // Add model variant based on endpoint
-          if (currentEndpoint.includes("mistral")) {
-            modelName += " (Mistral)";
-          } else if (currentEndpoint.includes("Abbasgamer1")) {
-            modelName += " (Legal)";
-          } else if (currentEndpoint.includes("deepseek")) {
-            modelName += " (DeepSeek)";
-          }
+          let modelName = "legalmind(abbasgamer1)";
           
           // Create thinking message with model info and data attribute for animation
           const thinkingMessage = `
@@ -3616,11 +3718,8 @@
                   <strong>User Query:</strong> ${userMessageText}
                   
                   <strong>Model:</strong> ${modelName}
-                  <strong>Endpoint:</strong> ${currentEndpoint}
-                  
-                  <strong>Context Length:</strong> ${conversationContext.split('\n').length} lines
-                  <strong>Continuation Question:</strong> ${isContinuation ? 'Yes (including more context)' : 'No (standard context)'}
-                  ${hasDocuments ? '<strong>Documents:</strong> ' + Object.keys(uploadedDocuments).join(', ') : ''}
+                  ${hasDocuments ? '<div style="margin-top: 8px;"><i class="fas fa-file-alt"></i> <strong>Documents:</strong> ' + Object.keys(uploadedDocuments).join(', ') + '</div>' : ''}
+                  ${isContinuation ? '<div style="margin-top: 8px; color: #ff8c00;"><i class="fas fa-link"></i> <strong>Continuation detected:</strong> Maintaining conversation context</div>' : ''}
                 </div>
               </div>
             </div>
@@ -3630,42 +3729,19 @@
           // Reference to the thinking message to remove it later
           const thinkingMsg = document.querySelector(".message.bot:last-child");
           
-          // Prepare conversation history for context
-          let conversationContext = "";
-          if (chats[currentChatId] && chats[currentChatId].messages) {
-            // Check if this appears to be a continuation question
-            const isContinuation = isContinuationQuestion(userMessageText, chats[currentChatId].messages);
-            
-            // Get more context for continuations, otherwise use standard context length
-            const contextLength = isContinuation ? 20 : 10;
-            
-            // Get recent messages for context, more if it's a continuation
-            const recentMessages = chats[currentChatId].messages.slice(-contextLength);
-            
-            for (const msg of recentMessages) {
-              if (msg.sender === "user") {
-                conversationContext += "User: " + msg.content + "\n";
-              } else if (msg.sender === "bot") {
-                conversationContext += "Assistant: " + msg.content + "\n";
-              }
-            }
-            
-            console.log("Is continuation question:", isContinuation);
-          }
-          
           // Add the current query
-          let fullPrompt = "You are LegalMind, a helpful assistant. Please respond to this query:\n" + 
+          let continuityInstructions = isContinuation ? 
+            "The user's current message appears to reference previous parts of the conversation. Be sure to maintain continuity and address any references to earlier messages or topics. " :
+            "";
+          
+          let conciseInstructions = "Be concise in your responses. If the user asks for a detailed explanation or extensive answer, provide it. Otherwise, give brief, direct answers focusing on the key points or steps.";
+          
+          let fullPrompt = "You are LegalMind, a helpful assistant specializing in legal document analysis. " + 
+                          continuityInstructions +
+                          conciseInstructions + " " +
+                          "Please respond to this query based on the conversation history:\n" + 
                           conversationContext + 
                           "User: " + userMessageText + "\nAssistant:";
-          
-          // For continuation questions, add special instructions
-          if (isContinuation) {
-            fullPrompt = "You are LegalMind, a helpful assistant. This is a CONTINUATION of the previous conversation.\n" +
-                        "The user may be referring to or asking about something mentioned earlier in the conversation.\n" +
-                        "Pay close attention to previous messages when you respond. Maintain continuity in the conversation.\n\n" +
-                        conversationContext + 
-                        "User: " + userMessageText + "\nAssistant:";
-          }
           
           // If we're using the DeepSeek model, use its recommended format
           const currentEndpointInfo = getCurrentEndpointInfo(activeModel);
@@ -3684,46 +3760,43 @@
             console.log("Using DeepSeek model with specialized prompt format");
           }
           
-          // For continuation questions, add special instructions for DeepSeek model too
-          if (isContinuation && currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
-            fullPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
-                        "This is a CONTINUATION of the previous conversation. " +
-                        "The user may be referring to or asking about something mentioned earlier. " +
-                        "Pay close attention to the context and maintain continuity.\n\n" +
-                        conversationContext +
-                        "User: " + userMessageText + "\nAssistant:";
-          }
-          
           console.log("Sending prompt:", fullPrompt);
           
           // Get document context if applicable
           const documentContext = getDocumentContext(userMessageText);
           let finalPrompt = fullPrompt;
           
-          // Check if there are uploaded documents
-          const hasDocuments = Object.keys(uploadedDocuments).length > 0;
-          
           // Always include document context if available, regardless of the query
           if (hasDocuments) {
             if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("deepseek")) {
+              const today = new Date();
+              const formattedDate = today.toLocaleDateString('en-US', { 
+                month: 'long', 
+                day: 'numeric',
+                weekday: 'long' 
+              });
+              
               finalPrompt = 
                 `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n` +
                 "Document(s) uploaded by user:" + 
                 documentContext + 
                 "\n\n" + conversationContext + 
                 "User: " + userMessageText + "\n" +
-                (isContinuation ? "NOTE: This is a continuation of the previous conversation. The user may be referring to previous messages or documents. Maintain continuity in your response.\n" : "") +
-                "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
+                (isContinuation ? 
+                  "This appears to be a follow-up question that may reference previous parts of the conversation. Maintain continuity and be sure to address references to earlier topics. " : "") +
+                "Be concise in your responses unless the user specifically requests detailed information. Always analyze the document(s) in your response. Include a short section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
                 "Assistant:";
             } else {
               finalPrompt = 
                 "You are LegalMind, a legal assistant that specializes in document analysis.\n\n" +
+                conciseInstructions + "\n\n" +
                 "User has uploaded the following document(s):" + 
                 documentContext + 
                 "\n\n" + conversationContext + 
                 "User: " + userMessageText + "\n" +
-                (isContinuation ? "NOTE: This is a continuation of the previous conversation. The user may be referring to previous messages or documents. Maintain continuity in your response.\n" : "") +
-                "Always analyze the document(s) in your response. Include a section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
+                (isContinuation ? 
+                  "This appears to be a follow-up question that may reference previous parts of the conversation. Maintain continuity and be sure to address references to earlier topics. " : "") +
+                "Always analyze the document(s) in your response. Include a short section titled 'Document Summary' with key points, and a section titled 'Document Improvement Suggestions' with 3-5 specific, actionable points on how to improve the document's clarity, precision, and effectiveness.\n" +
                 "Assistant:";
             }
             
@@ -3752,11 +3825,11 @@
             };
           }
           
-          // Create a timeout promise that will reject after 15 seconds
+          // Create a timeout promise that will reject after 45 seconds
           const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => {
-              reject(new Error('API request timed out after 15 seconds'));
-            }, 15000); // 15 seconds timeout
+              reject(new Error('API request timed out after 45 seconds'));
+            }, 45000); // 45 seconds timeout
           });
           
           // Race between the fetch request and the timeout
@@ -3803,7 +3876,7 @@
             // Add bot response from the API
             let botResponse = ""; // Empty default
             
-            // Specific handling for Mistral model
+            // Specific handling for different response formats
             if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
               botResponse = data[0].generated_text.trim();
               console.log("Using array[0].generated_text format");
@@ -3841,8 +3914,31 @@
               botResponse = "I apologize, but I received an empty response. Please try asking your question again.";
             }
             
-            // Add document download/update buttons if analysis is successful
-            if (botResponse && !botResponse.includes("I apologize")) {
+            // Format the bot response to ensure proper line spacing for step-by-step explanations
+            botResponse = botResponse
+              // Add double line breaks after numbered steps (1., 2., etc.)
+              .replace(/(\d+\..*?)(?=\s+\d+\.|\s*$)/g, '$1\n\n')
+              // Add line breaks after "Step X:" format
+              .replace(/(Step \d+:.*?)(?=\s+Step \d+:|\s*$)/g, '$1\n\n')
+              // Ensure proper spacing between sections with headers
+              .replace(/([A-Z][A-Za-z\s]+:)(?=\s+)/g, '\n\n$1\n')
+              // Replace single line breaks in paragraphs with double line breaks for better readability
+              .replace(/(\.)(\s+)([A-Z])/g, '$1\n\n$3');
+            
+            // Check if it's a document analysis
+            const isDocumentAnalysis = hasDocuments && 
+                                      (userMessageText.toLowerCase().includes("analyze") || 
+                                       userMessageText.toLowerCase().includes("review") ||
+                                       userMessageText.toLowerCase().includes("summarize") ||
+                                       userMessageText.toLowerCase().includes("improve") ||
+                                       userMessageText.toLowerCase().includes("check") ||
+                                       userMessageText.toLowerCase().includes("assess"));
+            
+            // Add document action buttons only if this is a document analysis
+            if (botResponse && !botResponse.includes("I apologize") && hasDocuments && isDocumentAnalysis) {
+              // Get the filename
+              const filename = Object.keys(uploadedDocuments)[0]; // Use first document if multiple uploaded
+              
               // Store the improvement suggestions for later use
               if (!window.documentImprovements) {
                 window.documentImprovements = {};
@@ -3853,7 +3949,7 @@
               };
               
               // Append the main response
-              appendMessage("bot", botResponse);
+            appendMessage("bot", botResponse);
               
               // Add action buttons for document improvements
               const actionButtonsHtml = `
@@ -3868,7 +3964,19 @@
               `;
               appendHtmlMessage("bot", actionButtonsHtml);
             } else {
+              // For regular responses
               appendMessage("bot", botResponse);
+            }
+            
+            // Add message to chat history
+            if (chats[currentChatId] && chats[currentChatId].messages) {
+              chats[currentChatId].messages.push({
+                sender: "bot",
+                content: botResponse
+              });
+              
+              // Save chats to localStorage
+              saveChatsToLocalStorage();
             }
           })
           .catch(error => {
@@ -3882,7 +3990,7 @@
             // Specific handling for timeout errors
             if (error.message.includes('timed out')) {
               console.log("API request timed out - automatically trying next endpoint");
-              showNotification("Model response timed out. Trying next model...", "warning");
+              showNotification("Model response timed out after 45 seconds. Trying next model...", "warning");
               
               // Automatically try the next endpoint or token
               if (tryNextEndpointOrToken(activeModel)) {
@@ -3895,7 +4003,12 @@
                 }
                 
                 // Retry with new endpoint/token (after a short delay)
-                setTimeout(() => sendMessage(), 1000);
+                setTimeout(() => {
+                  // Reuse the same user message that's already been displayed
+                  const messageInput = document.getElementById("messageInput");
+                  messageInput.value = userMessageText;
+                  sendMessage();
+                }, 1000);
                 return;
               }
             }
@@ -3911,7 +4024,12 @@
               }
               
               // Retry with new endpoint/token (after a short delay)
-              setTimeout(() => sendMessage(), 1000);
+              setTimeout(() => {
+                // Reuse the same user message that's already been displayed
+                const messageInput = document.getElementById("messageInput");
+                messageInput.value = userMessageText;
+                sendMessage();
+              }, 1000);
               return;
             }
             
@@ -3941,6 +4059,17 @@
             
             // Fallback response in case of error
             appendMessage("bot", errorMessage);
+            
+            // Add error message to chat history
+            if (chats[currentChatId] && chats[currentChatId].messages) {
+              chats[currentChatId].messages.push({
+                sender: "bot",
+                content: errorMessage
+              });
+              
+              // Save chats to localStorage
+              saveChatsToLocalStorage();
+            }
           });
           
         }, 300);
@@ -3957,6 +4086,17 @@
       const botMsg = { sender: "bot", text: text };
       chats[currentChatId].push(botMsg);
       appendMessage("bot", text);
+    }
+    
+    // Save chats to localStorage
+    function saveChatsToLocalStorage() {
+      try {
+        localStorage.setItem('legalMindChats', JSON.stringify(chats));
+        localStorage.setItem('legalMindCurrentChat', currentChatId);
+        console.log("Chats saved to localStorage");
+      } catch (e) {
+        console.error("Error saving chats to localStorage:", e);
+      }
     }
     
     // Toggle dark mode
@@ -4077,6 +4217,32 @@
           }
         }
       }
+    }
+    
+    // Function to get or set username
+    function getUserName() {
+      let userName = localStorage.getItem('userName');
+      
+      // If no username is stored, prompt the user
+      if (!userName) {
+        userName = prompt("Welcome to LegalMind! What's your name?", "");
+        
+        // If user cancels or enters empty string, use default
+        if (!userName) {
+          userName = "there";
+        } else {
+          // Store the username for future use
+          localStorage.setItem('userName', userName);
+          
+          // Also update the profile display if it exists
+          const profileUserName = document.getElementById('profileUserName');
+          if (profileUserName) {
+            profileUserName.textContent = userName;
+          }
+        }
+      }
+      
+      return userName;
     }
 
     function closeMobileMenu() {
@@ -4315,6 +4481,32 @@
       const file = event.target.files[0];
       if (!file) return;
       
+      // Reset the file input to allow reupload of the same file later
+      const fileInput = document.getElementById('fileInput');
+      if (fileInput) {
+        // Use setTimeout to reset it after processing is complete
+        setTimeout(() => {
+          fileInput.value = '';
+        }, 100);
+      }
+      
+      // Ensure we have a chat to work with
+      if (!currentChatId) {
+        console.log("No active chat found, creating one...");
+        addNewChat();
+        // Wait a little for the chat to be created
+        setTimeout(() => {
+          processUpload(file);
+        }, 300);
+        return;
+      }
+      
+      // Process the upload directly if we already have a chat
+      processUpload(file);
+    }
+    
+    // Separate function to process uploads to improve organization
+    function processUpload(file) {
       // Process document content for analysis
       processDocumentContent(file);
       
@@ -4421,6 +4613,16 @@
       closeBtn.addEventListener("click", function(e) {
         e.stopPropagation();
         filePreview.removeChild(fileItem);
+        
+        // Delete from the uploadedDocuments object
+        delete uploadedDocuments[file.name];
+        console.log(`Deleted document: ${file.name}`);
+        
+        // Reset the file input to allow reupload
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+          fileInput.value = '';
+        }
         
         // If no more files, show welcome message
         if (filePreview.children.length === 0) {
@@ -4596,11 +4798,11 @@
             };
           }
           
-          // Create a timeout promise that will reject after 15 seconds
+          // Create a timeout promise that will reject after 45 seconds
           const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => {
-              reject(new Error('API request timed out after 15 seconds'));
-            }, 15000); // 15 seconds timeout
+              reject(new Error('API request timed out after 45 seconds'));
+            }, 45000); // 45 seconds timeout
           });
           
           // Race between the fetch request and the timeout
@@ -4680,7 +4882,7 @@
               };
               
               // Append the main response
-              appendMessage("bot", botResponse);
+            appendMessage("bot", botResponse);
               
               // Add action buttons for document improvements
               const actionButtonsHtml = `
@@ -4756,124 +4958,124 @@
 
     // Function to test API connection
     function testAPIConnection() {
-        const model = modelConfig.legalMind;
-        const endpoint = model.endpoints[model.currentEndpointIndex];
-        const token = model.authTokens[model.currentTokenIndex];
-
-        console.log("Testing API connection to:", endpoint);
-        console.log("Using token index:", model.currentTokenIndex);
-
-        // Show testing notification
-        showNotification(`Testing API connection to endpoint ${model.currentEndpointIndex}...`, "info");
-
-        // Check if token appears valid
-        if (!token || !token.startsWith('hf_') || token.length < 10) {
-            console.error("API Token appears invalid:", token);
-            showNotification("API token appears invalid. Check console for details.", "error");
-            return;
+      const model = modelConfig.legalMind;
+      const endpoint = model.endpoints[model.currentEndpointIndex];
+      const token = model.authTokens[model.currentTokenIndex];
+      
+      console.log("Testing API connection to:", endpoint);
+      console.log("Using token index:", model.currentTokenIndex);
+      
+      // Show testing notification
+      showNotification(`Testing API connection to endpoint ${model.currentEndpointIndex}...`, "info");
+      
+      // Check if token appears valid
+      if (!token || !token.startsWith('hf_') || token.length < 10) {
+        console.error("API Token appears invalid:", token);
+        showNotification("API token appears invalid. Check console for details.", "error");
+        return;
+      }
+      
+        // Create a timeout promise that will reject after 45 seconds
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+                reject(new Error('API request timed out after 45 seconds'));
+            }, 45000); // 45 seconds timeout
+      });
+      
+      // Race between the fetch request and the timeout
+      Promise.race([
+        // Make a simple test request
+        fetch(endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            inputs: "Hello, can you give me a very brief response to test the connection?",
+            parameters: {
+              max_new_tokens: 50,
+              temperature: 0.7,
+              top_p: 0.95,
+              do_sample: true,
+              return_full_text: false
+            }
+          })
+        }),
+        timeoutPromise
+      ])
+      .then(response => {
+        console.log("Test API Status:", response.status);
+        console.log("Test API Headers:", [...response.headers.entries()]);
+        
+        if (!response.ok) {
+          return response.text().then(text => {
+            console.error("Test API Error Details:", text);
+            showNotification(`API connection failed (${response.status}): ${response.statusText}`, "error");
+            
+            // Try next endpoint or token
+            if (tryNextEndpointOrToken("legalMind")) {
+              setTimeout(testAPIConnection, 1000);
+            }
+            
+            return null;
+          });
         }
-
-        // Create a timeout promise that will reject after 15 seconds
-        const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => {
-                reject(new Error('API request timed out after 15 seconds'));
-            }, 15000); // 15 seconds timeout
-        });
-
-        // Race between the fetch request and the timeout
-        Promise.race([
-            // Make a simple test request
-            fetch(endpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    inputs: "Hello, can you give me a very brief response to test the connection?",
-                    parameters: {
-                        max_new_tokens: 50,
-                        temperature: 0.7,
-                        top_p: 0.95,
-                        do_sample: true,
-                        return_full_text: false
-                    }
-                })
-            }),
-            timeoutPromise
-        ])
-            .then(response => {
-                console.log("Test API Status:", response.status);
-                console.log("Test API Headers:", [...response.headers.entries()]);
-
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        console.error("Test API Error Details:", text);
-                        showNotification(`API connection failed (${response.status}): ${response.statusText}`, "error");
-
-                        // Try next endpoint or token
-                        if (tryNextEndpointOrToken("legalMind")) {
-                            setTimeout(testAPIConnection, 1000);
-                        }
-
-                        return null;
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data) {
-                    console.log("Test API Success:", data);
-
-                    // Display the actual response in the notification
-                    let responseText = "";
-                    if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-                        responseText = data[0].generated_text.substring(0, 50); // First 50 chars
-                    } else if (data && data.generated_text) {
-                        responseText = data.generated_text.substring(0, 50);
-                    } else {
-                        responseText = JSON.stringify(data).substring(0, 50);
-                    }
-
-                    showNotification(`API connection successful! Response: "${responseText}..."`, "success");
-
-                    // Also append result to chat if a chat is active
-                    if (currentChatId) {
-                        let successMessage = `API Test Result: Connection successful! Using endpoint ${model.currentEndpointIndex} and token ${model.currentTokenIndex}.`;
-
+        return response.json();
+      })
+      .then(data => {
+        if (data) {
+          console.log("Test API Success:", data);
+          
+          // Display the actual response in the notification
+          let responseText = "";
+          if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
+            responseText = data[0].generated_text.substring(0, 50); // First 50 chars
+          } else if (data && data.generated_text) {
+            responseText = data.generated_text.substring(0, 50);
+          } else {
+            responseText = JSON.stringify(data).substring(0, 50);
+          }
+          
+          showNotification(`API connection successful! Response: "${responseText}..."`, "success");
+          
+          // Also append result to chat if a chat is active
+          if (currentChatId) {
+            let successMessage = `API Test Result: Connection successful! Using endpoint ${model.currentEndpointIndex} and token ${model.currentTokenIndex}.`;
+            
                         // If we're using the DeepSeek fallback model, indicate this in the message
                         if (model.currentEndpointIndex === model.endpoints.length - 1) {
                             successMessage = "API Test Result: Connection successful using fallback model. The original model endpoints are not available, but this alternative will work.";
-                        }
-
-                        appendMessage("bot", successMessage);
-                    }
-                }
-            })
-            .catch(error => {
-                console.error("Test API Error:", error);
-
-                // Specific handling for timeout errors
-                if (error.message.includes('timed out')) {
-                    console.log("Test API request timed out - trying next endpoint");
-                    showNotification("Test API connection timed out. Trying next model...", "warning");
-
-                    // Try next endpoint or token
-                    if (tryNextEndpointOrToken("legalMind")) {
-                        setTimeout(testAPIConnection, 1000);
-                    } else {
-                        showNotification("All models timed out during testing. Please try again later.", "error");
-                    }
-                    return;
-                }
-
-                showNotification("API connection error: " + error.message, "error");
-
-                // Try next endpoint or token for other errors
-                if (tryNextEndpointOrToken("legalMind")) {
-                    setTimeout(testAPIConnection, 1000);
-                }
-            });
+            }
+            
+            appendMessage("bot", successMessage);
+          }
+        }
+      })
+      .catch(error => {
+        console.error("Test API Error:", error);
+        
+        // Specific handling for timeout errors
+        if (error.message.includes('timed out')) {
+          console.log("Test API request timed out - trying next endpoint");
+          showNotification("Test API connection timed out. Trying next model...", "warning");
+          
+          // Try next endpoint or token
+          if (tryNextEndpointOrToken("legalMind")) {
+            setTimeout(testAPIConnection, 1000);
+          } else {
+            showNotification("All models timed out during testing. Please try again later.", "error");
+          }
+          return;
+        }
+        
+        showNotification("API connection error: " + error.message, "error");
+        
+        // Try next endpoint or token for other errors
+        if (tryNextEndpointOrToken("legalMind")) {
+          setTimeout(testAPIConnection, 1000);
+        }
+      });
     }
 
     // Add a button to test the connection - button removed per user request
@@ -5089,11 +5291,11 @@
       console.log("Attempting to wake up endpoint:", endpoint);
       showNotification("Attempting to wake up endpoint...", "info");
       
-      // Create a timeout promise that will reject after 15 seconds
+      // Create a timeout promise that will reject after 45 seconds
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(() => {
-          reject(new Error('Wake up request timed out after 15 seconds'));
-        }, 15000); // 15 seconds timeout
+          reject(new Error('Wake up request timed out after 45 seconds'));
+        }, 45000); // 45 seconds timeout
       });
       
       // Race between the fetch request and the timeout
@@ -5140,8 +5342,8 @@
           appendMessage("bot", "The endpoint is waking up! Please try your request again in about 30 seconds.");
         }
         return response.json();
-      })
-      .catch(error => {
+          })
+          .catch(error => {
         console.error("Wake up error:", error);
         
         // Specific handling for timeout errors
@@ -5188,12 +5390,38 @@
       const file = event.target.files[0];
       if (!file) return;
       
+      // Reset the image input to allow reupload of the same file later
+      const imageInput = document.getElementById('imageInput');
+      if (imageInput) {
+        // Use setTimeout to reset it after processing is complete
+        setTimeout(() => {
+          imageInput.value = '';
+        }, 100);
+      }
+      
       // Check if it's actually an image
       if (!file.type.startsWith('image/')) {
         showNotification("Please select a valid image file (PNG, JPG, JPEG)", "error");
         return;
       }
       
+      // Ensure we have a chat to work with
+      if (!currentChatId) {
+        console.log("No active chat found, creating one...");
+        addNewChat();
+        // Wait a little for the chat to be created
+        setTimeout(() => {
+          processImageWithOCR(file);
+        }, 300);
+        return;
+      }
+      
+      // Process the image directly if we already have a chat
+      processImageWithOCR(file);
+    }
+    
+    // Separate function to process images with OCR
+    function processImageWithOCR(file) {
       showNotification("Processing image: " + file.name, "info");
       
       // For mobile devices, show the image in the chat
@@ -5310,6 +5538,16 @@
           closeBtn.addEventListener("click", function(e) {
             e.stopPropagation();
             filePreview.removeChild(fileItem);
+            
+            // Delete from the uploadedDocuments object
+            delete uploadedDocuments[file.name];
+            console.log(`Deleted document: ${file.name}`);
+            
+            // Reset the file input to allow reupload
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+              fileInput.value = '';
+            }
             
             // If no more files, show welcome message
             if (filePreview.children.length === 0) {
@@ -5433,6 +5671,7 @@
           2. Fix any grammatical or spelling errors
           3. Improve formatting and structure
           4. Return ONLY the improved document text, without any comments or explanations
+          5. Also provide a summary of changes made, listing each significant change in a brief bullet point
         `;
       } else {
         improvementPrompt = `
@@ -5448,7 +5687,8 @@
           1. Apply all suggested improvements to the document
           2. Fix any grammatical or spelling errors
           3. Improve formatting and structure
-          4. Return ONLY the improved document text, without any comments or explanations
+          4. Return the improved document text, followed by "CHANGES_SUMMARY:" and then a list of bullet points describing each significant change you made
+          5. Format your response exactly as: [IMPROVED_DOCUMENT]improved text here[/IMPROVED_DOCUMENT][CHANGES_SUMMARY]• Change 1\n• Change 2\n• etc.[/CHANGES_SUMMARY]
         `;
       }
       
@@ -5477,47 +5717,158 @@
         return response.json();
       })
       .then(data => {
-        let improvedText = "";
+        let modelResponse = "";
         
         // Extract the improved text based on the model's response format
         if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-          improvedText = data[0].generated_text.trim();
+          modelResponse = data[0].generated_text.trim();
         } else if (data && data.generated_text) {
-          improvedText = data.generated_text.trim();
+          modelResponse = data.generated_text.trim();
         } else if (data && data.choices && data.choices.length > 0) {
-          improvedText = (data.choices[0].message?.content || data.choices[0].text).trim();
+          modelResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
         } else {
           throw new Error("Unexpected response format");
         }
         
-        // Store the improved document
-        const improvedFilename = filename.replace(/(\.[^.]+)$/, "_improved$1");
-        uploadedDocuments[improvedFilename] = improvedText;
+        // Extract improved text and changes summary
+        let improvedText = "";
+        let changesSummary = "";
         
-        // Add the improved document to UI
-        addImprovedDocumentToUI(improvedFilename, improvedText);
+        // Try to extract using the requested format
+        const improvedDocMatch = modelResponse.match(/\[IMPROVED_DOCUMENT\]([\s\S]*?)\[\/IMPROVED_DOCUMENT\]/);
+        const changesSummaryMatch = modelResponse.match(/\[CHANGES_SUMMARY\]([\s\S]*?)\[\/CHANGES_SUMMARY\]/);
         
-        // Show success message with download options
-        const successMessageHtml = `
-          <div style="padding: 15px; background-color: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px; margin: 15px 0;">
-            <h4 style="margin-top: 0; color: #2e7d32;">✅ Document Improved Successfully</h4>
-            <p>I've implemented all the suggested improvements. The improved document is now available in your document panel.</p>
-            <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
-              <button onclick="downloadDocument('${improvedFilename}')" class="action-button primary-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--primary-color); color: white; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                <i class="fas fa-download"></i> Download Improved Document
-              </button>
-            </div>
-          </div>
-        `;
-        appendHtmlMessage("bot", successMessageHtml);
+        if (improvedDocMatch && changesSummaryMatch) {
+          improvedText = improvedDocMatch[1].trim();
+          changesSummary = changesSummaryMatch[1].trim();
+        } else {
+          // Fallback: if the model didn't use the requested format, assume the first part is the document
+          // and look for any section titled "Changes:" or similar
+          const changesSectionMatch = modelResponse.match(/(?:CHANGES(?:_SUMMARY)?:|Changes(?:\s+Summary)?:|Summary of Changes:)([\s\S]+)/);
+          
+          if (changesSectionMatch) {
+            improvedText = modelResponse.substring(0, changesSectionMatch.index).trim();
+            changesSummary = changesSectionMatch[1].trim();
+          } else {
+            // If no changes section found, just use the whole response as the improved text
+            improvedText = modelResponse;
+            changesSummary = "Changes not explicitly listed by the model.";
+          }
+        }
         
-        showNotification("Document improved successfully!", "success");
+        // Show the review UI with changes
+        showChangeReviewUI(filename, originalText, improvedText, changesSummary);
       })
       .catch(error => {
         console.error("Error implementing improvements:", error);
         showNotification("Error implementing document improvements", "error");
         appendMessage("bot", "I encountered an error while trying to implement the improvements. Please try again or implement the suggestions manually.");
       });
+    }
+    
+    // Function to show a UI for reviewing changes
+    function showChangeReviewUI(filename, originalText, improvedText, changesSummary) {
+      // Create the review UI container
+      const reviewUIHtml = `
+        <div class="change-review-container" style="padding: 15px; background-color: var(--light-bg); border-radius: 8px; margin: 15px 0; border: 1px solid var(--border-color);">
+          <h3 style="margin-top: 0; color: var(--primary-color);">Review Document Changes</h3>
+          <p>Please review the proposed changes to your document before accepting:</p>
+          
+          <div class="changes-summary" style="margin: 15px 0; padding: 10px; background-color: rgba(0,0,0,0.03); border-left: 3px solid var(--primary-color); border-radius: 4px;">
+            <h4 style="margin-top: 0;">Summary of Changes:</h4>
+            <div style="white-space: pre-line;">${changesSummary}</div>
+          </div>
+          
+          <div class="document-comparison" style="display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap;">
+            <div class="original-document" style="flex: 1; min-width: 250px;">
+              <h4 style="margin-top: 0;">Original Document</h4>
+              <div style="border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden;">
+                <textarea readonly style="width: 100%; height: 250px; padding: 10px; font-family: monospace; resize: vertical; border: none;">${originalText}</textarea>
+              </div>
+            </div>
+            
+            <div class="improved-document" style="flex: 1; min-width: 250px;">
+              <h4 style="margin-top: 0;">Improved Document</h4>
+              <div style="border: 1px solid var(--border-color); border-radius: 4px; overflow: hidden;">
+                <textarea id="improved-doc-content" style="width: 100%; height: 250px; padding: 10px; font-family: monospace; resize: vertical; border: none;">${improvedText}</textarea>
+              </div>
+            </div>
+          </div>
+          
+          <div class="action-buttons" style="display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end; flex-wrap: wrap;">
+            <button onclick="rejectChanges()" class="action-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--light-bg); color: var(--text-color); border: 1px solid var(--border-color); cursor: pointer;">
+              <i class="fas fa-times"></i> Reject Changes
+            </button>
+            <button onclick="acceptChanges('${filename}', true)" class="action-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--light-bg); color: var(--text-color); border: 1px solid var(--border-color); cursor: pointer;">
+              <i class="fas fa-edit"></i> Edit Before Accepting
+            </button>
+            <button onclick="acceptChanges('${filename}', false)" class="action-button primary-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--primary-color); color: white; border: none; cursor: pointer;">
+              <i class="fas fa-check"></i> Accept All Changes
+            </button>
+          </div>
+        </div>
+      `;
+      
+      // Add to chat
+      appendHtmlMessage("bot", reviewUIHtml);
+      
+      // Store the improved text for later use
+      if (!window.pendingDocumentChanges) {
+        window.pendingDocumentChanges = {};
+      }
+      window.pendingDocumentChanges[filename] = improvedText;
+      
+      showNotification("Please review the suggested changes", "info");
+    }
+    
+    // Function to accept changes
+    function acceptChanges(filename, allowEdit) {
+      if (!window.pendingDocumentChanges || !window.pendingDocumentChanges[filename]) {
+        showNotification("No pending changes found", "error");
+        return;
+      }
+      
+      let improvedText = window.pendingDocumentChanges[filename];
+      
+      // If user edited the content, get the updated version
+      if (allowEdit) {
+        const editedContent = document.getElementById('improved-doc-content');
+        if (editedContent) {
+          improvedText = editedContent.value;
+        }
+      }
+      
+      // Store the improved document
+      const improvedFilename = filename.replace(/(\.[^.]+)$/, "_improved$1");
+      uploadedDocuments[improvedFilename] = improvedText;
+      
+      // Add the improved document to UI
+      addImprovedDocumentToUI(improvedFilename, improvedText);
+      
+      // Show success message with download options
+      const successMessageHtml = `
+        <div style="padding: 15px; background-color: #e8f5e9; border-left: 4px solid #4caf50; border-radius: 4px; margin: 15px 0;">
+          <h4 style="margin-top: 0; color: #2e7d32;">✅ Document Changes Applied Successfully</h4>
+          <p>The improved document "${improvedFilename}" is now available in your document panel.</p>
+          <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+            <button onclick="downloadDocument('${improvedFilename}')" class="action-button primary-button" style="padding: 8px 15px; border-radius: 4px; background-color: var(--primary-color); color: white; border: none; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+              <i class="fas fa-download"></i> Download Improved Document
+            </button>
+          </div>
+        </div>
+      `;
+      appendHtmlMessage("bot", successMessageHtml);
+      
+      // Clear the pending changes
+      delete window.pendingDocumentChanges[filename];
+      
+      showNotification("Changes applied successfully!", "success");
+    }
+    
+    // Function to reject changes
+    function rejectChanges() {
+      showNotification("Changes rejected", "info");
+      appendMessage("bot", "Document changes have been rejected. If you'd like to try again with different improvements, please let me know.");
     }
     
     // Function to add improved document to UI
