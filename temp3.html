@@ -2711,6 +2711,74 @@
         opacity: 1;
       }
     }
+    
+    /* Enhanced Message Formatting Styles */
+    .message.bot {
+        line-height: 1.6;
+    }
+    
+    .message.bot h3.section-header {
+        margin: 16px 0 8px;
+        font-weight: 600;
+        color: var(--primary-color);
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding-bottom: 4px;
+    }
+    
+    .dark-mode .message.bot h3.section-header {
+        border-bottom-color: rgba(255,255,255,0.1);
+    }
+    
+    .message.bot .list-item {
+        margin: 8px 0;
+        display: flex;
+    }
+    
+    .message.bot .list-number {
+        min-width: 24px;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    .message.bot p {
+        margin: 12px 0;
+    }
+    
+    .message.bot code.inline-code {
+        background-color: rgba(0,0,0,0.05);
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-family: monospace;
+        font-size: 0.9em;
+    }
+    
+    .dark-mode .message.bot code.inline-code {
+        background-color: rgba(255,255,255,0.1);
+    }
+    
+    .message.bot pre.code-block {
+        background-color: rgba(0,0,0,0.05);
+        padding: 12px;
+        border-radius: 5px;
+        overflow-x: auto;
+        margin: 12px 0;
+    }
+    
+    .dark-mode .message.bot pre.code-block {
+        background-color: rgba(255,255,255,0.05);
+    }
+    
+    .message.bot .math-inline {
+        font-family: monospace;
+        font-style: italic;
+        background-color: rgba(0,0,0,0.02);
+        padding: 0 4px;
+        border-radius: 3px;
+    }
+    
+    .dark-mode .message.bot .math-inline {
+        background-color: rgba(255,255,255,0.05);
+    }
   </style>
   <!-- Remove authentication overlay -->
   
@@ -2785,7 +2853,7 @@
               </a>
               <div class="dropdown-content" id="modelsDropdown">
                 <a href="#" data-model="legalMind" onclick="setActiveModel('legalMind'); return false;" class="active-model"><i class="fas fa-brain"></i> LegalMind (Abbasgamer1)</a>
-                <a href="#" data-model="gemma" onclick="setActiveModel('gemma'); return false;"><i class="fas fa-brain"></i> Gemma 7B</a>
+                <a href="#" data-model="gemma" onclick="setActiveModel('gemma'); return false;"><i class="fas fa-brain"></i> Gemma 3 (12B)</a>
                 <a href="#" data-model="distilBert" onclick="setActiveModel('distilBert'); return false;"><i class="fas fa-brain"></i> Distl-BERT Model</a>
               </div>
             </div>
@@ -2938,7 +3006,7 @@
         // Original endpoint is scaled to zero due to inactivity
         endpoints: [
           "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
-          "https://api-inference.huggingface.co/models/google/gemma-7b-it",
+          "https://api-inference.huggingface.co/models/google/gemma-3-12b-it",
           "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
           "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind"
           // Hidden fallback
@@ -2955,9 +3023,9 @@
         usingFallbackModel: false
       },
       gemma: {
-        name: "Gemma",
+        name: "Gemma 3 (12B)",
         endpoints: [
-          "https://api-inference.huggingface.co/models/google/gemma-7b-it"
+          "https://api-inference.huggingface.co/models/google/gemma-3-12b-it"
         ],
         authTokens: [
           "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",  // legalmindapi - WRITE
@@ -3063,7 +3131,7 @@
       console.log("DOM loaded - initializing app directly without auth check");
       
       // Initialize the app immediately without checking authentication
-      initializeApp();
+              initializeApp();
     });
     
     // Function that initializes the app after authentication
@@ -3405,7 +3473,17 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
         if (!chatBox) return;
         
         const msgDiv = document.createElement("div");
-        msgDiv.textContent = text;
+        
+        // Format the text if it's coming from the bot
+        if (sender === "bot") {
+            // Process the text for better formatting
+            const formattedText = formatBotMessage(text);
+            msgDiv.innerHTML = formattedText;
+        } else {
+            // For user messages, just use regular text
+            msgDiv.textContent = text;
+        }
+        
         msgDiv.classList.add("message", sender);
         
         // Check if we're at the bottom before adding the message
@@ -3428,48 +3506,53 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
                 chats[currentChatId].messages = [];
             }
             chats[currentChatId].messages.push({
-                type: 'text',
+                type: sender === "bot" ? 'html' : 'text',
                 sender: sender,
                 content: text
             });
         }
     };
     
-    // Updated appendHtmlMessage function
-    window.appendHtmlMessage = function(sender, htmlContent) {
-        const chatBox = document.getElementById('chatBox');
-        if (!chatBox) return;
+    // Function to format bot messages with improved styling
+    function formatBotMessage(text) {
+        if (!text) return "";
         
-        const msgDiv = document.createElement("div");
-        msgDiv.innerHTML = htmlContent;
-        msgDiv.classList.add("message", sender);
+        // Process LaTeX-style math expressions
+        // Inline math: $formula$
+        let formattedText = text.replace(/\$([^$\n]+?)\$/g, '<span class="math-inline">$1</span>');
         
-        // Check if we're at the bottom before adding the message
-        const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
+        // Process code blocks
+        formattedText = formattedText.replace(/```([^`]*?)```/gs, '<pre class="code-block"><code>$1</code></pre>');
         
-        // Append the message
-        chatBox.appendChild(msgDiv);
+        // Process inline code
+        formattedText = formattedText.replace(/`([^`]+?)`/g, '<code class="inline-code">$1</code>');
         
-        // Only auto-scroll if we were already at the bottom
-        if (wasAtBottom) {
-            chatBox.scrollTo({
-                top: chatBox.scrollHeight,
-                behavior: 'smooth'
-            });
-        }
+        // Format section headers (e.g., "Document Summary:")
+        formattedText = formattedText.replace(/^([A-Z][A-Za-z\s]+):(?=\s+)/gm, '<h3 class="section-header">$1:</h3>');
         
-        // Store in current chat if available
-        if (currentChatId && chats[currentChatId]) {
-            if (!chats[currentChatId].messages) {
-                chats[currentChatId].messages = [];
-            }
-            chats[currentChatId].messages.push({
-                type: 'html',
-                sender: sender,
-                content: htmlContent
-            });
-        }
-    };
+        // Format numbered steps and lists (1. 2. 3. etc)
+        formattedText = formattedText.replace(/^(\d+\.\s+)(.+)$/gm, '<div class="list-item"><span class="list-number">$1</span>$2</div>');
+        
+        // Add proper paragraph spacing
+        formattedText = formattedText
+            .split(/\n\s*\n/)
+            .map(para => para.trim())
+            .filter(para => para.length > 0)
+            .map(para => {
+                // Don't wrap already formatted elements in paragraphs
+                if (para.startsWith('<h3') || 
+                    para.startsWith('<div class="list-item">') || 
+                    para.startsWith('<pre') ||
+                    para.startsWith('<ul') ||
+                    para.startsWith('<ol')) {
+                    return para;
+                }
+                return `<p>${para}</p>`;
+            })
+            .join('');
+            
+        return formattedText;
+    }
 
     // Function to check if the message is asking about chatbot identity
     function isIdentityQuestion(text) {
@@ -3508,6 +3591,34 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
       
       // Default identity response
       return "I am LegalMind, an AI legal assistant that specializes in analyzing legal documents. I can help review contracts, legal agreements, and other documents, providing insights and suggestions for improvements. If you have a document you'd like me to analyze, please upload it using the paperclip icon in the chat input.";
+    }
+
+    // Function to check if the user is asking about which model is being used
+    function isModelQuestion(text) {
+      const lowerText = text.toLowerCase().trim();
+      
+      // Check for common model-related questions
+      const modelPatterns = [
+        /which model/i,
+        /what model/i,
+        /model (?:is )?(?:being )?used/i,
+        /using which model/i,
+        /model (?:are|is) you/i,
+        /current model/i,
+        /active model/i,
+        /(?:you|it) (?:running|using) (?:on|as) (?:a|the) model/i,
+        /model (?:version|type|name)/i,
+        /(?:powered|run) by/i,
+        /backend model/i,
+        /based on (?:what|which) model/i
+      ];
+      
+      return modelPatterns.some(pattern => pattern.test(lowerText));
+    }
+    
+    // Function to get model information response
+    function getModelResponse() {
+      return "I'm running on LegalMind (Abbasgamer1), which is specially designed for legal document analysis and support. This model has been fine-tuned to understand legal terminology and concepts.";
     }
 
     // Function to determine if a question is a continuation of previous conversation
@@ -3677,7 +3788,7 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
           // Gemma format 
           fullPrompt = `<start_of_turn>user\n${userMessageText}<end_of_turn>\n<start_of_turn>model`;
           
-          console.log("Using Gemma model format");
+          console.log("Using Gemma 3 model format");
         } else if (chatMessages && chatMessages.length > 0) {
           // ... existing code ...
         }
@@ -3742,6 +3853,30 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
           setTimeout(() => {
             console.log("Responding with identity response:", identityResponse);
             appendMessage("bot", identityResponse);
+          }, 300);
+          return;
+        }
+        
+        // Check if asking about which model is being used
+        if (isModelQuestion(userMessageText)) {
+          // Provide model information response
+          const modelResponse = getModelResponse();
+          setTimeout(() => {
+            console.log("Responding with model information:", modelResponse);
+            appendMessage("bot", modelResponse);
+            
+            // Add to chat history
+            if (!chats[currentChatId].messages) {
+              chats[currentChatId].messages = [];
+            }
+            chats[currentChatId].messages.push({
+              sender: "user",
+              content: userMessageText
+            });
+            chats[currentChatId].messages.push({
+              sender: "bot",
+              content: modelResponse
+            });
           }, 300);
           return;
         }
@@ -3836,12 +3971,11 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
                           "User: " + userMessageText + "\nAssistant:";
           
           // If we're using the Gemma model, use its recommended format
-          const currentEndpointInfo = getCurrentEndpointInfo(activeModel);
           if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("gemma")) {
             // Gemma format 
             fullPrompt = `<start_of_turn>user\n${userMessageText}<end_of_turn>\n<start_of_turn>model`;
             
-            console.log("Using Gemma model format");
+            console.log("Using Gemma 3 model format");
           } else if (chatMessages && chatMessages.length > 0) {
             // ... existing code ...
           }
@@ -3858,7 +3992,7 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
               // Gemma format 
               finalPrompt = `<start_of_turn>user\n${userMessageText}<end_of_turn>\n<start_of_turn>model`;
               
-              console.log("Using Gemma model format");
+              console.log("Using Gemma 3 model format");
             } else {
               finalPrompt = 
                 "You are LegalMind, a legal assistant that specializes in document analysis.\n\n" +
@@ -3995,6 +4129,8 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
               .replace(/(Step \d+:.*?)(?=\s+Step \d+:|\s*$)/g, '$1\n\n')
               // Ensure proper spacing between sections with headers
               .replace(/([A-Z][A-Za-z\s]+:)(?=\s+)/g, '\n\n$1\n')
+              // Improve spacing for document sections
+              .replace(/(Document Summary:|Document Improvement Suggestions:|Next Steps:)/g, '\n\n$1\n')
               // Replace single line breaks in paragraphs with double line breaks for better readability
               .replace(/(\.)(\s+)([A-Z])/g, '$1\n\n$3');
             
@@ -4035,7 +4171,40 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
                   </button>
                 </div>
               `;
-              appendHtmlMessage("bot", actionButtonsHtml);
+              
+              // Create and append HTML content directly since appendHtmlMessage might not be defined
+              const chatBox = document.getElementById('chatBox');
+              if (chatBox) {
+                const msgDiv = document.createElement("div");
+                msgDiv.innerHTML = actionButtonsHtml;
+                msgDiv.classList.add("message", "bot");
+                
+                // Check if we're at the bottom before adding the message
+                const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
+                
+                // Append the message
+                chatBox.appendChild(msgDiv);
+                
+                // Only auto-scroll if we were already at the bottom
+                if (wasAtBottom) {
+                    chatBox.scrollTo({
+                        top: chatBox.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }
+                
+                // Store in current chat if available
+                if (currentChatId && chats[currentChatId]) {
+                    if (!chats[currentChatId].messages) {
+                        chats[currentChatId].messages = [];
+                    }
+                    chats[currentChatId].messages.push({
+                        type: 'html',
+                        sender: 'bot',
+                        content: actionButtonsHtml
+                    });
+                }
+              }
             } else {
               // For regular responses
               appendMessage("bot", botResponse);
@@ -4884,9 +5053,9 @@ Please include these sections in your response:
           // Use model-specific parameters if needed
           if (currentEndpointInfo && currentEndpointInfo.endpoint.includes("gemma")) {
             requestParams = {
-              max_new_tokens: 1024,
-              temperature: 0.3,  // Gemma recommends 0.3
-              top_p: 0.8,
+              max_new_tokens: 2048,  // Increased for Gemma 3 12B
+              temperature: 0.2,  // Lower temperature for more focused responses
+              top_p: 0.9,
               do_sample: true
             };
           }
@@ -4984,7 +5153,7 @@ Please include these sections in your response:
               };
               
               // Append the main response
-              appendMessage("bot", botResponse);
+            appendMessage("bot", botResponse);
               
               // Add action buttons for document improvements
               const actionButtonsHtml = `
@@ -4997,7 +5166,40 @@ Please include these sections in your response:
                   </button>
                 </div>
               `;
-              appendHtmlMessage("bot", actionButtonsHtml);
+              
+              // Create and append HTML content directly since appendHtmlMessage might not be defined
+              const chatBox = document.getElementById('chatBox');
+              if (chatBox) {
+                const msgDiv = document.createElement("div");
+                msgDiv.innerHTML = actionButtonsHtml;
+                msgDiv.classList.add("message", "bot");
+                
+                // Check if we're at the bottom before adding the message
+                const wasAtBottom = chatBox.scrollHeight - chatBox.clientHeight - chatBox.scrollTop < 50;
+                
+                // Append the message
+                chatBox.appendChild(msgDiv);
+                
+                // Only auto-scroll if we were already at the bottom
+                if (wasAtBottom) {
+                    chatBox.scrollTo({
+                        top: chatBox.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }
+                
+                // Store in current chat if available
+                if (currentChatId && chats[currentChatId]) {
+                    if (!chats[currentChatId].messages) {
+                        chats[currentChatId].messages = [];
+                    }
+                    chats[currentChatId].messages.push({
+                        type: 'html',
+                        sender: 'bot',
+                        content: actionButtonsHtml
+                    });
+                }
+              }
             } else {
               appendMessage("bot", botResponse);
             }
@@ -5753,17 +5955,17 @@ Please include these sections in your response:
               </div>
             `;
             appendHtmlMessage("bot", analysisNotification);
-            
+          
             // Call autoAnalyzeDocument with a delay to ensure the notification is displayed
-            setTimeout(() => {
+          setTimeout(() => {
               try {
-                autoAnalyzeDocument(file.name);
+            autoAnalyzeDocument(file.name);
               } catch (error) {
                 console.error("Error triggering document analysis:", error);
                 // Fallback to show a direct message with the extracted text
                 appendMessage("bot", `I've extracted the following text from your image. You can ask me specific questions about it:\n\n${text.length > 500 ? text.substring(0, 500) + "..." : text}`);
               }
-            }, 1000);
+          }, 1000);
           }
         }).catch(error => {
           console.error("OCR Error:", error);
