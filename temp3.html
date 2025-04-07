@@ -16,6 +16,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   
+  <!-- Custom CSS for chat input fixes -->
+  <link rel="stylesheet" href="fixed_chat_input.css">
+  
   <!-- Initialize Firebase -->
   <script>
     // Firebase Configuration
@@ -1923,7 +1926,8 @@
       }
       
       #messageInput {
-        padding-left: 70px !important;
+        padding-left: 100px !important;
+        padding-right: 50px !important;
       }
       
       #sendBtn {
@@ -2536,6 +2540,89 @@
     /* Mobile specific fixes */
   </style>
   
+  <style>
+    /* Desktop styles for document upload and camera buttons */
+    @media (min-width: 993px) {
+      .button-container {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        z-index: 10;
+      }
+      
+      .chat-btn.attach-btn, 
+      .chat-btn.image-btn {
+        position: static;
+        transform: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        color: #6c757d;
+        background-color: var(--light-surface);
+        border: 1px solid var(--light-border);
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        transition: all 0.2s ease;
+      }
+      
+      .chat-btn.attach-btn:hover, 
+      .chat-btn.image-btn:hover {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+      }
+      
+      body.dark-mode .chat-btn.attach-btn, 
+      body.dark-mode .chat-btn.image-btn {
+        background-color: var(--dark-surface);
+        border-color: var(--dark-border);
+        color: #adb5bd;
+      }
+      
+      body.dark-mode .chat-btn.attach-btn:hover, 
+      body.dark-mode .chat-btn.image-btn:hover {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+      }
+      
+      .input-container {
+        position: relative;
+        width: 100%;
+      }
+      
+      #messageInput {
+        width: 100%;
+        padding-left: 100px !important;
+        padding-right: 50px !important;
+      }
+      
+      /* Override any absolute positioning for attach and image buttons in mobile view */
+      .attach-btn, .image-btn {
+        position: static;
+        right: auto;
+      }
+      
+      /* Ensure input height matches button height for better alignment */
+      .chat-input input {
+        min-height: 46px;
+      }
+      
+      /* Ensure the buttons are always visible on desktop regardless of other CSS */
+      .button-container {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+    }
+  </style>
+  
   <script>
     // Add haptic feedback for mobile interactions
     document.addEventListener('DOMContentLoaded', function() {
@@ -2852,14 +2939,10 @@
         <div class="nav-right">
           <div class="nav-links">
             <div class="dropdown">
-              <a href="#" onclick="togglePlansDropdown(event)">
+              <a href="plans.html">
                 <i class="fas fa-crown"></i> Plans
               </a>
-              <div class="dropdown-content" id="plansDropdown">
-                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Month – ₹100</a>
-                <a href="#"><i class="fas fa-calendar-alt"></i> 3 Months – ₹250</a>
-                <a href="#"><i class="fas fa-calendar-alt"></i> 1 Year – ₹800</a>
-              </div>
+              <!-- Removed dropdown-content div -->
             </div>
             
             <div class="dropdown">
@@ -2967,13 +3050,7 @@
       <div class="chat-box" id="chatBox">
       <div class="welcome-message">
         <h2>Hi, I'm LegalMind.</h2>
-          <p>Ask me anything about legal documents and concepts.</p>
-          <p><i class="fas fa-file-upload"></i> Upload documents using the paperclip icon or <i class="fas fa-camera"></i> upload images with text using the camera icon.</p>
-          <div class="model-info">
-            <i class="fas fa-plug"></i> Connected to <span id="welcomeModelName">LegalMind</span> model 
-            <span class="model-id">(revision: 81f0038)</span>
-          </div>
-        </div>
+      </div>
         <button class="scroll-bottom-btn" id="scrollBottomBtn" aria-label="Scroll to bottom">
           <i class="fas fa-chevron-down"></i>
         </button>
@@ -2981,6 +3058,20 @@
 
       <div class="chat-input">
         <div class="input-container">
+          <!-- Left positioned buttons -->
+          <div class="button-container">
+            <button class="chat-btn attach-btn" onclick="document.getElementById('fileInput').click()">
+              <i class="fas fa-paperclip"></i>
+            </button>
+            <input type="file" id="fileInput" accept=".pdf,.txt,.docx" style="display:none;" onchange="previewFile(event)">
+            
+            <button class="chat-btn image-btn" onclick="document.getElementById('imageInput').click()">
+              <i class="fas fa-camera"></i>
+            </button>
+            <input type="file" id="imageInput" accept="image/png,image/jpeg,image/jpg" style="display:none;" onchange="processImage(event)">
+          </div>
+          
+          <!-- Input field -->
           <input 
             type="text" 
             id="messageInput" 
@@ -2989,17 +3080,8 @@
             onkeypress="if(event.key === 'Enter') sendMessage()"
           >
           
-          <span class="image-btn" onclick="document.getElementById('imageInput').click()">
-            <i class="fas fa-camera"></i>
-          </span>
-          <input type="file" id="imageInput" accept="image/png,image/jpeg,image/jpg" style="display:none;" onchange="processImage(event)">
-          
-          <span class="attach-btn" onclick="document.getElementById('fileInput').click()">
-            <i class="fas fa-paperclip"></i>
-          </span>
-          <input type="file" id="fileInput" accept=".pdf,.txt,.docx" style="display:none;" onchange="previewFile(event)">
-          
-          <button id="sendBtn" onclick="sendMessage()" aria-label="Send message">
+          <!-- Right positioned send button -->
+          <button id="sendBtn" class="chat-btn" onclick="sendMessage()" aria-label="Send message">
             <i class="fas fa-paper-plane"></i>
           </button>
         </div>
@@ -3014,22 +3096,53 @@
     let currentChatId = null;
     let uploadedDocuments = {}; // Store document content by filename
     
+    // Simplified mobile viewport fix for better keyboard handling
+    function adjustViewportForKeyboard() {
+      // Only apply on mobile devices
+      if (window.innerWidth < 992) {
+        document.documentElement.style.height = window.innerHeight + 'px';
+        document.body.style.height = window.innerHeight + 'px';
+        
+        // Basic keyboard handling
+        const messageInput = document.getElementById('messageInput');
+        if (messageInput) {
+          messageInput.addEventListener('focus', function() {
+            setTimeout(function() {
+              const chatBox = document.getElementById('chatBox');
+              if (chatBox) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+              }
+            }, 300);
+          });
+        }
+      }
+    }
+    
+    // Run on page load and resize
+    window.addEventListener('DOMContentLoaded', adjustViewportForKeyboard);
+    window.addEventListener('resize', adjustViewportForKeyboard);
+    
+    // Listen for orientation changes
+    window.addEventListener('orientationchange', function() {
+      setTimeout(adjustViewportForKeyboard, 300);
+    });
+    
     // Model configuration
     const modelConfig = {
       legalMind: {
         name: "LegalMind",
 
         endpoints: [
-          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+          "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2", // Moved working endpoint to first position
           "https://api-inference.huggingface.co/models/google/gemma-3-12b-it",
           "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
           "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind"
           // Hidden fallback
         ],
-        // Multiple API tokens to try as alternatives
+        // API tokens
         authTokens: [
-          "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",  // legalmindapi - WRITE
-          "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"   // Current token
+          "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", // New working token
+          "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"  // Old token as backup
         ],
         // Track which endpoint and token is currently being used
         currentEndpointIndex: 0,
@@ -3043,8 +3156,8 @@
           "https://api-inference.huggingface.co/models/google/gemma-3-12b-it"
         ],
         authTokens: [
-          "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",  // legalmindapi - WRITE
-          "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"   // Current token
+          "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", // New working token
+          "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"  // Old token as backup
         ],
         currentEndpointIndex: 0,
         currentTokenIndex: 0,
@@ -3376,8 +3489,6 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
         welcomeMessage.classList.add("welcome-message");
         welcomeMessage.innerHTML = `
             <h2>Hi, I'm LegalMind.</h2>
-            <p>Ask me anything about legal documents and concepts.</p>
-            <p><i class="fas fa-file-upload"></i> Upload documents using the paperclip icon and I can analyze them for you.</p>
         `;
         chatBox.appendChild(welcomeMessage);
         
@@ -4383,22 +4494,10 @@ Note: For non-legal questions, I'll automatically switch to a general knowledge 
       }
     }
 
-    function togglePlansDropdown(event) {
-      event.preventDefault();
-      const dropdown = document.getElementById("plansDropdown");
-      dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
-      
-      // Close other dropdowns
-      document.getElementById("modelsDropdown").style.display = "none";
-    }
-
     function toggleModelsDropdown(event) {
       event.preventDefault();
       const dropdown = document.getElementById("modelsDropdown");
       dropdown.style.display = (dropdown.style.display === "block") ? "none" : "block";
-      
-      // Close other dropdowns
-      document.getElementById("plansDropdown").style.display = "none";
     }
 
     // Profile menu toggle and settings functionality
@@ -6434,6 +6533,48 @@ Please include these sections in your response:
           behavior: 'smooth'
         });
       });
+    });
+  </script>
+  
+  <!-- Script to fix send button functionality -->
+  <script>
+    // When DOM is loaded, ensure the send button works properly
+    document.addEventListener('DOMContentLoaded', function() {
+      // Direct send button handler
+      const sendBtn = document.getElementById('sendBtn');
+      if (sendBtn) {
+        // First remove any existing event listeners
+        const newSendBtn = sendBtn.cloneNode(true);
+        sendBtn.parentNode.replaceChild(newSendBtn, sendBtn);
+        
+        // Add new event listener
+        newSendBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          sendMessage();
+        });
+      }
+      
+      // Direct enter key handler for input
+      const messageInput = document.getElementById('messageInput');
+      if (messageInput) {
+        // First remove any existing event listeners
+        const newInput = messageInput.cloneNode(true);
+        messageInput.parentNode.replaceChild(newInput, messageInput);
+        
+        // Add new event listener
+        newInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
+          }
+        });
+        
+        // Focus input
+        setTimeout(() => {
+          newInput.focus();
+        }, 100);
+      }
     });
   </script>
 </body>
