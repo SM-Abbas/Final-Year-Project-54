@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
             signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google signup successful:", result.user);
-                    window.location.href = "temp3.html";
+                    window.location.href = "temp4.html";
         })
         .catch((error) => {
                     console.error("Google signup error:", error);
