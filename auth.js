@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     console.log("User signed in successfully:", userCredential.user);
-                    window.location.href = "temp4.html";
+                    window.location.href = "temp3.html";
                 })
                 .catch((error) => {
                     console.error("Sign-in error:", error.message);
