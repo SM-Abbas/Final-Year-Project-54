@@ -8220,6 +8220,62 @@ Your modified document is ready to download.`);
             return summary;
         }
     </script>
+
+    <!-- Add layout adjustment script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to adjust chat box height based on viewport
+            function adjustChatBoxHeight() {
+                const chatBox = document.getElementById('chatBox');
+                const windowHeight = window.innerHeight;
+                
+                if (chatBox) {
+                    // Set chat box height to fill viewport
+                    chatBox.style.height = `${windowHeight}px`;
+                    
+                    // Ensure content is scrolled to bottom
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }
+            }
+            
+            // Initial adjustment
+            adjustChatBoxHeight();
+            
+            // Adjust on window resize
+            window.addEventListener('resize', adjustChatBoxHeight);
+            
+            // Adjust on orientation change for mobile
+            window.addEventListener('orientationchange', function() {
+                // Small delay to ensure orientation has completed
+                setTimeout(adjustChatBoxHeight, 300);
+            });
+            
+            // Make scroll to bottom button functional
+            const scrollBottomBtn = document.getElementById('scrollBottomBtn');
+            const chatBox = document.getElementById('chatBox');
+            
+            if (scrollBottomBtn && chatBox) {
+                // Show button when scrolled up
+                chatBox.addEventListener('scroll', function() {
+                    const isScrolledUp = chatBox.scrollTop < (chatBox.scrollHeight - chatBox.clientHeight - 100);
+                    
+                    if (isScrolledUp) {
+                        scrollBottomBtn.classList.add('visible');
+                    } else {
+                        scrollBottomBtn.classList.remove('visible');
+                    }
+                });
+                
+                // Scroll to bottom when button clicked
+                scrollBottomBtn.addEventListener('click', function() {
+                    chatBox.scrollTo({
+                        top: chatBox.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>
