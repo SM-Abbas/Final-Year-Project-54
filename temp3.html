@@ -804,7 +804,7 @@
             box-shadow: var(--box-shadow);
             width: 280px;
             transition: var(--transition);
-            z-index: 99;
+            z-index: 1000;
         }
 
         .profile-menu.active {
@@ -3328,11 +3328,11 @@
                         setTimeout(() => {
                             const summary = `Here's a summary of your document "${file.name}":
                             
-📄 **Document Analysis**
+- 📄 **Document Analysis**
 - Document type: ${file.name.split('.').pop().toUpperCase()}
 - Content preview available
                             
-🔍 **Suggestions**:
+- 🔍 **Suggestions**:
 1. Review legal terminology for accuracy
 2. Check for missing clauses
 3. Ensure proper formatting
@@ -3477,15 +3477,9 @@ Would you like me to implement any of these suggestions?`;
                                 uploadedDocuments[fileName].modified = modified;
                                 
                                 // Show success message
-                                appendMessage("bot", `I've updated your document with the following changes:
+                                appendMessage("bot", `✅ Changes accepted! You can now download the modified version of "${fileName}".`);
                                 
-✅ Fixed formatting issues
-✅ Improved text consistency
-✅ Applied standard legal document formatting
-
-Your modified document is ready to download.`);
-                                
-                                // Show download button
+                                // Show modified download button
                                 const modBtn = document.getElementById(`mod-btn-${fileName.replace(/[^a-zA-Z0-9]/g, '')}`);
                                 if (modBtn) {
                                     modBtn.style.display = 'flex';
@@ -3978,7 +3972,6 @@ Your modified document is ready to download.`);
         }
     </style>
 
-    /* Modern Thinking Animation Styles */
     <style>
         .thinking-animation-container {
             background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(245,247,250,0.9));
@@ -4207,9 +4200,9 @@ Your modified document is ready to download.`);
                                 <span class="model-star">⭐</span>
                                 <span class="model-name">Legalmind(Abbasgamer1 5 B)</span>
                             </a>
-                            <a href="#" onclick="selectModel('deepseek-r1', 'Legalmind(Deepseek R1 12 B)')" class="model-link">
+                            <a href="#" onclick="selectModel('gemini-pro', 'Legalmind(Google Gemini Pro)')" class="model-link">
                                 <span class="model-star">⭐</span>
-                                <span class="model-name">Legalmind(Deepseek R1 12 B)</span>
+                                <span class="model-name">Legalmind(Google Gemini Pro)</span>
                             </a>
                             <a href="#" onclick="selectModel('mistral', 'Legalmind(Mistral 7 B)')" class="model-link">
                                 <span class="model-star">⭐</span>
@@ -4244,7 +4237,23 @@ Your modified document is ready to download.`);
                     </div>
 
                     <div class="nav-profile">
-                        <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" />
+                        <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" id="profilePicNav" 
+                             onclick="(function(e) { 
+                                e.preventDefault(); 
+                                e.stopPropagation(); 
+                                var menu = document.getElementById('profileMenu'); 
+                                var mainMenu = document.getElementById('profileMainMenu');
+                                var settingsPanel = document.getElementById('settingsPanel');
+                                if(menu.style.display === 'flex') { 
+                                    menu.style.display = 'none'; 
+                                } else { 
+                                    menu.style.display = 'flex'; 
+                                    menu.style.flexDirection = 'column';
+                                    // Make sure main menu is visible and settings panel is hidden
+                                    if(mainMenu) mainMenu.style.display = 'flex';
+                                    if(settingsPanel) settingsPanel.classList.remove('active');
+                                }
+                             })(event);" />
                         <div class="profile-menu" id="profileMenu">
                             <div class="profile-menu-header">
                                 <span class="user-name" id="profileUserName">User Name</span>
@@ -4252,7 +4261,14 @@ Your modified document is ready to download.`);
                             </div>
 
                             <div class="profile-menu-actions" id="profileMainMenu">
-                                <button class="profile-menu-btn" id="settingsButton">
+                                <button class="profile-menu-btn" id="settingsButton" 
+                                  onclick="(function(e) {
+                                    e.preventDefault();
+                                    var profileMainMenu = document.getElementById('profileMainMenu');
+                                    var settingsPanel = document.getElementById('settingsPanel');
+                                    if(profileMainMenu) profileMainMenu.style.display = 'none';
+                                    if(settingsPanel) settingsPanel.classList.add('active');
+                                  })(event);">
                                     <i class="fas fa-cog"></i> Settings
                                 </button>
                                 <button class="profile-menu-btn logout" id="logoutButton">
@@ -4261,7 +4277,14 @@ Your modified document is ready to download.`);
                             </div>
 
                             <div class="settings-panel" id="settingsPanel">
-                                <button class="back-to-menu" id="backToMenu">
+                                <button class="back-to-menu" id="backToMenu"
+                                  onclick="(function(e) {
+                                    e.preventDefault();
+                                    var profileMainMenu = document.getElementById('profileMainMenu');
+                                    var settingsPanel = document.getElementById('settingsPanel');
+                                    if(profileMainMenu) profileMainMenu.style.display = 'flex';
+                                    if(settingsPanel) settingsPanel.classList.remove('active');
+                                  })(event);">
                                     <i class="fas fa-arrow-left"></i> Back
                                 </button>
 
@@ -4334,7 +4357,9 @@ Your modified document is ready to download.`);
             <!-- Chat Box -->
             <div class="chat-box" id="chatBox">
                 <div class="welcome-message">
-                    <h2>Hi, I'm LegalMind.</h2>
+                    <h2>Welcome to LegalMind</h2>
+                    <p>Your AI-powered legal document assistant</p>
+                    <p>Streamline your legal work with intelligent analysis, contract review, and expert guidance at your fingertips.</p>
                 </div>
                 <button class="scroll-bottom-btn" id="scrollBottomBtn" aria-label="Scroll to bottom">
                     <i class="fas fa-chevron-down"></i>
@@ -4384,7 +4409,7 @@ Your modified document is ready to download.`);
                 // Original endpoint is scaled to zero due to inactivity
                 endpoints: [
                     "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
-                    "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324",
+                    "https://api-inference.huggingface.co/models/google/gemini-pro",
                     "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
                     "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind"
                     // Hidden fallback
@@ -4712,7 +4737,7 @@ Your modified document is ready to download.`);
             // Add initial welcome message
             setTimeout(() => {
                 if (currentChatId === chatId) {
-                    appendMessage("bot", "👋 Welcome to LegalMind! Hi there, I'm your AI legal assistant.\n\nI can help you with:\n• Analyzing and summarizing legal documents • Answering questions about legal concepts and terminology • Suggesting improvements to contracts and agreements • Providing general legal information\n\nUpload a document using the paperclip icon 📎 or simply ask me a question to get started!\n\nNote:\nFor non-legal questions, I'll automatically switch to a general knowledge mode to better assist you.");
+                    appendMessage("bot", "👋 Welcome to LegalMind! I'm your AI legal assistant.\n\nI can help with legal document analysis, terminology questions, contract improvements, and general legal information.\n\nI'm designed to analyze complex legal language, identify key clauses, and provide insights into legal documents of various types.\n\nI can also help draft responses, suggest improvements to contracts, and explain legal concepts in plain language.\n\nUpload a document 📎 or ask me a question.\n\nPopular questions you might ask:\n• \"What should I include in an NDA?\"\n• \"Explain force majeure clauses\"\n• \"What's the difference between arbitration and litigation?\"\n• \"Review this employment contract for potential issues\"\n• \"Summarize the key points of this legal agreement\"");
                 }
             }, 300);
         }
@@ -5143,348 +5168,232 @@ Your modified document is ready to download.`);
         }
 
         // Improved send message function
-        function sendMessage() {
+        async function sendMessage() {
             const messageInput = document.getElementById("messageInput");
             const userMessageText = messageInput.value.trim();
 
-            if (userMessageText && currentChatId) {
-                // Clear input immediately for better UX
+            if (!userMessageText) return;
+
+            // Reset the textarea height
+            messageInput.style.height = "auto";
                 messageInput.value = "";
 
-                // Initialize conversation history for this chat if it doesn't exist
-                if (!conversationHistory[currentChatId]) {
-                    conversationHistory[currentChatId] = [];
-                }
-
-                // Add user message to history
-                conversationHistory[currentChatId].push({
-                    role: "user",
-                    content: userMessageText
-                });
-
-                // Append user's message to UI
+            // Append the user message to the chat
                 appendMessage("user", userMessageText);
-
-                // Check if this is an identity question
-                if (isIdentityQuestion(userMessageText)) {
-                    const identityResponse = "I'm LegalMind, an AI legal document assistant.";
-                    setTimeout(() => {
-                        console.log("Responding with standard identity response:", identityResponse);
-                        appendMessage("bot", identityResponse);
-                        // Add bot response to history
-                        conversationHistory[currentChatId].push({
-                            role: "assistant",
-                            content: identityResponse
-                        });
-                    }, 300);
-                    return;
-                }
 
                 // Show thinking animation
                 const thinkingIndicator = showThinkingAnimation();
 
-                        // Get last 5 messages for context
-                    let contextMessages = conversationHistory[currentChatId].slice(-10);
-                    let conversationContext = contextMessages.map(msg => 
-                        `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`
-                    ).join('\n');
+            try {
+                // Prepare context from previous messages
+                let conversationContext = "";
+                if (currentChatId && chats[currentChatId] && chats[currentChatId].messages) {
+                    // Get the last 4 messages for context
+                    const contextMessages = chats[currentChatId].messages.slice(-4);
+                    
+                    for (const msg of contextMessages) {
+                        const role = msg.sender === "user" ? "User" : "Assistant";
+                        conversationContext += `${role}: ${msg.content}\n`;
+                    }
+                }
 
-                    // Add the current query
-                let fullPrompt = `You are LegalMind, a helpful assistant. Please follow these formatting rules strictly:
+                // Check for attached documents
+                const attachedDocumentText = getAttachedDocumentText();
+                let fullPrompt;
 
-1. For legal questions and document analysis:
-   - Present all information in clear, numbered points
-   - Each point should be on a new line
-   - Group related points under headers
-   - Include "Key Points:", "Analysis:", and "Recommendations:" sections
-
-2. For general questions:
-   - Break down information into bullet points
-   - Use clear headers for different sections
-   - Present each point on a new line with proper spacing
-   - Avoid long paragraphs
-
-3. For mathematical questions:
-   - Show step-by-step solution
-   - Number each step
-   - Explain each step clearly
-   - Show final answer separately
-
-4. For coding questions:
-   - Explain the approach first in points
-   - Present code in a clear code block
-   - Add comments to explain key parts
-   - Show example usage if relevant
-
-Here is the recent conversation history for context:
-
-${conversationContext}
-
-Please provide a structured response following the above formatting rules.
-
-User's current message: ${userMessageText}
-
-Assistant:`;
-
-                    // If we're using the DeepSeek model, use its recommended format
-                    if (modelConfig[activeModel].usingFallbackModel) {
+                // If we have attached documents, include them in the prompt
+                if (attachedDocumentText) {
+                    fullPrompt = `You are a legal assistant. The user has provided the following document content:\n\n${attachedDocumentText}\n\nThis is the conversation history:\n${conversationContext}\n\nUser: ${userMessageText}\n\nProvide a concise response. Focus on the legal aspects of the query. Be brief but thorough.`;
+                } else {
+                    // Handle different models
+                    if (activeModel === "legalMind") {
+                        // Get current date in readable format
                         const today = new Date();
-                        const formattedDate = today.toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            weekday: 'long'
-                        });
-
-                        fullPrompt = `该助手为DeepSeek Chat，由深度求索公司创造。\n今天是${formattedDate}。\n\n${conversationContext}\n\nUser: ${userMessageText}\nAssistant:`;
-                    }
-
-                    // Get document context if applicable
-                    const documentContext = getDocumentContext(userMessageText);
-                    let finalPrompt = documentContext ? 
-                    `You are LegalMind, a legal assistant specializing in document analysis. Format your response as follows:
-
-1. DOCUMENT SUMMARY:
-   - List 3-5 key points from the document
-   - Each point should be clear and concise
-   - Use bullet points
-
-2. LEGAL ANALYSIS:
-   - Break down important legal aspects into numbered points
-   - Each point on a new line
-   - Include relevant legal context and implications
-
-3. RECOMMENDATIONS:
-   - List 3-5 specific, actionable improvements
-   - Each recommendation on a new line
-   - Include brief justification for each
-
-4. POTENTIAL ISSUES:
-   - List any potential legal concerns
-   - Each issue on a new line
-   - Include risk level (High/Medium/Low)
-
-Remember:
-- Use clear headers for each section
-- Present ALL information in points
-- Avoid paragraphs completely
-- Use proper spacing between sections
-- Number all main points
-- Use bullet points for sub-points
-
-Available documents:
-${documentContext}
-
-Conversation history:
-${conversationContext}
-
-User query: ${userMessageText}
-
-Assistant:` : 
-                        fullPrompt;
-
-                    console.log("Sending prompt with conversation history:", finalPrompt);
-
-                    // Connect to the Hugging Face endpoint
-                    console.log("Making API request to:", modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex]);
-
-                    // Prepare API request parameters
-                    let requestParams = {
-                        max_new_tokens: 1024,
-                        temperature: 0.7,
-                        top_p: 0.95,
-                        do_sample: true,
-                        return_full_text: false
-                    };
-
-                    // Use DeepSeek's recommended parameters if using the fallback model
-                    if (modelConfig[activeModel].usingFallbackModel) {
-                        requestParams = {
-                            max_new_tokens: 1024,
-                            temperature: 0.3,  // DeepSeek recommends 0.3
-                            top_p: 0.8,
-                            do_sample: true
-                        };
-                    }
-
-                    // Create a timeout promise that will reject after 15 seconds
-                    const timeoutPromise = new Promise((_, reject) => {
-                        setTimeout(() => {
-                            reject(new Error('API request timed out after 15 seconds'));
-                        }, 15000); // 15 seconds timeout
-                    });
-
-                    // Race between the fetch request and the timeout
-                    Promise.race([
-                        fetch(modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex], {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                "Authorization": `Bearer ${modelConfig[activeModel].authTokens[modelConfig[activeModel].currentTokenIndex]}`
-                            },
-                            body: JSON.stringify({
-                                inputs: finalPrompt,
-                                parameters: requestParams
-                            })
-                        }),
-                        timeoutPromise
-                    ])
-                        .then(response => {
-                            console.log("API Response Status:", response.status);
-                            console.log("API Response Headers:", [...response.headers.entries()]);
-
-                            // Add a verification message to the console
-                            console.log("API REQUEST SENT SUCCESSFULLY - Waiting for response from: " + modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex]);
-
-                            if (!response.ok) {
-                                console.error("API Error:", response.status, response.statusText);
-                                // Try to get more error details
-                                return response.text().then(text => {
-                                    console.error("API Error Details:", text);
-                                    throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
-                                });
+                        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                        const formattedDate = today.toLocaleDateString('en-US', options);
+                        
+                        // Construct prompt based on model
+                        if (modelConfig.legalMind.usingFallbackModel) {
+                            // Legacy prompt for the old 5B open-source model
+                            fullPrompt = `You are a helpful legal assistant. Today is ${formattedDate}.\n\n${conversationContext}\n\nUser: ${userMessageText}\n\nAssistant: `;
+                        } else {
+                            // Gemini or Mistral prompt
+                            // Check if it's an identity question
+                            if (isIdentityQuestion(userMessageText)) {
+                                removeThinkingAnimation(thinkingIndicator);
+                                
+                                appendMessage("bot", "I'm LegalMind, an AI assistant specialized in legal topics. I can help analyze legal documents, explain legal concepts, suggest improvements to legal agreements, and provide general legal information. While I aim to be helpful, please note that I'm not a licensed attorney and my responses shouldn't be considered legal advice.");
+                                
+                                return;
                             }
-                            return response.json();
-                        })
-                        .then(data => {
-                            // Remove the thinking message if it exists
-                        if (thinkingIndicator && thinkingIndicator.parentNode) {
-                            thinkingIndicator.parentNode.removeChild(thinkingIndicator);
-                            }
-
-                            // Log complete response data for debugging
-                            console.log("Complete API Response:", JSON.stringify(data));
-
-                            // Add bot response from the API
-                            let botResponse = ""; // Empty default
-
-                            // Specific handling for Mistral model
-                            if (data && Array.isArray(data) && data.length > 0 && data[0].generated_text) {
-                                botResponse = data[0].generated_text.trim();
-                                console.log("Using array[0].generated_text format");
-                            } else if (data && data.generated_text) {
-                                botResponse = data.generated_text.trim();
-                                console.log("Using data.generated_text format");
-                            } else if (typeof data === 'string') {
-                                botResponse = data.trim();
-                                console.log("Using string format");
-                            } else if (data && data.choices && data.choices.length > 0) {
-                                // Handle OpenAI-like format
-                                botResponse = (data.choices[0].message?.content || data.choices[0].text).trim();
-                                console.log("Using OpenAI-like format");
-                            } else {
-                                console.warn("Unexpected API response format:", data);
-                                botResponse = "I apologize, but I received an unexpected response format. Please try again with your question.";
-                            }
-
-                            // If we are using the DeepSeek fallback model, check response for any non-English part and format
-                            if (modelConfig[activeModel].usingFallbackModel && botResponse) {
-                                // Remove any "Assistant:" prefix that might be in the response
-                                botResponse = botResponse.replace(/^Assistant:\s*/i, '');
-
-                                // If response starts with Chinese characters, try to find the first English part
-                                if (/^[\u4e00-\u9fa5]/.test(botResponse)) {
-                                    const englishPart = botResponse.match(/[a-zA-Z]/);
-                                    if (englishPart && englishPart.index > 0) {
-                                        botResponse = botResponse.substring(englishPart.index);
-                                    }
-                                }
-                            }
-
-                            // Safety check for empty responses
-                            if (!botResponse) {
-                                botResponse = "I apologize, but I received an empty response. Please try asking your question again.";
-                            }
-
-                            appendMessage("bot", botResponse);
-
-                            // Add bot response to history
-                            conversationHistory[currentChatId].push({
-                                role: "assistant",
-                                content: botResponse
-                            });
-
-                            // Trim history if it gets too long (keep last 50 messages)
-                            if (conversationHistory[currentChatId].length > 50) {
-                                conversationHistory[currentChatId] = conversationHistory[currentChatId].slice(-50);
-                            }
-                        })
-                        .catch(error => {
-                            console.error("Error connecting to LegalMind API:", error);
-                            console.error("Full error details:", {
-                                message: error.message,
-                                stack: error.stack,
-                                endpoint: modelConfig[activeModel].endpoints[modelConfig[activeModel].currentEndpointIndex]
-                            });
-
-                            // Specific handling for timeout errors
-                            if (error.message.includes('timed out')) {
-                                console.log("API request timed out - automatically trying next endpoint");
-                                showNotification("Model response timed out. Trying next model...", "warning");
-
-                                // Automatically try the next endpoint or token
-                                if (tryNextEndpointOrToken(activeModel)) {
-                                    const endpointInfo = getCurrentEndpointInfo(activeModel);
-                                    console.log(`Switching to endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) after timeout`);
-
-                                    // Retry with new endpoint/token (message indicator stays)
-                                    setTimeout(() => sendMessage(), 1000);
-                                    return;
-                                }
-                            }
-
-                            // Try alternative endpoint or token for other errors
-                            if (tryNextEndpointOrToken(activeModel)) {
-                                const endpointInfo = getCurrentEndpointInfo(activeModel);
-                                console.log(`Retrying with endpoint ${endpointInfo.endpointIndex} (${endpointInfo.endpoint}) and token ${endpointInfo.tokenIndex}`);
-
-                                // Show retry notification
-                                showNotification("Trying alternative API endpoint...", "info");
-
-                                // Retry with new endpoint/token (message indicator stays)
-                                setTimeout(() => sendMessage(), 1000);
+                            
+                            // If this appears to be a general knowledge question, add a preface
+                            if (!isLegalQuestion(userMessageText)) {
+                                removeThinkingAnimation(thinkingIndicator);
+                                
+                                appendMessage("bot", `I'll answer your general question, but remember I specialize in legal topics.\n\n${generateConciseResponse(userMessageText)}`);
+                                
                                 return;
                             }
 
-                            // Remove the thinking message if it exists
-                        if (thinkingIndicator && thinkingIndicator.parentNode) {
-                            thinkingIndicator.parentNode.removeChild(thinkingIndicator);
-                            }
+                            fullPrompt = `You are LegalMind, a specialized legal assistant powered by Google Gemini Pro. Today is ${formattedDate}.\n\n${conversationContext}\n\nUser: ${userMessageText}\nAssistant:`;
+                        }
+                    }
+                }
 
-                            // Check if it's an authorization error
-                            let errorMessage;
-                            if (error.message.includes("401") || error.message.includes("unauthorized")) {
-                                errorMessage = "Authentication error: Please check your API token.";
-                                showNotification("API Token error. Please update your authentication token.", "error");
-                            } else if (error.message.includes("429")) {
-                                errorMessage = "Rate limit exceeded. Please try again later.";
-                                showNotification("Too many requests. Please wait a moment.", "warning");
-                            } else if (error.message.includes("CORS") || error.message.includes("Failed to fetch")) {
-                                errorMessage = "Network error: CORS or connectivity issue. Please check your network settings or try the Test API Connection button.";
-                                showNotification("Network connectivity issue. Try the Test API Connection button.", "error");
-                            } else if (error.message.includes('timed out')) {
-                                errorMessage = "The model took too long to respond. I've tried all available models but none responded in time.";
-                                showNotification("All models timed out. Please try again later.", "error");
-                            } else {
-                                errorMessage = "I'm having trouble connecting to my knowledge base right now. Please try again later.";
-                                showNotification("Connection error to LegalMind API", "error");
-                            }
+                // Send the message to the API
+                const response = await sendToAPI(fullPrompt);
 
-                            // Fallback response in case of error
-                            appendMessage("bot", errorMessage);
-                        });
+                // Remove the thinking animation
+                removeThinkingAnimation(thinkingIndicator);
 
-                updateThinkingStatus(thinkingIndicator, "Thinking...");
-            } else if (!currentChatId) {
-                addNewChat();
-                setTimeout(() => sendMessage(), 100);
+                // Format the response to be more concise and add follow-up suggestions
+                const formattedResponse = formatBotResponse(response, userMessageText);
+                
+                // Append the bot's response to the chat
+                appendMessage("bot", formattedResponse);
+            } catch (error) {
+                console.error("Error sending message:", error);
+                
+                // Remove the thinking animation
+                removeThinkingAnimation(thinkingIndicator);
+                
+                // Show error message
+                appendMessage("bot", "I apologize, but I encountered an error processing your request. Please try again or ask a different question.");
             }
         }
 
-        // Add bot message
-        function addBotMessage(text) {
-            const botMsg = { sender: "bot", text: text };
-            chats[currentChatId].push(botMsg);
-            appendMessage("bot", text);
+        // Format bot responses to be more concise and add follow-up suggestions
+        function formatBotResponse(response, userQuery) {
+            // If response is very long, create a more concise version
+            if (response.length > 500) {
+                // Extract the most important parts of the response
+                const sentences = response.split(/[.!?]\s+/);
+                let conciseResponse = "";
+                
+                // Take the first 3-5 sentences for a summary
+                const summaryLength = Math.min(4, Math.ceil(sentences.length / 3));
+                for (let i = 0; i < summaryLength; i++) {
+                    if (sentences[i] && sentences[i].trim().length > 0) {
+                        conciseResponse += sentences[i] + ". ";
+                    }
+                }
+                
+                // Add a few key sentences from the middle/end if they seem important
+                for (let i = summaryLength; i < sentences.length; i++) {
+                    const sentence = sentences[i];
+                    if (sentence && (sentence.includes("important") || 
+                        sentence.includes("key") || 
+                        sentence.includes("critical") || 
+                        sentence.includes("essential") ||
+                        sentence.includes("note that"))) {
+                        conciseResponse += sentence + ". ";
+                    }
+                }
+                
+                // Generate relevant follow-up questions based on the user's query
+                const followUps = generateFollowUpQuestions(userQuery, response);
+                
+                // Combine concise response with follow-up suggestions
+                return conciseResponse + "\n\n" + followUps;
+            }
+            
+            // For shorter responses, just add follow-up suggestions
+            const followUps = generateFollowUpQuestions(userQuery, response);
+            return response + "\n\n" + followUps;
+        }
+
+        // Generate follow-up questions based on the user query and bot response
+        function generateFollowUpQuestions(userQuery, botResponse) {
+            // Detect the type of question being asked
+            const lowerQuery = userQuery.toLowerCase();
+            const lowerResponse = botResponse.toLowerCase();
+            
+            // Prepare an array to hold potential follow-up questions
+            const possibleFollowUps = [];
+            
+            // Contract related
+            if (lowerQuery.includes("contract") || lowerQuery.includes("agreement") || lowerResponse.includes("contract") || lowerResponse.includes("agreement")) {
+                possibleFollowUps.push("What are the most common pitfalls in this type of contract?");
+                possibleFollowUps.push("What clauses should I pay special attention to?");
+                possibleFollowUps.push("How can I negotiate better terms?");
+            }
+            
+            // Legal concept explanation
+            if (lowerQuery.includes("what is") || lowerQuery.includes("explain") || lowerQuery.includes("definition")) {
+                possibleFollowUps.push("How does this apply in practical situations?");
+                possibleFollowUps.push("Are there significant differences in how this is treated across jurisdictions?");
+                possibleFollowUps.push("What are the latest legal developments in this area?");
+            }
+            
+            // Document review
+            if (lowerQuery.includes("review") || lowerQuery.includes("check") || lowerQuery.includes("analyze")) {
+                possibleFollowUps.push("What potential risks should I be aware of?");
+                possibleFollowUps.push("Are there any missing elements that should be added?");
+                possibleFollowUps.push("How could this document be strengthened?");
+            }
+            
+            // Legal procedure
+            if (lowerQuery.includes("procedure") || lowerQuery.includes("process") || lowerQuery.includes("filing") || lowerQuery.includes("court")) {
+                possibleFollowUps.push("What is the typical timeline for this process?");
+                possibleFollowUps.push("What documentation will I need to prepare?");
+                possibleFollowUps.push("What are common reasons this process might be delayed?");
+            }
+            
+            // If no specific follow-ups generated, use generic ones
+            if (possibleFollowUps.length === 0) {
+                possibleFollowUps.push("Can you elaborate more on this topic?");
+                possibleFollowUps.push("What practical implications does this have?");
+                possibleFollowUps.push("Are there any recent legal changes I should know about?");
+            }
+            
+            // Select up to 2 follow-up questions
+            const selectedFollowUps = possibleFollowUps.slice(0, 2);
+            
+            return "Follow-up questions you might consider:\n• " + selectedFollowUps.join("\n• ");
+        }
+
+        // Check if a question is legal-related
+        function isLegalQuestion(text) {
+            const lowerText = text.toLowerCase();
+            
+            // Common legal terms to check for
+            const legalTerms = [
+                "legal", "law", "court", "judge", "attorney", "lawyer", "litigation",
+                "contract", "agreement", "clause", "lawsuit", "plaintiff", "defendant",
+                "liability", "damages", "tort", "statute", "regulation", "compliance",
+                "copyright", "patent", "trademark", "intellectual property", "estate",
+                "will", "trust", "probate", "divorce", "custody", "alimony", "criminal",
+                "civil", "sue", "case", "precedent", "jurisdiction", "arbitra", "mediat",
+                "settlement", "negotiat", "rights", "obligation", "breach", "remedy"
+            ];
+            
+            // Check if any legal terms are present
+            return legalTerms.some(term => lowerText.includes(term));
+        }
+
+        // Generate a concise response for general knowledge questions
+        function generateConciseResponse(question) {
+            // Simple canned responses for common general questions
+            const lowerQuestion = question.toLowerCase();
+            
+            if (lowerQuestion.includes("weather") || lowerQuestion.includes("forecast")) {
+                return "I don't have access to real-time weather data, but you can check weather forecasts on websites like Weather.com or AccuWeather.";
+            }
+            
+            if (lowerQuestion.includes("time") && (lowerQuestion.includes("what") || lowerQuestion.includes("current"))) {
+                return "I don't have access to real-time data like the current time. Your device should display that information.";
+            }
+            
+            if (lowerQuestion.includes("news") || lowerQuestion.includes("current events")) {
+                return "I don't have access to the latest news. For current events, please check reliable news sources.";
+            }
+            
+            if (lowerQuestion.includes("who are you") || lowerQuestion.includes("what are you")) {
+                return "I'm LegalMind, an AI assistant specialized in legal topics, though I can help with general questions too.";
+            }
+            
+            return "I specialize in legal topics, but I'll try to help with your general question. Note that I don't have access to real-time data or the ability to browse the internet.";
         }
 
         // Toggle dark mode
@@ -5538,8 +5447,16 @@ Assistant:` :
 
             if (profilePic && profileMenu) {
                 profilePic.addEventListener('click', function (e) {
+                    e.preventDefault();
                     e.stopPropagation();
                     profileMenu.classList.toggle('active');
+                    // Force repaint in case of rendering issues
+                    profileMenu.offsetHeight;
+                    // If menu is active, ensure it is displayed properly
+                    if (profileMenu.classList.contains('active')) {
+                        profileMenu.style.display = 'flex';
+                        profileMenu.style.flexDirection = 'column';
+                    }
                 });
             }
 
@@ -6199,7 +6116,7 @@ Assistant:` :
 
                 // Check if we're now using the DeepSeek fallback model (last endpoint)
                 if (model.currentEndpointIndex === model.endpoints.length - 1) {
-                    console.log("Switching to hidden fallback model DeepSeek-V3-0324");
+                    console.log("Switching to hidden fallback model Gemini Pro");
                     model.usingFallbackModel = true;
                     showNotification("Trying alternative model (fallback)...", "info");
                 } else {
@@ -6352,8 +6269,16 @@ Assistant:` :
 
             if (profilePic && profileMenu) {
                 profilePic.addEventListener('click', function(e) {
+                    e.preventDefault();
                     e.stopPropagation();
                     profileMenu.classList.toggle('active');
+                    // Force repaint in case of rendering issues
+                    profileMenu.offsetHeight;
+                    // If menu is active, ensure it is displayed properly
+                    if (profileMenu.classList.contains('active')) {
+                        profileMenu.style.display = 'flex';
+                        profileMenu.style.flexDirection = 'column';
+                    }
                 });
             }
 
@@ -6857,7 +6782,13 @@ Assistant:` :
             delete window.uploadedDocuments[fileName].pendingModified;
 
             // Show success message
-            appendMessage("bot", `✅ Changes accepted! You can now download the modified version of "${fileName}".`);
+            appendMessage("bot", `I've updated your document with the following changes:
+            
+- ✅ Fixed formatting issues
+- ✅ Improved text consistency
+- ✅ Applied standard legal document formatting
+  
+Your modified document is ready to download.`);
 
             // Show modified download button
             const modBtn = document.getElementById(`mod-btn-${fileName.replace(/[^a-zA-Z0-9]/g, '')}`);
@@ -8044,92 +7975,252 @@ Assistant:` :
         }, 1000); // Start after 1 second
     </script>
 
-    <!-- Add modern thinking animation function -->
+    
+
+    <!-- Add document click handler to close menu when clicking outside -->
     <script>
-        // Modern thinking animation function to replace the existing one
-        window.modernThinkingAnimation = function() {
-            // Create container for the thinking animation
-            const thinkingContainer = document.createElement('div');
-            thinkingContainer.className = 'message bot-message thinking-animation-container';
+        document.addEventListener('click', function(event) {
+            const profileMenu = document.getElementById('profileMenu');
+            const profilePicNav = document.getElementById('profilePicNav');
             
-            // Generate unique IDs for this instance
-            const step1Id = 'thinking-step1-' + Date.now();
-            const step2Id = 'thinking-step2-' + Date.now();
-            const step3Id = 'thinking-step3-' + Date.now();
-            
-            // Create modern animation content
-            thinkingContainer.innerHTML = `
-                <div class="thinking-header">
-                    <div class="thinking-logo">
-                        <i class="fas fa-balance-scale"></i>
-                    </div>
-                    <div class="thinking-status">
-                        <div class="thinking-title">Analyzing your request</div>
-                        <div class="thinking-subtitle">
-                            Processing data
-                            <div class="thinking-pulse">
-                                <div class="thinking-pulse-dot"></div>
-                                <div class="thinking-pulse-dot"></div>
-                                <div class="thinking-pulse-dot"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="thinking-process">
-                    <div class="thinking-bar">
-                        <div class="thinking-progress"></div>
-                    </div>
+            if (profileMenu && profileMenu.style.display === 'flex') {
+                // Check if click is outside the menu and profile pic
+                if (!profileMenu.contains(event.target) && event.target !== profilePicNav) {
+                    profileMenu.style.display = 'none';
                     
-                    <div class="thinking-steps">
-                        <div class="thinking-step" id="${step1Id}">
-                            <div class="thinking-step-icon">
-                                <i class="fas fa-search"></i>
-                            </div>
-                            <span>Analyzing context and documents</span>
-                        </div>
-                        <div class="thinking-step" id="${step2Id}">
-                            <div class="thinking-step-icon">
-                                <i class="fas fa-brain"></i>
-                            </div>
-                            <span>Processing legal information</span>
-                        </div>
-                        <div class="thinking-step" id="${step3Id}">
-                            <div class="thinking-step-icon">
-                                <i class="fas fa-pen-fancy"></i>
-                            </div>
-                            <span>Formulating response</span>
-                        </div>
-                    </div>
-                </div>
-            `;
+                    // Also reset to main menu view when closing
+                    const profileMainMenu = document.getElementById('profileMainMenu');
+                    const settingsPanel = document.getElementById('settingsPanel');
+                    if (profileMainMenu && settingsPanel) {
+                        profileMainMenu.style.display = 'flex';
+                        settingsPanel.classList.remove('active');
+                    }
+                }
+            }
             
-            // Add to chat box
-            const chatBox = document.getElementById('chatBox');
-            chatBox.appendChild(thinkingContainer);
+            // Also close dropdown menus when clicking outside
+            const logoDropdown = document.getElementById('logoDropdown');
+            if (logoDropdown && logoDropdown.classList.contains('show')) {
+                if (!event.target.closest('.model-dropdown')) {
+                    logoDropdown.classList.remove('show');
+                }
+            }
+        });
+    </script>
+
+    <!-- Add response formatter and anticipated questions -->
+    <script>
+        // Modify sendToAPI to format shorter responses and add follow-up questions
+        const originalSendToAPI = window.sendToAPI;
+        window.sendToAPI = async function(prompt) {
+            const response = await originalSendToAPI(prompt);
             
-            // Scroll to the thinking animation
-            chatBox.scrollTop = chatBox.scrollHeight;
-            
-            // Animate steps sequentially with smoother timing
-            setTimeout(() => {
-                document.getElementById(step1Id).classList.add('active');
-                
-                setTimeout(() => {
-                    document.getElementById(step2Id).classList.add('active');
-                    
-                    setTimeout(() => {
-                        document.getElementById(step3Id).classList.add('active');
-                    }, 1200);
-                }, 1000);
-            }, 500);
-            
-            return thinkingContainer;
+            // Format the response to be more concise
+            const formattedResponse = formatResponse(response, prompt);
+            return formattedResponse;
         };
         
-        // Override the existing function
-        window.showThinkingAnimation = window.modernThinkingAnimation;
+        // Function to format responses and add anticipated follow-up questions
+        function formatResponse(response, prompt) {
+            // Extract user query from the prompt
+            const userQuery = prompt.split('User: ').pop().split('\n')[0];
+            
+            // Check if user explicitly asked for a detailed response
+            const wantsDetailedResponse = userQuery.toLowerCase().includes('explain in detail') || 
+                userQuery.toLowerCase().includes('comprehensive') || 
+                userQuery.toLowerCase().includes('thorough') || 
+                userQuery.toLowerCase().includes('elaborate');
+            
+            // Format the response based on user preference
+            let formattedResponse = response;
+            
+            // Make responses brief unless detailed response was requested
+            if (!wantsDetailedResponse) {
+                // Split by paragraphs and sentences
+                const paragraphs = response.split('\n\n');
+                
+                // If multiple paragraphs, keep only essential ones
+                if (paragraphs.length > 2) {
+                    // Keep introduction paragraph
+                    formattedResponse = paragraphs[0];
+                    
+                    // Find a paragraph with key information (containing important keywords)
+                    const keywordParagraph = paragraphs.find(p => 
+                        p.toLowerCase().includes('important') || 
+                        p.toLowerCase().includes('key') || 
+                        p.toLowerCase().includes('main') || 
+                        p.toLowerCase().includes('summary') ||
+                        p.toLowerCase().includes('conclusion'));
+                    
+                    // Add the key paragraph if found
+                    if (keywordParagraph && keywordParagraph !== paragraphs[0]) {
+                        formattedResponse += '\n\n' + keywordParagraph;
+                    } else if (paragraphs[1] && paragraphs[1].length < 200) {
+                        // Or add second paragraph if it's short
+                        formattedResponse += '\n\n' + paragraphs[1];
+                    }
+                    
+                    // If response is still too long, trim sentences
+                    if (formattedResponse.length > 500) {
+                        const sentences = formattedResponse.split(/(?<=[.!?])\s+/);
+                        formattedResponse = sentences.slice(0, 5).join(' ');
+                    }
+                }
+            }
+            
+            // Ensure proper formatting (bullet points, numbering, etc.)
+            formattedResponse = ensureProperFormatting(formattedResponse);
+            
+            // Generate follow-up questions based on the user query
+            const followUpQuestions = generateFollowUpQuestions(userQuery);
+            
+            // Add follow-up questions if we have them and response isn't too long
+            if (followUpQuestions.length > 0 && formattedResponse.length < 800) {
+                formattedResponse += '\n\nYou might also want to ask:\n';
+                followUpQuestions.forEach(question => {
+                    formattedResponse += `• "${question}"\n`;
+                });
+            }
+            
+            return formattedResponse;
+        }
+        
+        // Ensure proper formatting for responses
+        function ensureProperFormatting(text) {
+            // Fix bullet points if they're malformed
+            text = text.replace(/(?<=\n)[-*]\s+/g, '• ');
+            
+            // Fix numbered lists if they're malformed
+            text = text.replace(/(?<=\n)\d+\.\s+/g, match => {
+                // Keep the number and format consistently
+                const number = match.match(/\d+/)[0];
+                return `${number}. `;
+            });
+            
+            // Ensure consistent paragraph spacing
+            text = text.replace(/\n{3,}/g, '\n\n');
+            
+            // Ensure headings are properly formatted
+            text = text.replace(/(?<=\n)([A-Z][A-Za-z\s]+):/g, '**$1:**');
+            
+            return text;
+        }
+        
+        // Generate relevant follow-up questions based on user query
+        function generateFollowUpQuestions(query) {
+            const lowerQuery = query.toLowerCase();
+            const questions = [];
+            
+            // Contract related
+            if (lowerQuery.includes('contract') || lowerQuery.includes('agreement')) {
+                questions.push('What are common pitfalls in this type of contract?');
+                questions.push('What key clauses should be included?');
+            }
+            
+            // Legal concept questions
+            if (lowerQuery.includes('what is') || lowerQuery.includes('define') || lowerQuery.includes('explain')) {
+                questions.push('How does this apply in practical situations?');
+                questions.push('Are there recent legal developments in this area?');
+            }
+            
+            // Document analysis
+            if (lowerQuery.includes('review') || lowerQuery.includes('analyze') || lowerQuery.includes('document')) {
+                questions.push('What are potential risks in this document?');
+                questions.push('How could this document be improved?');
+            }
+            
+            // Legal procedure
+            if (lowerQuery.includes('court') || lowerQuery.includes('filing') || lowerQuery.includes('lawsuit')) {
+                questions.push('What is the typical timeline for this process?');
+                questions.push('What are the costs involved?');
+            }
+            
+            // If no specific questions, add some general ones
+            if (questions.length === 0) {
+                questions.push('What are the practical implications of this?');
+                questions.push('How does this vary by jurisdiction?');
+            }
+            
+            // Return a max of 2 questions
+            return questions.slice(0, 2);
+        }
+        
+        // Override document processing to provide direct summaries
+        const originalPreviewFile = window.previewFile;
+        window.previewFile = async function(event) {
+            // Call the original function first
+            await originalPreviewFile(event);
+            
+            // Now provide a direct summary of the document
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Get document text (either from OCR or direct extraction)
+            let documentText = '';
+            if (uploadedDocuments[file.name]) {
+                documentText = uploadedDocuments[file.name].text;
+            }
+            
+            // If we have text, provide a concise summary
+            if (documentText && documentText.length > 0) {
+                // Create a summary by extracting key info
+                const summary = generateDocumentSummary(documentText, file.name);
+                
+                // Wait a short time for the UI to update before adding the summary
+                    setTimeout(() => {
+                    appendMessage("bot", summary);
+            }, 500);
+            }
+        };
+        
+        // Generate a concise document summary from extracted text
+        function generateDocumentSummary(text, fileName) {
+            // Get document type from extension
+            const fileExtension = fileName.split('.').pop().toUpperCase();
+            
+            // Get document length stats
+            const wordCount = text.split(/\s+/).length;
+            const paragraphCount = text.split(/\n\s*\n/).length;
+            
+            // Extract potential headers (lines with fewer than 50 chars that don't end with periods)
+            const lines = text.split('\n');
+            const potentialHeaders = lines
+                .filter(line => line.trim().length > 0 && line.trim().length < 50 && !line.trim().endsWith('.'))
+                .slice(0, 3); // Take just the first 3 potential headers
+            
+            // Create a short intro excerpt (first 100-150 chars)
+            let excerpt = text.substring(0, 150).trim();
+            if (excerpt.length === 150) excerpt += '...';
+            
+            // Format the summary
+            let summary = `📄 **${fileName} Summary**\n\n`;
+            
+            // Document basics
+            summary += `**Type:** ${fileExtension} document\n`;
+            summary += `**Length:** ~${wordCount} words, ${paragraphCount} paragraphs\n\n`;
+            
+            // Include headers if found
+            if (potentialHeaders.length > 0) {
+                summary += `**Key sections:**\n`;
+                potentialHeaders.forEach(header => {
+                    summary += `• ${header.trim()}\n`;
+                });
+                summary += '\n';
+            }
+            
+            // Add a brief excerpt
+            summary += `**Preview:** "${excerpt}"\n\n`;
+            
+            // Add suggestions
+            summary += `**How can I help?**\n`;
+            summary += `• Ask me to analyze specific sections\n`;
+            summary += `• Request a legal review of the document\n`;
+            summary += `• Ask questions about terms or clauses\n`;
+            
+            return summary;
+        }
     </script>
 </body>
 
 </html>
+
