@@ -24,6 +24,11 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
     <!-- Custom CSS for chat input fixes -->
+    <script src="document_functions.js" defer></script>
+    <script src="ocr_functions.js" defer></script>
+    <script src="download_button.js" defer></script>
+    <script src="fix_ocr.js" defer></script>
+    <script src="fix_document_ui.js" defer></script>
 
 
     <!-- Initialize Firebase -->
@@ -24542,100 +24547,7 @@
 
     <!-- Add document processing scripts -->
     <script>
-        // Document Processing Functions
-        async function processDocument(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-
-                reader.onload = async function (e) {
-                    try {
-                        // Store document content
-                        uploadedDocuments[file.name] = {
-                            content: e.target.result,
-                            original: e.target.result
-                        };
-
-                        // Automatically generate summary
-                        setTimeout(() => {
-                            const summary = `Here's a summary of your document "${file.name}":
-                            
-- ?? **Document Analysis**
-- Document type: ${file.name.split('.').pop().toUpperCase()}
-- Content preview available
-                            
-- ?? **Suggestions**:
-1. Review legal terminology for accuracy
-2. Check for missing clauses
-3. Ensure proper formatting
-                            
-Would you like me to implement any of these suggestions?`;
-
-                             appendMessage("bot", summary);
-
-                            // Add download button
-                            addDownloadButton(file.name);
-                        }, 1000);
-
-                        resolve();
-                    } catch (error) {
-                        console.error("Error processing document:", error);
-                        reject(error);
-                    }
-                };
-
-                reader.onerror = function () {
-                    reject(new Error("Error reading file"));
-                };
-
-                if (file.type === "text/plain" ||
-                    file.name.endsWith('.txt') ||
-                    file.name.endsWith('.md')) {
-                    reader.readAsText(file);
-                } else {
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        // Add download button to file preview
-        function addDownloadButton(fileName) {
-            const fileItems = document.querySelectorAll('.file-item');
-            let fileItem = null;
-
-            for (const item of fileItems) {
-                const nameEl = item.querySelector('.file-name-container span');
-                if (nameEl && nameEl.textContent === fileName) {
-                    fileItem = item;
-                    break;
-                }
-            }
-
-            if (!fileItem) return;
-
-            // Create download button container if not exists
-            if (!fileItem.querySelector('.file-actions')) {
-                const actionsDiv = document.createElement('div');
-                actionsDiv.className = 'file-actions';
-                actionsDiv.style.cssText = 'display:flex; padding:8px; gap:8px; border-top:1px solid #eee';
-
-                // Original download button
-                const origBtn = document.createElement('button');
-                origBtn.innerHTML = '<i class="fas fa-download"></i> Download';
-                origBtn.style.cssText = 'background:#f8f9fa; border:1px solid #dee2e6; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px';
-                origBtn.onclick = () => downloadDocument(fileName);
-
-                // Modified download button (hidden initially)
-                const modBtn = document.createElement('button');
-                modBtn.innerHTML = '<i class="fas fa-download"></i> Modified';
-                modBtn.style.cssText = 'background:#007bff; color:white; border:1px solid #007bff; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; display:none; align-items:center; gap:4px';
-                modBtn.onclick = () => downloadDocument(fileName, true);
-                modBtn.id = `mod-btn-${fileName.replace(/[^a-zA-Z0-9]/g, '')}`;
-
-                actionsDiv.appendChild(origBtn);
-                actionsDiv.appendChild(modBtn);
-                fileItem.appendChild(actionsDiv);
-            }
-        }
+        
 
         // Download document function
         function downloadDocument(fileName, modified = false) {
@@ -27307,85 +27219,8 @@ Would you like me to implement any of these suggestions?`;
             // No buttons added to UI
         });
 
-        // Function to process document content
-        function processDocumentContent(file) {
-            console.log("Processing document:", file.name);
-            showNotification("Processing document: " + file.name, "info");
-
-            if (file.name.endsWith('.pdf')) {
-                extractTextFromPDF(file)
-                    .then(text => {
-                        console.log("Extracted PDF text length:", text.length);
-                        uploadedDocuments[file.name] = text;
-                        showNotification("PDF processed successfully", "success");
-                    })
-                    .catch(error => {
-                        console.error("Error extracting PDF text:", error);
-                        showNotification("Error processing PDF", "error");
-                    });
-            } else if (file.name.endsWith('.txt')) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    const text = e.target.result;
-                    uploadedDocuments[file.name] = text;
-                    console.log("Processed text file:", file.name);
-                    showNotification("Text file processed successfully", "success");
-                };
-                reader.onerror = function () {
-                    console.error("Error reading text file");
-                    showNotification("Error processing text file", "error");
-                };
-                reader.readAsText(file);
-            } else if (file.type.startsWith('image/')) {
-                // For images, just store a placeholder
-                uploadedDocuments[file.name] = "[Image: " + file.name + "]";
-                showNotification("Image added to conversation", "success");
-            } else {
-                // For other files, store a note that they can't be processed
-                uploadedDocuments[file.name] = "[File type not supported for content extraction: " + file.name + "]";
-                showNotification("File type not supported for content processing", "warning");
-            }
-        }
-
-        // Function to extract text from PDF
-        async function extractTextFromPDF(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-
-                reader.onload = async function (e) {
-                    const typedArray = new Uint8Array(e.target.result);
-
-                    try {
-                        // Load the PDF document
-                        const loadingTask = pdfjsLib.getDocument(typedArray);
-                        const pdf = await loadingTask.promise;
-
-                        let fullText = "";
-
-                        // Loop through each page to extract text
-                        for (let i = 1; i <= pdf.numPages; i++) {
-                            const page = await pdf.getPage(i);
-                            const textContent = await page.getTextContent();
-
-                            // Extract the text items
-                            const pageText = textContent.items.map(item => item.str).join(' ');
-                            fullText += pageText + "\n\n"; // Add page breaks
-                        }
-
-                        resolve(fullText);
-                    } catch (error) {
-                        console.error("PDF.js error:", error);
-                        reject(error);
-                    }
-                };
-
-                reader.onerror = function () {
-                    reject(new Error("Error reading the file"));
-                };
-
-                reader.readAsArrayBuffer(file);
-            });
-        }
+   
+        
 
         // Function to get document summary for the prompt
         function getDocumentSummary() {
@@ -29064,52 +28899,8 @@ Your modified document is ready to download.`);
             }
         };
 
-        // Generate a concise document summary from extracted text
-        function generateDocumentSummary(text, fileName) {
-            // Get document type from extension
-            const fileExtension = fileName.split('.').pop().toUpperCase();
-
-            // Get document length stats
-            const wordCount = text.split(/\s+/).length;
-            const paragraphCount = text.split(/\n\s*\n/).length;
-
-            // Extract potential headers (lines with fewer than 50 chars that don't end with periods)
-            const lines = text.split('\n');
-            const potentialHeaders = lines
-                .filter(line => line.trim().length > 0 && line.trim().length < 50 && !line.trim().endsWith('.'))
-                .slice(0, 3); // Take just the first 3 potential headers
-
-            // Create a short intro excerpt (first 100-150 chars)
-            let excerpt = text.substring(0, 150).trim();
-            if (excerpt.length === 150) excerpt += '...';
-
-            // Format the summary
-            let summary = `?? **${fileName} Summary**\n\n`;
-
-            // Document basics
-            summary += `**Type:** ${fileExtension} document\n`;
-            summary += `**Length:** ~${wordCount} words, ${paragraphCount} paragraphs\n\n`;
-
-            // Include headers if found
-            if (potentialHeaders.length > 0) {
-                summary += `**Key sections:**\n`;
-                potentialHeaders.forEach(header => {
-                    summary += `� ${header.trim()}\n`;
-                });
-                summary += '\n';
-            }
-
-            // Add a brief excerpt
-            summary += `**Preview:** "${excerpt}"\n\n`;
-
-            // Add suggestions
-            summary += `**How can I help?**\n`;
-            summary += `� Ask me to analyze specific sections\n`;
-            summary += `� Request a legal review of the document\n`;
-            summary += `� Ask questions about terms or clauses\n`;
-
-            return summary;
-        }
+       
+        
 
         document.addEventListener('DOMContentLoaded', function () {
             // Function to adjust chat box height based on viewport
