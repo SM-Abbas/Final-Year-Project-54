@@ -2801,7 +2801,8 @@
                 name: "LegalMind",
                 // Original endpoint is scaled to zero due to inactivity
                 endpoints: [
-                    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+                    "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
+                    "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
                     "https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-V3-0324",
                     "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
                     "https://api-inference.huggingface.co/models/Abbasgamer1/legalMind"
@@ -2809,8 +2810,9 @@
                 ],
                 // Multiple API tokens to try as alternatives
                 authTokens: [
-                    "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",  // legalmindapi - WRITE
-                    "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"   // Current token
+                    "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",
+                    "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",
+                    "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" 
                 ],
                 // Track which endpoint and token is currently being used
                 currentEndpointIndex: 0,
