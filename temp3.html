@@ -8,8 +8,7 @@
     <title>LegalMind Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Add PDF.js library for PDF processing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    
     <!-- Add Tesseract.js for OCR (image text recognition) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.3/dist/tesseract.min.js"></script>
     <!-- Add Mammoth.js for Word document processing -->
@@ -18,6 +17,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Add JSZip for PPTX file processing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- Add Tesseract.js for OCR (image text recognition) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.3/dist/tesseract.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+    </script>
+    <!-- Add PDF-lib for PDF generation and manipulation -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -29,6 +39,19 @@
     <script src="download_button.js" defer></script>
     <script src="fix_ocr.js" defer></script>
     <script src="fix_document_ui.js" defer></script>
+
+
+
+
+
+
+
+
+    <!-- Add PDF.js library for PDF processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <!-- Add PDF-lib for PDF generation and manipulation -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- Add Tesseract.js for OCR (image text recognition) -->
 
 
     <!-- Initialize Firebase -->
@@ -24547,7 +24570,7 @@
 
     <!-- Add document processing scripts -->
     <script>
-        
+
 
         // Download document function
         function downloadDocument(fileName, modified = false) {
@@ -24685,7 +24708,7 @@
                 // Set language and improve recognition
                 await worker.loadLanguage('eng');
                 await worker.initialize('eng');
-                
+
                 // Configure for better table recognition
                 await worker.setParameters({
                     tessedit_ocr_engine_mode: Tesseract.PSM.AUTO_OSD,
@@ -24704,15 +24727,15 @@
 
                 // Post-process the text to preserve table structure
                 let text = result.data.text;
-                
+
                 // Clean up table formatting
                 text = text.replace(/\s+/g, ' ')  // Normalize spaces
-                           .replace(/(\d) (\d)/g, '$1$2')  // Join split numbers
-                           .replace(/(\d+\.\d+)/g, (match) => parseFloat(match).toFixed(4))  // Format decimals
-                           .split('\n')  // Split into lines
-                           .map(line => line.trim())  // Trim each line
-                           .filter(line => line)  // Remove empty lines
-                           .join('\n');  // Rejoin lines
+                    .replace(/(\d) (\d)/g, '$1$2')  // Join split numbers
+                    .replace(/(\d+\.\d+)/g, (match) => parseFloat(match).toFixed(4))  // Format decimals
+                    .split('\n')  // Split into lines
+                    .map(line => line.trim())  // Trim each line
+                    .filter(line => line)  // Remove empty lines
+                    .join('\n');  // Rejoin lines
 
                 return text;
             } catch (error) {
@@ -25620,7 +25643,7 @@
                     "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
                     "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
                     "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
-            
+
                     // Hidden fallback
                 ],
                 // Multiple API tokens to try as alternatives
@@ -27220,8 +27243,8 @@
             // No buttons added to UI
         });
 
-   
-        
+
+
 
         // Function to get document summary for the prompt
         function getDocumentSummary() {
@@ -28900,8 +28923,8 @@ Your modified document is ready to download.`);
             }
         };
 
-       
-        
+
+
 
         document.addEventListener('DOMContentLoaded', function () {
             // Function to adjust chat box height based on viewport
