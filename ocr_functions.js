@@ -32,12 +32,16 @@ document.addEventListener('DOMContentLoaded', function() {
 async function processDocumentWithOCR(file, thinkingContainer) {
     try {
         let documentText = '';
+        let documentBinary = null;
         
         // Extract text based on file type
         if (file.type.startsWith('image/')) {
             documentText = await extractTextFromImage(file);
         } else if (file.name.endsWith('.pdf')) {
+            // For PDFs, store both text and binary data
+            const arrayBuffer = await file.arrayBuffer();
             documentText = await extractTextFromPDF(file);
+            documentBinary = arrayBuffer;
         } else if (file.name.endsWith('.txt')) {
             const reader = new FileReader();
             documentText = await new Promise((resolve, reject) => {
@@ -58,7 +62,10 @@ async function processDocumentWithOCR(file, thinkingContainer) {
         
         window.uploadedDocuments[file.name] = {
             original: documentText,
-            modified: null
+            modified: null,
+            originalBinary: documentBinary,
+            modifiedBinary: null,
+            isPdf: file.name.endsWith('.pdf')
         };
         
         // Generate document summary and suggested changes
@@ -91,48 +98,236 @@ async function processDocumentWithOCR(file, thinkingContainer) {
     }
 }
 
+// Extract text from PDF using PDF.js
+async function extractTextFromPDF(file) {
+    try {
+        // Ensure PDF.js is properly initialized
+        if (typeof pdfjsLib === 'undefined') {
+            throw new Error('PDF.js library not loaded');
+        }
+
+        // Get array buffer from file
+        const arrayBuffer = await file.arrayBuffer();
+        
+        // Load the PDF document
+        const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
+        
+        let fullText = '';
+        
+        // Extract text from each page
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+                .map(item => item.str)
+                .join(' ');
+            fullText += pageText + '\n\n';
+        }
+        
+        return fullText;
+    } catch (error) {
+        console.error('Error extracting text from PDF:', error);
+        throw error;
+    }
+}
+
+// Function to create PDF from modified text
+async function createModifiedPDF(text) {
+    try {
+        // Check if PDF-lib is available
+        if (typeof PDFLib === 'undefined') {
+            throw new Error('PDF-lib not loaded');
+        }
+
+        const { PDFDocument, StandardFonts, rgb } = PDFLib;
+
+        // Create a new PDF document
+        const pdfDoc = await PDFDocument.create();
+        
+        // Add a page to the document
+        const page = pdfDoc.addPage([612, 792]); // US Letter size
+        
+        // Embed the font
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        
+        // Set some basic text parameters
+        const fontSize = 12;
+        const lineHeight = fontSize * 1.2;
+        const margin = 50;
+        const maxWidth = page.getWidth() - 2 * margin;
+        
+        // Split text into lines that fit the page width
+        const words = text.split(' ');
+        let lines = [];
+        let currentLine = '';
+        
+        for (const word of words) {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            const width = font.widthOfTextAtSize(testLine, fontSize);
+            
+            if (width > maxWidth) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        }
+        if (currentLine) {
+            lines.push(currentLine);
+        }
+        
+        // Draw text on the page
+        let y = page.getHeight() - margin;
+        
+        for (const line of lines) {
+            if (y < margin) {
+                // Add a new page if we run out of space
+                const newPage = pdfDoc.addPage([612, 792]);
+                y = newPage.getHeight() - margin;
+                page = newPage;
+            }
+            
+            page.drawText(line, {
+                x: margin,
+                y: y,
+                size: fontSize,
+                font: font,
+                color: rgb(0, 0, 0)
+            });
+            
+            y -= lineHeight;
+        }
+        
+        // Save the PDF as bytes
+        const pdfBytes = await pdfDoc.save();
+        
+        return pdfBytes;
+    } catch (error) {
+        console.error('Error creating modified PDF:', error);
+        throw error;
+    }
+}
+
 // Generate document summary
 function generateDocumentSummary(text, fileName) {
     // Basic document analysis
     const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
     const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0).length;
     const charCount = text.length;
+    const sentences = text.split(/[.!?]+\s+/).filter(s => s.trim().length > 0).length;
+    const averageWordLength = text.split(/\s+/).filter(word => word.length > 0).reduce((sum, word) => sum + word.length, 0) / wordCount || 0;
     
-    // Find keywords (simple implementation)
-    const commonWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 'as', 'into', 'like', 'through', 'after', 'over', 'between', 'out', 'against', 'during', 'without', 'before', 'under', 'around', 'among']);
-    const words = text.toLowerCase().replace(/[^\w\s]/g, ' ').split(/\s+/).filter(word => 
-        word.length > 3 && !commonWords.has(word)
-    );
+    // Get file extension
+    const fileExt = fileName.split('.').pop().toLowerCase();
+    const fileType = getFileTypeName(fileExt);
     
-    // Count word frequencies
+    // Find keywords (improved implementation)
+    const commonWords = new Set([
+        'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'with', 'by', 'about', 
+        'as', 'into', 'like', 'through', 'after', 'over', 'between', 'out', 'against', 'during', 
+        'without', 'before', 'under', 'around', 'among', 'this', 'that', 'these', 'those', 'they',
+        'them', 'their', 'from', 'have', 'has', 'had', 'not', 'been', 'being', 'was', 'were', 'will'
+    ]);
+    
+    // Better word tokenization with cleanup
+    const words = text.toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 3 && !commonWords.has(word) && isNaN(word));
+    
+    // Count word frequencies with better handling
     const wordFreq = {};
     words.forEach(word => {
         wordFreq[word] = (wordFreq[word] || 0) + 1;
     });
     
-    // Get top keywords
+    // Get top keywords with improved relevance
     const keywords = Object.entries(wordFreq)
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
+        .slice(0, 7)
         .map(entry => entry[0]);
-        
+    
     // Create summary
     let summary = `## Document Analysis: ${fileName}\n\n`;
+    summary += `📄 **Document Type**: ${fileType}\n`;
     summary += `📊 **Document Statistics**\n`;
-    summary += `- Words: ${wordCount}\n`;
-    summary += `- Paragraphs: ${paragraphs}\n`;
-    summary += `- Characters: ${charCount}\n\n`;
+    summary += `- Words: ${wordCount.toLocaleString()}\n`;
+    summary += `- Sentences: ${sentences.toLocaleString()}\n`;
+    summary += `- Paragraphs: ${paragraphs.toLocaleString()}\n`;
+    summary += `- Characters: ${charCount.toLocaleString()}\n`;
+    summary += `- Average Word Length: ${averageWordLength.toFixed(1)} characters\n\n`;
     
     if (keywords.length > 0) {
         summary += `🔑 **Key Terms**: ${keywords.join(', ')}\n\n`;
     }
     
-    // Add content preview
-    summary += `📄 **Content Preview**:\n`;
-    const preview = text.substring(0, 250);
-    summary += `\`\`\`\n${preview}${text.length > 250 ? '...' : ''}\n\`\`\`\n\n`;
+    // Try to detect document type/category based on content
+    const documentCategory = detectDocumentCategory(text);
+    if (documentCategory) {
+        summary += `📋 **Document Category**: ${documentCategory}\n\n`;
+    }
+    
+    // Add content preview with better formatting
+    summary += `📝 **Content Preview**:\n`;
+    // Get first substantial paragraph
+    const firstParagraph = text.split(/\n\s*\n/).find(p => p.trim().length > 50) || text;
+    const preview = firstParagraph.substring(0, 250).trim();
+    summary += `\`\`\`\n${preview}${firstParagraph.length > 250 ? '...' : ''}\n\`\`\`\n\n`;
+    
+    // Add document recommendations
+    summary += `💡 **Use LegalMind to**:\n`;
+    summary += `- Extract key information from this document\n`;
+    summary += `- Summarize the full content\n`;
+    summary += `- Answer questions about specific details\n`;
     
     return summary;
+}
+
+// Helper function to get friendly file type name
+function getFileTypeName(extension) {
+    const typeMap = {
+        'pdf': 'PDF Document',
+        'doc': 'Microsoft Word Document',
+        'docx': 'Microsoft Word Document',
+        'txt': 'Text Document',
+        'rtf': 'Rich Text Format Document',
+        'xlsx': 'Microsoft Excel Spreadsheet',
+        'xls': 'Microsoft Excel Spreadsheet',
+        'ppt': 'Microsoft PowerPoint Presentation',
+        'pptx': 'Microsoft PowerPoint Presentation',
+        'jpg': 'JPEG Image',
+        'jpeg': 'JPEG Image',
+        'png': 'PNG Image',
+        'csv': 'CSV Spreadsheet'
+    };
+    
+    return typeMap[extension] || 'Document';
+}
+
+// Helper function to detect document category based on content
+function detectDocumentCategory(text) {
+    const lowerText = text.toLowerCase();
+    
+    // Define patterns for different document types
+    const patterns = [
+        { category: 'Legal Contract', patterns: ['agreement', 'contract', 'parties', 'hereby', 'shall', 'terms and conditions', 'obligations', 'clause'] },
+        { category: 'Financial Document', patterns: ['balance', 'income', 'expense', 'revenue', 'financial statement', 'profit', 'loss', 'assets', 'liabilities'] },
+        { category: 'Academic Paper', patterns: ['abstract', 'introduction', 'methodology', 'conclusion', 'references', 'hypothesis', 'study', 'research'] },
+        { category: 'Business Letter', patterns: ['dear', 'sincerely', 'regards', 'letter', 'request', 'inquiry', 'response', 'letterhead'] },
+        { category: 'Resume/CV', patterns: ['experience', 'education', 'skills', 'references', 'employment', 'qualifications', 'objective', 'resume', 'curriculum vitae'] },
+        { category: 'Legal Brief', patterns: ['court', 'plaintiff', 'defendant', 'jurisdiction', 'ruling', 'appeal', 'motion', 'petitioner', 'respondent'] },
+        { category: 'Technical Manual', patterns: ['instructions', 'guide', 'steps', 'procedure', 'manual', 'installation', 'configuration', 'troubleshooting'] }
+    ];
+    
+    // Find matching patterns
+    const matches = patterns.map(type => {
+        const matchCount = type.patterns.filter(pattern => lowerText.includes(pattern)).length;
+        return { category: type.category, matches: matchCount, percentage: matchCount / type.patterns.length };
+    });
+    
+    // Get best match if it meets threshold
+    const bestMatch = matches.sort((a, b) => b.percentage - a.percentage)[0];
+    return bestMatch.percentage > 0.3 ? bestMatch.category : null;
 }
 
 // Generate suggested changes
@@ -324,7 +519,7 @@ function applySingleChange(fileName, change) {
 }
 
 // Apply all changes
-function applyAllChanges(fileName, changes) {
+async function applyAllChanges(fileName, changes) {
     if (!window.uploadedDocuments || !window.uploadedDocuments[fileName]) return;
     
     // Apply changes in sequence
@@ -336,6 +531,22 @@ function applyAllChanges(fileName, changes) {
     
     // Store modified version
     window.uploadedDocuments[fileName].modified = modifiedText;
+    
+    // For PDF files, we need to handle binary data
+    if (fileName.toLowerCase().endsWith('.pdf') && window.uploadedDocuments[fileName].isOriginalBinary) {
+        try {
+            // Convert modified text to PDF binary data
+            const pdfModified = await convertTextToPdfBinary(modifiedText);
+            window.uploadedDocuments[fileName].modifiedBinary = pdfModified;
+            
+            console.log("Successfully generated modified PDF binary data");
+        } catch (error) {
+            console.error("Error generating modified PDF:", error);
+        }
+    }
+    
+    // Add "Modified" download button if not already present
+    enableModifiedDownload(fileName);
 }
 
 // Check if all changes have been handled
@@ -395,31 +606,311 @@ function enableModifiedDownload(fileName) {
             actionsDiv.innerHTML = ''; // Clear any existing buttons
             actionsDiv.appendChild(origBtn);
             actionsDiv.appendChild(modBtn);
+            
+            // Add view buttons for PDFs
+            if (fileName.toLowerCase().endsWith('.pdf')) {
+                // Original view button
+                const origViewBtn = document.createElement('button');
+                origViewBtn.innerHTML = '<i class="fas fa-eye"></i> View Original';
+                origViewBtn.style.cssText = 'background:#e9ecef; border:1px solid #dee2e6; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px';
+                origViewBtn.onclick = () => viewPdfDocument(fileName, false);
+                
+                // Modified view button
+                const modViewBtn = document.createElement('button');
+                modViewBtn.innerHTML = '<i class="fas fa-eye"></i> View Modified';
+                modViewBtn.style.cssText = 'background:#17a2b8; color:white; border:1px solid #17a2b8; padding:4px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:4px';
+                modViewBtn.onclick = () => viewPdfDocument(fileName, true);
+                
+                actionsDiv.appendChild(origViewBtn);
+                actionsDiv.appendChild(modViewBtn);
+            }
         }
     });
 }
 
-// Download document function
-function downloadDocument(fileName, modified = false) {
+// View PDF document in a modal
+function viewPdfDocument(fileName, modified = false) {
     if (!window.uploadedDocuments || !window.uploadedDocuments[fileName]) return;
     
-    const content = modified ? 
-        window.uploadedDocuments[fileName].modified || window.uploadedDocuments[fileName].original : 
-        window.uploadedDocuments[fileName].original;
+    try {
+        // Get content based on modified flag
+        let content;
+        
+        if (modified) {
+            // Use modifiedBinary for PDFs if available
+            if (window.uploadedDocuments[fileName].modifiedBinary) {
+                content = window.uploadedDocuments[fileName].modifiedBinary;
+            } else {
+                content = window.uploadedDocuments[fileName].modified || window.uploadedDocuments[fileName].original;
+            }
+        } else {
+            // Use originalBinary for PDFs if available
+            if (window.uploadedDocuments[fileName].originalBinary) {
+                content = window.uploadedDocuments[fileName].originalBinary;
+            } else {
+                content = window.uploadedDocuments[fileName].original;
+            }
+        }
+        
+        if (!content) {
+            console.error("No content available to view");
+            return;
+        }
+        
+        // Create a modal to view the PDF
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center;';
+        
+        // Modal header with filename and close button
+        const modalHeader = document.createElement('div');
+        modalHeader.style.cssText = 'width:90%; max-width:1000px; display:flex; justify-content:space-between; align-items:center; background:#fff; padding:10px; border-radius:5px 5px 0 0;';
+        
+        const modalTitle = document.createElement('h3');
+        modalTitle.textContent = `${modified ? 'Modified' : 'Original'}: ${fileName}`;
+        modalTitle.style.margin = '0';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.style.cssText = 'background:none; border:none; font-size:24px; cursor:pointer;';
+        closeBtn.onclick = () => modal.remove();
+        
+        modalHeader.appendChild(modalTitle);
+        modalHeader.appendChild(closeBtn);
+        
+        // PDF viewer container
+        const viewerContainer = document.createElement('div');
+        viewerContainer.style.cssText = 'width:90%; max-width:1000px; height:80%; background:#fff; padding:10px; border-radius:0 0 5px 5px; overflow:hidden;';
+        
+        // Create PDF viewer
+        const viewer = document.createElement('iframe');
+        viewer.style.cssText = 'width:100%; height:100%; border:none;';
+        
+        // Convert content to a URL
+        let blobUrl;
+        if (content instanceof ArrayBuffer) {
+            const blob = new Blob([content], { type: 'application/pdf' });
+            blobUrl = URL.createObjectURL(blob);
+        } else if (typeof content === 'string' && content.startsWith('data:')) {
+            blobUrl = content;
+        } else {
+            const blob = new Blob([content], { type: 'application/pdf' });
+            blobUrl = URL.createObjectURL(blob);
+        }
+        
+        // Set iframe source to the PDF
+        viewer.src = blobUrl;
+        
+        // Append elements to modal
+        viewerContainer.appendChild(viewer);
+        modal.appendChild(modalHeader);
+        modal.appendChild(viewerContainer);
+        
+        // Add modal to body
+        document.body.appendChild(modal);
+        
+        // Clean up when modal is closed
+        closeBtn.addEventListener('click', () => {
+            if (blobUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(blobUrl);
+            }
+        });
+    } catch (error) {
+        console.error("Error viewing PDF:", error);
+        alert(`Error viewing PDF: ${error.message}`);
+    }
+}
+
+// Helper function to convert text to PDF binary
+async function convertTextToPdfBinary(text) {
+    try {
+        // Check if pdf-lib is available
+        if (typeof PDFLib !== 'undefined') {
+            // Add PDF-lib script dynamically if not already there
+            await loadPdfLibIfNeeded();
+            return await createPdfWithPdfLib(text);
+        } else {
+            console.warn("PDF-lib not available, using fallback PDF generator");
+            return createBasicPdf(text);
+        }
+    } catch (error) {
+        console.error("Error creating PDF:", error);
+        return createBasicPdf(text);
+    }
+}
+
+// Load PDF-lib if needed
+async function loadPdfLibIfNeeded() {
+    if (typeof PDFLib !== 'undefined') return;
+    
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+        script.onload = resolve;
+        script.onerror = () => reject(new Error('Failed to load PDF-lib'));
+        document.head.appendChild(script);
+    });
+}
+
+// Create PDF using pdf-lib if available
+async function createPdfWithPdfLib(text) {
+    try {
+        // Use pdf-lib to create a proper PDF
+        const { PDFDocument, StandardFonts, rgb } = PDFLib;
+        
+        // Create a new PDF document
+        const pdfDoc = await PDFDocument.create();
+        
+        // Add a blank page to the document
+        const page = pdfDoc.addPage([612, 792]); // US Letter size
+        
+        // Get the font
+        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+        
+        // Draw text on the page
+        const fontSize = 12;
+        const lineHeight = fontSize * 1.2;
+        const margin = 50;
+        
+        // Split text into lines
+        const textWidth = page.getWidth() - 2 * margin;
+        const words = text.split(' ');
+        let lines = [];
+        let currentLine = '';
+        
+        for (const word of words) {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            const testLineWidth = font.widthOfTextAtSize(testLine, fontSize);
+            
+            if (testLineWidth > textWidth) {
+                lines.push(currentLine);
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+        }
+        if (currentLine) lines.push(currentLine);
+        
+        // Draw each line of text
+        let y = page.getHeight() - margin;
+        for (const line of lines) {
+            if (y < margin) {
+                // Add a new page if we run out of space
+                const newPage = pdfDoc.addPage([612, 792]);
+                y = newPage.getHeight() - margin;
+                page = newPage;
+            }
+            
+            page.drawText(line, {
+                x: margin,
+                y: y,
+                size: fontSize,
+                font: font,
+                color: rgb(0, 0, 0)
+            });
+            
+            y -= lineHeight;
+        }
+        
+        // Serialize the PDFDocument to bytes
+        const pdfBytes = await pdfDoc.save();
+        
+        // Convert to ArrayBuffer
+        return pdfBytes.buffer;
+    } catch (error) {
+        console.error("Error creating PDF with pdf-lib:", error);
+        return createBasicPdf(text);
+    }
+}
+
+// Fallback basic PDF creator
+function createBasicPdf(text) {
+    // Simple PDF structure (this is a very basic representation, not for production use)
+    const pdfHeader = '%PDF-1.7\n';
+    const pdfObject = '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
+    const pagesObject = '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
+    const pageObject = '3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n';
+    const fontObject = '4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n';
+    
+    // Encode the text for PDF
+    const escapedText = text.replace(/\(/g, '\\(').replace(/\)/g, '\\)').replace(/\\/g, '\\\\');
+    const encodedText = `BT /F1 12 Tf 36 700 Td (${escapedText}) Tj ET`;
+    
+    const contentObject = `5 0 obj\n<< /Length ${encodedText.length} >>\nstream\n${encodedText}\nendstream\nendobj\n`;
+    const xref = 'xref\n0 6\n0000000000 65535 f\n0000000010 00000 n\n0000000060 00000 n\n0000000120 00000 n\n0000000220 00000 n\n0000000290 00000 n\n';
+    const trailer = 'trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n0\n%%EOF';
+    
+    const pdfContent = pdfHeader + pdfObject + pagesObject + pageObject + fontObject + contentObject + xref + trailer;
+    
+    // Convert string to ArrayBuffer
+    const buffer = new ArrayBuffer(pdfContent.length);
+    const view = new Uint8Array(buffer);
+    for (let i = 0; i < pdfContent.length; i++) {
+        view[i] = pdfContent.charCodeAt(i);
+    }
+    
+    return buffer;
+}
+
+// Helper function to determine MIME type from filename
+function getMimeTypeFromFileName(fileName) {
+    const extension = fileName.split('.').pop().toLowerCase();
+    const mimeTypes = {
+        'pdf': 'application/pdf',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'xls': 'application/vnd.ms-excel',
+        'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'ppt': 'application/vnd.ms-powerpoint',
+        'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'txt': 'text/plain',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif'
+    };
+    
+    return mimeTypes[extension] || 'text/plain';
+}
+
+// Download document function
+function downloadDocument(fileName, modified = false, view = false) {
+    if (!window.uploadedDocuments || !window.uploadedDocuments[fileName]) return;
+    
+    const docInfo = window.uploadedDocuments[fileName];
+    let content;
+    let contentType;
+    
+    if (docInfo.isPdf) {
+        if (modified && docInfo.modifiedBinary) {
+            content = docInfo.modifiedBinary;
+        } else if (docInfo.originalBinary) {
+            content = docInfo.originalBinary;
+        } else {
+            content = modified ? docInfo.modified : docInfo.original;
+        }
+        contentType = 'application/pdf';
+        
+        // If view is true and it's a PDF, show in viewer instead of downloading
+        if (view) {
+            viewPdfDocument(content, fileName);
+            return;
+        }
+    } else {
+        content = modified ? docInfo.modified : docInfo.original;
+        contentType = 'text/plain';
+    }
     
     if (!content) return;
     
     const element = document.createElement('a');
     
-    // Handle base64 data URLs vs text content
     if (typeof content === 'string' && content.startsWith('data:')) {
         element.href = content;
     } else {
-        const blob = new Blob([content], { type: 'text/plain' });
+        const blob = new Blob([content], { type: contentType });
         element.href = URL.createObjectURL(blob);
     }
     
-    // Set download filename
     if (modified) {
         const parts = fileName.split('.');
         const ext = parts.pop();
@@ -428,10 +919,14 @@ function downloadDocument(fileName, modified = false) {
         element.download = fileName;
     }
     
-    // Trigger download
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+    
+    // Clean up the URL object
+    if (element.href.startsWith('blob:')) {
+        URL.revokeObjectURL(element.href);
+    }
 }
 
 // Add styles for changes UI

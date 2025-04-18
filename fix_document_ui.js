@@ -217,5 +217,76 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, 1000);
     
+    // New function to ensure delete buttons are always visible
+    function ensureDeleteButtonVisible() {
+        const fileItems = document.querySelectorAll('.file-item');
+        
+        fileItems.forEach(fileItem => {
+            const fileHeader = fileItem.querySelector('.file-header');
+            const deleteBtn = fileHeader.querySelector('.delete-file');
+            const fileName = fileItem.querySelector('.file-name-container span')?.textContent;
+            
+            if (!deleteBtn && fileName) {
+                // Create delete button if missing
+                const newDeleteBtn = document.createElement('button');
+                newDeleteBtn.className = 'delete-file';
+                newDeleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                newDeleteBtn.setAttribute('title', 'Delete File');
+                newDeleteBtn.style.display = 'flex';  // Force display
+                newDeleteBtn.style.visibility = 'visible';  // Force visibility
+                newDeleteBtn.style.opacity = '1';     // Full opacity
+                
+                // Add event listener
+                newDeleteBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (confirm(`Are you sure you want to delete ${fileName}?`)) {
+                        // Remove from UI
+                        fileItem.remove();
+                        
+                        // Remove from storage
+                        if (window.uploadedDocuments && window.uploadedDocuments[fileName]) {
+                            delete window.uploadedDocuments[fileName];
+                        }
+                    }
+                });
+                
+                // Add to file header
+                fileHeader.appendChild(newDeleteBtn);
+            } else if (deleteBtn) {
+                // Ensure existing delete button is visible
+                deleteBtn.style.display = 'flex';
+                deleteBtn.style.visibility = 'visible';
+                deleteBtn.style.opacity = '1';
+            }
+        });
+    }
+    
+    // Run on page load
+    setTimeout(ensureDeleteButtonVisible, 1000);
+    
+    // Run periodically to catch dynamically added items
+    setInterval(ensureDeleteButtonVisible, 3000);
+    
+    // Run after file upload
+    const fileInput = document.getElementById('fileInput');
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            setTimeout(ensureDeleteButtonVisible, 1500);
+        });
+    }
+    
+    // Add styles for delete button visibility
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+        .file-header .delete-file {
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            z-index: 10;
+        }
+    `;
+    document.head.appendChild(styleElement);
+    
     console.log("Document UI fixes applied successfully");
 }); 
