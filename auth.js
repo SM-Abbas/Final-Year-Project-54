@@ -13,7 +13,7 @@ import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10
 
 // Firebase Configuration
 const firebaseConfig = {
-    apiKey: "AIzaSyB9TKLmKIVO7-YWKv1iORqnax0sru249sY" ,
+    apiKey: "${{ secrets.AUTH_API}}" ,
     authDomain: "legalmind-users.firebaseapp.com",
     projectId: "legalmind-users",
     storageBucket: "legalmind-users.firebasestorage.app",
