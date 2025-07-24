@@ -25640,17 +25640,17 @@
                 name: "LegalMind",
                 // Original endpoint is scaled to zero due to inactivity
                 endpoints: [
-                    "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
-                    "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
-                    "https://evktndrzhfjk0kzf.us-east-1.aws.endpoints.huggingface.cloud",
+
+                    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1",
+                   
 
                     // Hidden fallback
                 ],
                 // Multiple API tokens to try as alternatives
                 authTokens: [
-                    "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",
-                    "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",
-                    "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" 
+                    "${{secrets.LEGALMINDO}}",
+                    "${{secrets.LEGALMINDc}}"
+                
                 ],
                 // Track which endpoint and token is currently being used
                 currentEndpointIndex: 0,
