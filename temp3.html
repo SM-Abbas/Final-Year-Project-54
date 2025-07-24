@@ -58,7 +58,7 @@
     <script>
         // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyB9TKLmKIVO7-YWKv1iORqnax0sru249sY" ,
+            apiKey: "${{ secrets.AUTH_API}}" ,
             authDomain: "legalmind-users.firebaseapp.com",
             projectId: "legalmind-users",
             storageBucket: "legalmind-users.firebaseapp.com",
@@ -25639,17 +25639,18 @@
             legalMind: {
                 name: "LegalMind",
                 // Original endpoint is scaled to zero due to inactivity
-              endpoints: [
+                endpoints: [
                     "https://api-inference.huggingface.co/models/mistralai/Mixtral-8x7B-Instruct-v0.1",
                     "https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta",
                     "https://api-inference.huggingface.co/models/microsoft/phi-2"
-                ]
+
+                    // Hidden fallback
+                ],
                 // Multiple API tokens to try as alternatives
                 authTokens: [
                     "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",
                     "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",
                     "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" 
-            
                 ],
                 // Track which endpoint and token is currently being used
                 currentEndpointIndex: 0,
