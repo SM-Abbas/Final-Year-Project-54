@@ -25648,9 +25648,9 @@
                 ],
                 // Multiple API tokens to try as alternatives
                 authTokens: [
-                    process.env.HF_ACCESS_LM,
-                    process.env.HF_ACCESS_LC
-                    
+                    VITE_HF_TOKEN=${{ secrets.HF_TOKEN_LC }}
+                    VITE_HF_TOKEN=${{ secrets.HF_TOKEN_LM }}
+
                 
                 ],
                 // Track which endpoint and token is currently being used
