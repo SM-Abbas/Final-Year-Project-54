@@ -25641,16 +25641,15 @@
                 // Original endpoint is scaled to zero due to inactivity
                 endpoints: [
 
-                    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3",
+                    "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-v0.1",
                    
 
                     // Hidden fallback
                 ],
                 // Multiple API tokens to try as alternatives
                 authTokens: [
-                    VITE_HF_TOKEN=${{ secrets.HF_TOKEN_LC }}
-                    VITE_HF_TOKEN=${{ secrets.HF_TOKEN_LM }}
-                    
+                    "${{secrets.LEGALMINDO}}",
+                    "${{secrets.LEGALMINDc}}"
                 
                 ],
                 // Track which endpoint and token is currently being used
