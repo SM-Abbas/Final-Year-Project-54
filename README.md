@@ -135,4 +135,4 @@ The pruning algorithm prioritized keeping input-adjacent and output-adjacent lay
 
 
 We have also worked on a website and hosted it on GitHub Pages and on our website, 
-(https://legalmind.space/) Check it out 
+(https://legalmind.cloud/) Check it out 
